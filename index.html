@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Umepay — Gestión</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,wght@0,300;0,500;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f1ea;--bg2:#ece7dd;--surface:#faf8f4;--surface2:#f0ece4;
+  --ink:#1c1917;--ink2:#57534e;--ink3:#a8a29e;
+  --green:#1e5c3a;--green2:#2d7a50;--green3:#d1fae5;
+  --amber:#92400e;--amber2:#fef3c7;
+  --red:#9b1c1c;--red2:#fee2e2;
+  --blue:#1e3a5f;--blue2:#dbeafe;
+  --border:#ddd8ce;--border2:#c8c2b6;
+  --mono:'DM Mono',monospace;--serif:'Fraunces',serif;
+  --r:9px;--sh:0 1px 3px rgba(28,25,23,.07),0 4px 12px rgba(28,25,23,.05);
+}
+body{font-family:var(--mono);background:var(--bg);color:var(--ink);min-height:100vh;font-size:13px}
+/* ── TOPBAR ── */
+.topbar{background:var(--ink);color:#fff;height:50px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:100}
+.brand{display:flex;align-items:center;gap:14px}
+.brand-logo{font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+  border:1px solid rgba(255,255,255,.3);padding:4px 8px;line-height:1.3}
+.brand-name{font-family:var(--serif);font-size:18px;font-weight:300;color:rgba(255,255,255,.9)}
+.conn-status{display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.4)}
+.dot{width:7px;height:7px;border-radius:50%;background:#a8a29e}
+.dot.ok{background:#52b788}.dot.err{background:#f87171}
+/* ── NAV TABS ── */
+.nav{background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;gap:2px;padding:0 20px;overflow-x:auto}
+.nav-btn{font-family:var(--mono);font-size:12px;padding:12px 18px;border:none;
+  background:none;cursor:pointer;color:var(--ink3);border-bottom:2px solid transparent;
+  white-space:nowrap;transition:all .12s;letter-spacing:.02em}
+.nav-btn:hover{color:var(--ink)}
+.nav-btn.active{color:var(--green);border-bottom-color:var(--green);font-weight:500}
+/* ── MAIN ── */
+.main{max-width:1100px;margin:0 auto;padding:24px 20px}
+.tab{display:none}.tab.active{display:block}
+/* ── DASHBOARD CARDS ── */
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:24px}
+.dcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh)}
+.dcard-label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px}
+.dcard-val{font-family:var(--serif);font-size:22px;font-weight:500;color:var(--ink)}
+.dcard-val.pos{color:var(--green)}.dcard-val.neg{color:var(--red)}.dcard-val.warn{color:var(--amber)}
+.dcard-sub{font-size:11px;color:var(--ink3);margin-top:4px}
+/* ── BALANCE SOCIOS ── */
+.balance-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px;margin-bottom:24px;box-shadow:var(--sh)}
+.balance-title{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:14px}
+.balance-row{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;border-bottom:1px solid var(--border)}
+.balance-row:last-child{border-bottom:none}
+.balance-who{font-weight:500;color:var(--ink)}
+.balance-amounts{display:flex;gap:16px;font-family:var(--mono);font-size:12px}
+.balance-verdict{margin-top:14px;padding:10px 14px;border-radius:6px;font-size:12px}
+.balance-verdict.even{background:var(--green3);color:var(--green)}
+.balance-verdict.uneven{background:var(--amber2);color:var(--amber)}
+/* ── SECTION HEADER ── */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sec-title{font-family:var(--serif);font-size:18px;font-weight:300;color:var(--ink)}
+.sec-sub{font-size:11px;color:var(--ink3);margin-top:2px}
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;
+  border:1px solid var(--border2);background:var(--surface);color:var(--ink);
+  font-family:var(--mono);font-size:12px;cursor:pointer;transition:all .12s;white-space:nowrap}
+.btn:hover{background:var(--bg2);border-color:var(--ink3)}
+.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.primary:hover{background:#333}
+.btn.success{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.success:hover{background:var(--green2)}
+.btn.danger{background:var(--red2);color:var(--red);border-color:var(--red)}
+.btn.sm{padding:4px 10px;font-size:11px}
+/* ── TABLE ── */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
+table{width:100%;border-collapse:collapse}
+th{background:var(--bg2);padding:9px 12px;text-align:left;font-size:10px;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--ink)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg)}
+.empty-row td{text-align:center;color:var(--ink3);padding:28px;font-style:italic}
+/* ── BADGES ── */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;white-space:nowrap}
+.badge-green{background:var(--green3);color:var(--green)}
+.badge-amber{background:var(--amber2);color:var(--amber)}
+.badge-red{background:var(--red2);color:var(--red)}
+.badge-blue{background:var(--blue2);color:var(--blue)}
+.badge-gray{background:var(--bg2);color:var(--ink3)}
+/* ── MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(28,25,23,.45);z-index:200;
+  align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(28,25,23,.18)}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;border-bottom:1px solid var(--border)}
+.modal-title{font-family:var(--serif);font-size:16px;font-weight:500}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink3);
+  width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:4px}
+.modal-close:hover{background:var(--bg2);color:var(--ink)}
+.modal-body{padding:20px}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+/* ── FORM ── */
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.field label{font-size:11px;letter-spacing:.04em;color:var(--ink2);font-weight:500}
+.field input,.field select,.field textarea{
+  font-family:var(--mono);font-size:13px;color:var(--ink);
+  background:var(--bg);border:1px solid var(--border2);border-radius:6px;
+  padding:8px 10px;width:100%;outline:none;transition:border .12s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green);background:#fff}
+.field textarea{resize:vertical;min-height:70px;line-height:1.5}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.field-hint{font-size:10px;color:var(--ink3)}
+/* ── TRABAJO CARD ── */
+.trab-cards{display:flex;flex-direction:column;gap:10px}
+.trab-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px;box-shadow:var(--sh);transition:all .12s}
+.trab-card:hover{border-color:var(--border2)}
+.trab-card-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+.trab-cliente{font-family:var(--serif);font-size:15px;font-weight:500}
+.trab-tipo{font-size:11px;color:var(--ink3);margin-top:2px}
+.trab-badges{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.trab-desc{font-size:12px;color:var(--ink2);margin-bottom:8px;line-height:1.5}
+.trab-comentario{background:var(--bg2);border-left:3px solid var(--border2);
+  padding:8px 12px;border-radius:0 6px 6px 0;font-size:11px;color:var(--ink2);
+  margin-bottom:8px;line-height:1.5}
+.trab-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.trab-fecha{font-size:10px;color:var(--ink3)}
+.trab-monto{font-family:var(--serif);font-size:14px;font-weight:500;color:var(--green)}
+.trab-actions{display:flex;gap:6px}
+/* ── SPINNER ── */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);
+  border-top-color:var(--green);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* ── TOAST ── */
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;
+  font-size:12px;box-shadow:0 4px 16px rgba(0,0,0,.2);
+  animation:slideIn .2s ease;max-width:300px}
+.toast.err{background:var(--red)}
+@keyframes slideIn{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+/* ── SETUP ── */
+.setup-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:24px;margin-bottom:20px;box-shadow:var(--sh)}
+.setup-step{display:flex;gap:14px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.setup-step:last-child{border-bottom:none;margin-bottom:0}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.step-content{flex:1}
+.step-title{font-weight:500;margin-bottom:4px}
+.step-desc{font-size:11px;color:var(--ink2);line-height:1.5}
+.url-input{font-family:var(--mono);font-size:12px;background:var(--bg);border:1px solid var(--border2);
+  border-radius:6px;padding:8px 10px;width:100%;outline:none;margin-top:8px}
+.url-input:focus{border-color:var(--green)}
+</style>
+</head>
+<body>
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-logo">AGRIMENSURA<br>UMEPAY</div>
+    <div class="brand-name">Gestión del estudio</div>
+  </div>
+  <div class="conn-status">
+    <div class="dot" id="status-dot"></div>
+    <span id="status-txt">Configurando...</span>
+  </div>
+</div>
+<!-- NAV -->
+<div class="nav">
+  <button class="nav-btn active" onclick="showTab('dashboard')">◈ Dashboard</button>
+  <button class="nav-btn" onclick="showTab('trabajos')">◎ Trabajos</button>
+  <button class="nav-btn" onclick="showTab('movimientos')">⇄ Ingresos / Gastos</button>
+  <button class="nav-btn" onclick="showTab('presupuestos')">◻ Presupuestos</button>
+  <button class="nav-btn" onclick="showTab('setup')">⚙ Configuración</button>
+</div>
+<!-- MAIN -->
+<div class="main">
+<!-- ═══════════════ DASHBOARD ═══════════════ -->
+<div class="tab active" id="tab-dashboard">
+  <div class="sec-hdr" style="margin-bottom:20px">
+    <div>
+      <div class="sec-title">Resumen del estudio</div>
+      <div class="sec-sub" id="dash-fecha">—</div>
+    </div>
+    <button class="btn" onclick="loadDashboard()">↻ Actualizar</button>
+  </div>
+  <div class="dash-grid" id="dash-cards">
+    <div class="dcard"><div class="dcard-label">Ingresos ARS</div><div class="dcard-val" id="d-ing-ars">—</div></div>
+    <div class="dcard"><div class="dcard-label">Ingresos USD</div><div class="dcard-val" id="d-ing-usd">—</div></div>
+    <div class="dcard"><div class="dcard-label">Gastos ARS</div><div class="dcard-val" id="d-gast-ars">—</div></div>
+    <div class="dcard"><div class="dcard-label">Gastos USD</div><div class="dcard-val" id="d-gast-usd">—</div></div>
+    <div class="dcard"><div class="dcard-label">Balance ARS</div><div class="dcard-val" id="d-bal-ars">—</div></div>
+    <div class="dcard"><div class="dcard-label">Balance USD</div><div class="dcard-val" id="d-bal-usd">—</div></div>
+    <div class="dcard"><div class="dcard-label">Trabajos activos</div><div class="dcard-val" id="d-trab">—</div></div>
+    <div class="dcard"><div class="dcard-label">Presupuestos</div><div class="dcard-val" id="d-pres">—</div></div>
+  </div>
+  <div class="balance-card">
+    <div class="balance-title">Balance entre socios (gastos pagados)</div>
+    <div class="balance-row">
+      <div class="balance-who">Santiago</div>
+      <div class="balance-amounts">
+        <span id="bs-stg-ars">ARS —</span>
+        <span id="bs-stg-usd">USD —</span>
+      </div>
+    </div>
+    <div class="balance-row">
+      <div class="balance-who">Julia</div>
+      <div class="balance-amounts">
+        <span id="bs-jul-ars">ARS —</span>
+        <span id="bs-jul-usd">USD —</span>
+      </div>
+    </div>
+    <div class="balance-verdict" id="balance-verdict">—</div>
+  </div>
+  <div class="sec-hdr"><div class="sec-title">Trabajos por estado</div></div>
+  <div id="dash-estados" class="dash-grid"></div>
+</div>
+<!-- ═══════════════ TRABAJOS ═══════════════ -->
+<div class="tab" id="tab-trabajos">
+  <div class="sec-hdr">
+    <div>
+      <div class="sec-title">Trabajos</div>
+      <div class="sec-sub">Seguimiento de expedientes y trabajos en curso</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <select id="filtro-estado" class="url-input" style="width:auto;margin:0" onchange="renderTrabajos()">
+        <option value="">Todos los estados</option>
+        <option value="En curso">En curso</option>
+        <option value="Pausado">Pausado</option>
+        <option value="Esperando cliente">Esperando cliente</option>
+        <option value="Finalizado">Finalizado</option>
+        <option value="Cobrado">Cobrado</option>
+      </select>
+      <button class="btn success" onclick="openModal('modal-trabajo')">+ Nuevo trabajo</button>
+    </div>
+  </div>
+  <div class="trab-cards" id="trab-list"><div style="text-align:center;color:var(--ink3);padding:40px">Cargando...</div></div>
+</div>
+<!-- ═══════════════ MOVIMIENTOS ═══════════════ -->
+<div class="tab" id="tab-movimientos">
+  <div class="sec-hdr">
+    <div>
+      <div class="sec-title">Ingresos y Gastos</div>
+      <div class="sec-sub">Todos los movimientos de dinero del estudio</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <select id="filtro-tipo" class="url-input" style="width:auto;margin:0" onchange="renderMovimientos()">
+        <option value="">Todos</option>
+        <option value="ingreso">Solo ingresos</option>
+        <option value="egreso">Solo gastos</option>
+      </select>
+      <button class="btn success" onclick="openModal('modal-movimiento')">+ Registrar movimiento</button>
+    </div>
+  </div>
+  <!-- Subtotales rápidos -->
+  <div class="dash-grid" style="margin-bottom:16px" id="mov-totals"></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Monto</th>
+          <th>Forma pago</th><th>Quién</th><th>Categoría</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="mov-tbody"><tr class="empty-row"><td colspan="8">Cargando...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+<!-- ═══════════════ PRESUPUESTOS ═══════════════ -->
+<div class="tab" id="tab-presupuestos">
+  <div class="sec-hdr">
+    <div>
+      <div class="sec-title">Presupuestos</div>
+      <div class="sec-sub">Registro de presupuestos enviados</div>
+    </div>
+    <button class="btn success" onclick="openModal('modal-presupuesto')">+ Registrar presupuesto</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th><th>Cliente</th><th>Trabajo</th><th>Monto ARS</th>
+          <th>Monto USD</th><th>Estado</th><th>Notas</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="pres-tbody"><tr class="empty-row"><td colspan="8">Cargando...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+<!-- ═══════════════ SETUP ═══════════════ -->
+<div class="tab" id="tab-setup">
+  <div class="sec-hdr"><div class="sec-title">Configuración</div></div>
+  <div class="setup-card">
+    <div class="balance-title" style="margin-bottom:16px">Conexión con Google Sheets</div>
+    <div class="setup-step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Crear la Google Sheet</div>
+        <div class="step-desc">Entrá a <strong>drive.google.com</strong> con la cuenta <strong>agrimensuraumepay@gmail.com</strong>. Creá una hoja nueva y llamala "Umepay - Gestión".</div>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Pegar el Apps Script</div>
+        <div class="step-desc">En la Sheet: <strong>Extensiones → Apps Script</strong>. Borrá todo el código y pegá el contenido del archivo <code>umepay_apps_script.gs</code> que te entregamos. Guardá con Ctrl+S.</div>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">Publicar como Web App</div>
+        <div class="step-desc">
+          Clic en <strong>Implementar → Nueva implementación</strong><br>
+          • Tipo: <strong>Aplicación web</strong><br>
+          • Ejecutar como: <strong>Yo (agrimensuraumepay@gmail.com)</strong><br>
+          • Quién tiene acceso: <strong>Cualquier usuario</strong><br>
+          Clic en <strong>Implementar</strong>, autorizá los permisos y copiá la URL que aparece.
+        </div>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">Pegar la URL acá abajo</div>
+        <div class="step-desc">
+          Pegá la URL del Web App aquí. Se guarda en tu navegador automáticamente.
+          <input type="text" class="url-input" id="script-url-input"
+            placeholder="https://script.google.com/macros/s/.../exec"
+            oninput="saveUrl()">
+          <div class="field-hint" style="margin-top:6px" id="url-status">—</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:8px">
+      <button class="btn primary" onclick="testConnection()">Probar conexión</button>
+      <button class="btn" onclick="loadAll()">↻ Recargar datos</button>
+    </div>
+  </div>
+</div>
+</div><!-- /main -->
+<!-- ═══════════════ MODALES ═══════════════ -->
+<!-- Modal Trabajo -->
+<div class="modal-bg" id="modal-trabajo">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="modal-trabajo-title">Nuevo trabajo</div>
+      <button class="modal-close" onclick="closeModal('modal-trabajo')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="trab-id">
+      <div class="g2">
+        <div class="field">
+          <label>Cliente *</label>
+          <input id="trab-cliente" placeholder="Nombre del cliente">
+        </div>
+        <div class="field">
+          <label>Tipo de trabajo</label>
+          <select id="trab-tipo">
+            <option>Mensura simple rural</option>
+            <option>Mensura y subdivisión</option>
+            <option>Mensura y unión</option>
+            <option>Mensura, unión y subdivisión</option>
+            <option>Mensura para posesión/usucapión</option>
+            <option>Amojonamiento</option>
+            <option>Cert. de amojonamiento colegiado</option>
+            <option>Verificación de estado parcelario</option>
+            <option>Relevamiento planialtimétrico</option>
+            <option>Loteo</option>
+            <option>Croquis de subdivisión</option>
+            <option>Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Descripción del inmueble / trabajo</label>
+        <textarea id="trab-desc" placeholder="Ej: Mensura para usucapión — parcela 12-02-... — Dpto. Calamuchita"></textarea>
+      </div>
+      <div class="g3">
+        <div class="field">
+          <label>Estado</label>
+          <select id="trab-estado">
+            <option>En curso</option>
+            <option>Pausado</option>
+            <option>Esperando cliente</option>
+            <option>Finalizado</option>
+            <option>Cobrado</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Fecha inicio</label>
+          <input type="date" id="trab-fecha">
+        </div>
+        <div class="field">
+          <label>Presupuesto ref. (opcional)</label>
+          <input id="trab-pres-ref" placeholder="Nro. o descripción">
+        </div>
+      </div>
+      <div class="field">
+        <label>Comentario / última actualización</label>
+        <textarea id="trab-comentario" placeholder="Ej: Esperando respuesta negativa de carta documento enviada al propietario registral..."></textarea>
+      </div>
+      <div class="g2">
+        <div class="field">
+          <label>Monto presupuestado ARS</label>
+          <input type="number" id="trab-monto-ars" placeholder="0">
+        </div>
+        <div class="field">
+          <label>Monto presupuestado USD</label>
+          <input type="number" id="trab-monto-usd" placeholder="0">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-trabajo')">Cancelar</button>
+      <button class="btn success" onclick="saveTrabajo()">Guardar trabajo</button>
+    </div>
+  </div>
+</div>
+<!-- Modal Movimiento -->
+<div class="modal-bg" id="modal-movimiento">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">Registrar movimiento</div>
+      <button class="modal-close" onclick="closeModal('modal-movimiento')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mov-id">
+      <div class="g2">
+        <div class="field">
+          <label>Tipo *</label>
+          <select id="mov-tipo" onchange="updateMovLabel()">
+            <option value="ingreso">Ingreso (cobro)</option>
+            <option value="egreso">Gasto / Egreso</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Fecha *</label>
+          <input type="date" id="mov-fecha">
+        </div>
+      </div>
+      <div class="field">
+        <label id="mov-desc-label">Descripción del cobro</label>
+        <input id="mov-desc" placeholder="Ej: Cobro seña mensura Capaldo">
+      </div>
+      <div class="g3">
+        <div class="field">
+          <label>Monto *</label>
+          <input type="number" id="mov-monto" placeholder="0">
+        </div>
+        <div class="field">
+          <label>Moneda</label>
+          <select id="mov-moneda">
+            <option value="$">$ (ARS)</option>
+            <option value="U$D">U$D</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Forma de pago</label>
+          <select id="mov-forma">
+            <option>Transferencia</option>
+            <option>Efectivo</option>
+            <option>Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="field">
+          <label id="mov-quien-label">¿Quién cobró?</label>
+          <select id="mov-quien">
+            <option value="Santiago">Santiago</option>
+            <option value="Julia">Julia</option>
+            <option value="Ambos">Ambos / Cuenta empresa</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Categoría</label>
+          <select id="mov-cat">
+            <option>Honorarios</option>
+            <option>Tasa / Arancel</option>
+            <option>Combustible / Traslado</option>
+            <option>Insumos</option>
+            <option>Equipamiento</option>
+            <option>Software</option>
+            <option>Impuestos / AFIP</option>
+            <option>Aporte previsional</option>
+            <option>Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Trabajo vinculado (opcional)</label>
+        <select id="mov-trabajo">
+          <option value="">— Ninguno —</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-movimiento')">Cancelar</button>
+      <button class="btn success" onclick="saveMovimiento()">Guardar</button>
+    </div>
+  </div>
+</div>
+<!-- Modal Presupuesto -->
+<div class="modal-bg" id="modal-presupuesto">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">Registrar presupuesto</div>
+      <button class="modal-close" onclick="closeModal('modal-presupuesto')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pres-id">
+      <div class="g2">
+        <div class="field">
+          <label>Cliente *</label>
+          <input id="pres-cliente" placeholder="Nombre del cliente">
+        </div>
+        <div class="field">
+          <label>Fecha *</label>
+          <input type="date" id="pres-fecha">
+        </div>
+      </div>
+      <div class="field">
+        <label>Tipo de trabajo</label>
+        <select id="pres-tipo">
+          <option>Mensura simple rural</option>
+          <option>Mensura y subdivisión</option>
+          <option>Amojonamiento</option>
+          <option>Cert. de amojonamiento colegiado</option>
+          <option>Verificación de estado parcelario</option>
+          <option>Relevamiento planialtimétrico</option>
+          <option>Croquis de subdivisión</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <div class="g2">
+        <div class="field">
+          <label>Monto ARS</label>
+          <input type="number" id="pres-ars" placeholder="0">
+        </div>
+        <div class="field">
+          <label>Monto USD</label>
+          <input type="number" id="pres-usd" placeholder="0">
+        </div>
+      </div>
+      <div class="g2">
+        <div class="field">
+          <label>Estado</label>
+          <select id="pres-estado">
+            <option>Enviado</option>
+            <option>Aprobado</option>
+            <option>Rechazado</option>
+            <option>Vencido</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Trabajo vinculado (si se aprobó)</label>
+          <select id="pres-trabajo">
+            <option value="">— Ninguno —</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Notas</label>
+        <textarea id="pres-notas" placeholder="Observaciones..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-presupuesto')">Cancelar</button>
+      <button class="btn success" onclick="savePresupuesto()">Guardar</button>
+    </div>
+  </div>
+</div>
+<!-- Modal Actualizar Estado Trabajo -->
+<div class="modal-bg" id="modal-estado">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-hdr">
+      <div class="modal-title">Actualizar estado</div>
+      <button class="modal-close" onclick="closeModal('modal-estado')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="est-id">
+      <div class="field">
+        <label>Estado</label>
+        <select id="est-estado">
+          <option>En curso</option>
+          <option>Pausado</option>
+          <option>Esperando cliente</option>
+          <option>Finalizado</option>
+          <option>Cobrado</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Comentario / actualización</label>
+        <textarea id="est-comentario" style="min-height:100px"
+          placeholder="Describí el estado actual del trabajo..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-estado')">Cancelar</button>
+      <button class="btn primary" onclick="saveEstado()">Actualizar</button>
+    </div>
+  </div>
+</div>
+<!-- TOASTS -->
+<div class="toast-wrap" id="toasts"></div>
+<script>
+// ==============================
+// CONFIG & STATE
+// ==============================
+let SCRIPT_URL = localStorage.getItem('umepay_script_url') || '';
+let DB = { trabajos: [], movimientos: [], presupuestos: [] };
+let connected = false;
+// ==============================
+// API
+// ==============================
+async function api(action, sheet, extra = {}) {
+  if (!SCRIPT_URL) throw new Error('URL no configurada');
+  const body = { action, sheet, ...extra };
+  const res = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'text/plain' }  // Apps Script requiere esto
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+async function apiGet(action, params = {}) {
+  if (!SCRIPT_URL) throw new Error('URL no configurada');
+  const url = new URL(SCRIPT_URL);
+  url.searchParams.set('action', action);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString());
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+// ==============================
+// LOAD ALL DATA
+// ==============================
+async function loadAll() {
+  if (!SCRIPT_URL) { setStatus(false, 'Sin URL configurada'); return; }
+  try {
+    const [trab, movs, pres] = await Promise.all([
+      apiGet('getAll', { sheet: 'trabajos' }),
+      apiGet('getAll', { sheet: 'movimientos' }),
+      apiGet('getAll', { sheet: 'presupuestos' })
+    ]);
+    DB.trabajos     = trab.rows || [];
+    DB.movimientos  = movs.rows || [];
+    DB.presupuestos = pres.rows || [];
+    setStatus(true, `Conectado — ${new Date().toLocaleTimeString('es-AR')}`);
+    renderAll();
+  } catch(e) {
+    setStatus(false, 'Error: ' + e.message);
+    toast('Error al cargar datos: ' + e.message, true);
+  }
+}
+async function loadDashboard() {
+  if (!SCRIPT_URL) return;
+  try {
+    const d = await apiGet('getDashboard');
+    renderDashboard(d);
+  } catch(e) { /* fallback to local */ renderDashboardLocal(); }
+}
+function renderAll() {
+  renderTrabajos();
+  renderMovimientos();
+  renderPresupuestos();
+  renderDashboardLocal();
+  fillWorkSelects();
+}
+// ==============================
+// DASHBOARD
+// ==============================
+function renderDashboardLocal() {
+  const movs = DB.movimientos;
+  const n = v => parseFloat(v) || 0;
+  const cobros  = movs.filter(m => m.tipo === 'ingreso');
+  const gastos  = movs.filter(m => m.tipo === 'egreso');
+  const ingARS  = cobros.filter(m=>m.moneda==='$').reduce((a,b)=>a+n(b.monto),0);
+  const ingUSD  = cobros.filter(m=>m.moneda==='U$D').reduce((a,b)=>a+n(b.monto),0);
+  const gastARS = gastos.filter(m=>m.moneda==='$').reduce((a,b)=>a+n(b.monto),0);
+  const gastUSD = gastos.filter(m=>m.moneda==='U$D').reduce((a,b)=>a+n(b.monto),0);
+  const balARS  = ingARS - gastARS;
+  const balUSD  = ingUSD - gastUSD;
+  const stgARS  = gastos.filter(m=>m.quien_pago==='Santiago'&&m.moneda==='$').reduce((a,b)=>a+n(b.monto),0);
+  const julARS  = gastos.filter(m=>m.quien_pago==='Julia'&&m.moneda==='$').reduce((a,b)=>a+n(b.monto),0);
+  const stgUSD  = gastos.filter(m=>m.quien_pago==='Santiago'&&m.moneda==='U$D').reduce((a,b)=>a+n(b.monto),0);
+  const julUSD  = gastos.filter(m=>m.quien_pago==='Julia'&&m.moneda==='U$D').reduce((a,b)=>a+n(b.monto),0);
+  const difARS  = stgARS - julARS;
+  const by = id => document.getElementById(id);
+  const fmt = (v,mon) => mon + ' ' + Math.abs(v).toLocaleString('es-AR',{maximumFractionDigits:0});
+  by('d-ing-ars').textContent = fmt(ingARS,'$');
+  by('d-ing-usd').textContent = fmt(ingUSD,'U$D');
+  by('d-gast-ars').textContent = fmt(gastARS,'$');    by('d-gast-ars').className = 'dcard-val warn';
+  by('d-gast-usd').textContent = fmt(gastUSD,'U$D');  by('d-gast-usd').className = 'dcard-val warn';
+  by('d-bal-ars').textContent = fmt(balARS,'$');      by('d-bal-ars').className = 'dcard-val ' + (balARS>=0?'pos':'neg');
+  by('d-bal-usd').textContent = fmt(balUSD,'U$D');    by('d-bal-usd').className = 'dcard-val ' + (balUSD>=0?'pos':'neg');
+  by('d-trab').textContent = DB.trabajos.filter(t=>!['Cobrado','Finalizado'].includes(t.estado)).length;
+  by('d-pres').textContent = DB.presupuestos.length;
+  by('bs-stg-ars').textContent = '$ ' + stgARS.toLocaleString('es-AR',{maximumFractionDigits:0});
+  by('bs-stg-usd').textContent = 'U$D ' + stgUSD.toLocaleString('es-AR',{maximumFractionDigits:0});
+  by('bs-jul-ars').textContent = '$ ' + julARS.toLocaleString('es-AR',{maximumFractionDigits:0});
+  by('bs-jul-usd').textContent = 'U$D ' + julUSD.toLocaleString('es-AR',{maximumFractionDigits:0});
+  const verd = by('balance-verdict');
+  if (Math.abs(difARS) < 500) {
+    verd.className = 'balance-verdict even';
+    verd.textContent = '✓ Los gastos están equilibrados entre los dos socios';
+  } else {
+    verd.className = 'balance-verdict uneven';
+    const deudor = difARS > 0 ? 'Julia' : 'Santiago';
+    const acreedor = difARS > 0 ? 'Santiago' : 'Julia';
+    const monto = Math.abs(difARS).toLocaleString('es-AR',{maximumFractionDigits:0});
+    verd.textContent = `${deudor} le debe $ ${monto} ARS a ${acreedor} para equilibrar los gastos`;
+  }
+  const porEstado = {};
+  DB.trabajos.forEach(t => { porEstado[t.estado||'Sin estado'] = (porEstado[t.estado||'Sin estado']||0)+1; });
+  const estadoColors = {'En curso':'badge-green','Pausado':'badge-amber','Esperando cliente':'badge-blue',
+    'Finalizado':'badge-gray','Cobrado':'badge-green'};
+  by('dash-estados').innerHTML = Object.entries(porEstado).map(([est,cant])=>`
+    <div class="dcard">
+      <div class="dcard-label"><span class="badge ${estadoColors[est]||'badge-gray'}">${est}</span></div>
+      <div class="dcard-val">${cant}</div>
+      <div class="dcard-sub">${cant===1?'trabajo':'trabajos'}</div>
+    </div>`).join('') || '<div style="color:var(--ink3);font-size:12px">Sin trabajos registrados</div>';
+  by('dash-fecha').textContent = 'Actualizado: ' + new Date().toLocaleString('es-AR');
+}
+// ==============================
+// TRABAJOS
+// ==============================
+function renderTrabajos() {
+  const filtro = document.getElementById('filtro-estado').value;
+  let list = DB.trabajos.filter(t => !filtro || t.estado === filtro);
+  list.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+  const estadoBadge = e => {
+    const map = {'En curso':'badge-green','Pausado':'badge-amber','Esperando cliente':'badge-blue',
+      'Finalizado':'badge-gray','Cobrado':'badge-green'};
+    return `<span class="badge ${map[e]||'badge-gray'}">${e||'Sin estado'}</span>`;
+  };
+  const fmtMonto = t => {
+    const parts = [];
+    if(parseFloat(t.monto_ars)>0) parts.push('$ '+parseFloat(t.monto_ars).toLocaleString('es-AR',{maximumFractionDigits:0}));
+    if(parseFloat(t.monto_usd)>0) parts.push('U$D '+parseFloat(t.monto_usd).toLocaleString('es-AR',{maximumFractionDigits:0}));
+    return parts.join(' + ') || '';
+  };
+  const wrap = document.getElementById('trab-list');
+  if(!list.length){
+    wrap.innerHTML = '<div style="text-align:center;color:var(--ink3);padding:40px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)">No hay trabajos registrados</div>';
+    return;
+  }
+  wrap.innerHTML = list.map(t => `
+    <div class="trab-card">
+      <div class="trab-card-hdr">
+        <div>
+          <div class="trab-cliente">${t.cliente}</div>
+          <div class="trab-tipo">${t.tipo_trabajo}</div>
+        </div>
+        <div class="trab-badges">
+          ${estadoBadge(t.estado)}
+          ${t.forma_cobro ? '<span class="badge badge-green">Cobrado</span>' : ''}
+        </div>
+      </div>
+      ${t.descripcion ? `<div class="trab-desc">${t.descripcion}</div>` : ''}
+      ${t.comentario ? `<div class="trab-comentario">💬 ${t.comentario}${t.fecha_estado ? `<span style="color:var(--ink3);display:block;margin-top:4px;font-size:10px">Actualizado: ${fmtFecha(t.fecha_estado)}</span>` : ''}</div>` : ''}
+      <div class="trab-footer">
+        <div class="trab-fecha">${t.fecha_inicio ? 'Inicio: ' + fmtFecha(t.fecha_inicio) : ''}</div>
+        <div class="trab-monto">${fmtMonto(t)}</div>
+        <div class="trab-actions">
+          <button class="btn sm" onclick="openEstado('${t.id}','${escHtml(t.estado)}','${escHtml(t.comentario)}')">↺ Estado</button>
+          <button class="btn sm" onclick="editTrabajo('${t.id}')">✎ Editar</button>
+          <button class="btn sm danger" onclick="deleteTrabajo('${t.id}')">✕</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+function openEstado(id, estado, comentario) {
+  document.getElementById('est-id').value = id;
+  document.getElementById('est-estado').value = estado;
+  document.getElementById('est-comentario').value = decodeHtml(comentario);
+  openModal('modal-estado');
+}
+async function saveEstado() {
+  const id = document.getElementById('est-id').value;
+  const data = {
+    estado: document.getElementById('est-estado').value,
+    comentario: document.getElementById('est-comentario').value,
+    fecha_estado: new Date().toISOString()
+  };
+  await saveData('trabajos', id, data);
+  closeModal('modal-estado');
+}
+async function saveTrabajo() {
+  const id = document.getElementById('trab-id').value;
+  const data = {
+    cliente:        document.getElementById('trab-cliente').value,
+    tipo_trabajo:   document.getElementById('trab-tipo').value,
+    descripcion:    document.getElementById('trab-desc').value,
+    estado:         document.getElementById('trab-estado').value,
+    comentario:     document.getElementById('trab-comentario').value,
+    fecha_estado:   new Date().toISOString(),
+    monto_ars:      document.getElementById('trab-monto-ars').value || '0',
+    monto_usd:      document.getElementById('trab-monto-usd').value || '0',
+    presupuesto_ref:document.getElementById('trab-pres-ref').value,
+    fecha_inicio:   document.getElementById('trab-fecha').value,
+  };
+  if(!data.cliente){ toast('El cliente es obligatorio',true); return; }
+  await saveData('trabajos', id, data);
+  closeModal('modal-trabajo');
+}
+function editTrabajo(id) {
+  const t = DB.trabajos.find(x=>x.id===id);
+  if(!t) return;
+  document.getElementById('trab-id').value          = t.id;
+  document.getElementById('trab-cliente').value      = t.cliente;
+  document.getElementById('trab-tipo').value         = t.tipo_trabajo;
+  document.getElementById('trab-desc').value         = t.descripcion;
+  document.getElementById('trab-estado').value       = t.estado;
+  document.getElementById('trab-comentario').value   = t.comentario;
+  document.getElementById('trab-monto-ars').value    = t.monto_ars;
+  document.getElementById('trab-monto-usd').value    = t.monto_usd;
+  document.getElementById('trab-pres-ref').value     = t.presupuesto_ref;
+  document.getElementById('trab-fecha').value        = t.fecha_inicio ? t.fecha_inicio.split('T')[0] : '';
+  document.getElementById('modal-trabajo-title').textContent = 'Editar trabajo';
+  openModal('modal-trabajo');
+}
+async function deleteTrabajo(id) {
+  if(!confirm('¿Eliminar este trabajo?')) return;
+  await deleteData('trabajos', id);
+}
+// ==============================
+// MOVIMIENTOS
+// ==============================
+function renderMovimientos() {
+  const filtro = document.getElementById('filtro-tipo').value;
+  let list = DB.movimientos.filter(m => !filtro || m.tipo === filtro);
+  list.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+  const n = v => parseFloat(v)||0;
+  const cobros  = list.filter(m=>m.tipo==='ingreso');
+  const gastos  = list.filter(m=>m.tipo==='egreso');
+  const iARS = cobros.filter(m=>m.moneda==='$').reduce((a,b)=>a+n(b.monto),0);
+  const iUSD = cobros.filter(m=>m.moneda==='U$D').reduce((a,b)=>a+n(b.monto),0);
+  const gARS = gastos.filter(m=>m.moneda==='$').reduce((a,b)=>a+n(b.monto),0);
+  const gUSD = gastos.filter(m=>m.moneda==='U$D').reduce((a,b)=>a+n(b.monto),0);
+  document.getElementById('mov-totals').innerHTML = `
+    <div class="dcard"><div class="dcard-label">Cobros ARS</div><div class="dcard-val pos">$ ${iARS.toLocaleString('es-AR',{maximumFractionDigits:0})}</div></div>
+    <div class="dcard"><div class="dcard-label">Cobros USD</div><div class="dcard-val pos">U$D ${iUSD.toLocaleString('es-AR',{maximumFractionDigits:0})}</div></div>
+    <div class="dcard"><div class="dcard-label">Gastos ARS</div><div class="dcard-val warn">$ ${gARS.toLocaleString('es-AR',{maximumFractionDigits:0})}</div></div>
+    <div class="dcard"><div class="dcard-label">Gastos USD</div><div class="dcard-val warn">U$D ${gUSD.toLocaleString('es-AR',{maximumFractionDigits:0})}</div></div>`;
+  const tbody = document.getElementById('mov-tbody');
+  if(!list.length){ tbody.innerHTML='<tr class="empty-row"><td colspan="8">No hay movimientos</td></tr>'; return; }
+  tbody.innerHTML = list.map(m => {
+    const isIng = m.tipo === 'ingreso';
+    const montoStr = (isIng?'+':'-') + ' ' + m.moneda + ' ' + Math.abs(parseFloat(m.monto)||0).toLocaleString('es-AR',{maximumFractionDigits:0});
+    return `<tr>
+      <td>${fmtFecha(m.fecha)}</td>
+      <td><span class="badge ${isIng?'badge-green':'badge-amber'}">${isIng?'Ingreso':'Gasto'}</span></td>
+      <td>${m.descripcion}</td>
+      <td style="font-weight:500;color:${isIng?'var(--green)':'var(--amber)'}">${montoStr}</td>
+      <td>${m.forma_pago}</td>
+      <td>${m.quien_pago}</td>
+      <td><span class="badge badge-gray">${m.categoria}</span></td>
+      <td><button class="btn sm danger" onclick="deleteMovimiento('${m.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+function updateMovLabel() {
+  const tipo = document.getElementById('mov-tipo').value;
+  document.getElementById('mov-desc-label').textContent = tipo==='ingreso' ? 'Descripción del cobro' : 'Descripción del gasto';
+  document.getElementById('mov-quien-label').textContent = tipo==='ingreso' ? '¿Quién cobró?' : '¿Quién pagó?';
+}
+async function saveMovimiento() {
+  const id = document.getElementById('mov-id').value;
+  const data = {
+    tipo:       document.getElementById('mov-tipo').value,
+    fecha:      document.getElementById('mov-fecha').value,
+    descripcion:document.getElementById('mov-desc').value,
+    monto:      document.getElementById('mov-monto').value,
+    moneda:     document.getElementById('mov-moneda').value,
+    forma_pago: document.getElementById('mov-forma').value,
+    quien_pago: document.getElementById('mov-quien').value,
+    categoria:  document.getElementById('mov-cat').value,
+    trabajo_id: document.getElementById('mov-trabajo').value,
+  };
+  if(!data.monto || !data.fecha){ toast('Completá monto y fecha',true); return; }
+  await saveData('movimientos', id, data);
+  closeModal('modal-movimiento');
+}
+async function deleteMovimiento(id) {
+  if(!confirm('¿Eliminar este movimiento?')) return;
+  await deleteData('movimientos', id);
+}
+// ==============================
+// PRESUPUESTOS
+// ==============================
+function renderPresupuestos() {
+  const list = [...DB.presupuestos].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  const tbody = document.getElementById('pres-tbody');
+  const estadoBadge = e => {
+    const map = {'Enviado':'badge-blue','Aprobado':'badge-green','Rechazado':'badge-red','Vencido':'badge-amber'};
+    return `<span class="badge ${map[e]||'badge-gray'}">${e}</span>`;
+  };
+  if(!list.length){ tbody.innerHTML='<tr class="empty-row"><td colspan="8">No hay presupuestos registrados</td></tr>'; return; }
+  tbody.innerHTML = list.map(p => `<tr>
+    <td>${fmtFecha(p.fecha)}</td>
+    <td>${p.cliente}</td>
+    <td>${p.tipo_trabajo}</td>
+    <td>${parseFloat(p.monto_ars)>0 ? '$ '+parseFloat(p.monto_ars).toLocaleString('es-AR',{maximumFractionDigits:0}) : '—'}</td>
+    <td>${parseFloat(p.monto_usd)>0 ? 'U$D '+parseFloat(p.monto_usd).toLocaleString('es-AR',{maximumFractionDigits:0}) : '—'}</td>
+    <td>${estadoBadge(p.estado)}</td>
+    <td style="font-size:11px;color:var(--ink3)">${p.notas||'—'}</td>
+    <td><button class="btn sm danger" onclick="deletePresupuesto('${p.id}')">✕</button></td>
+  </tr>`).join('');
+}
+async function savePresupuesto() {
+  const id = document.getElementById('pres-id').value;
+  const data = {
+    cliente:      document.getElementById('pres-cliente').value,
+    fecha:        document.getElementById('pres-fecha').value,
+    tipo_trabajo: document.getElementById('pres-tipo').value,
+    monto_ars:    document.getElementById('pres-ars').value || '0',
+    monto_usd:    document.getElementById('pres-usd').value || '0',
+    estado:       document.getElementById('pres-estado').value,
+    trabajo_id:   document.getElementById('pres-trabajo').value,
+    notas:        document.getElementById('pres-notas').value,
+  };
+  if(!data.cliente){ toast('El cliente es obligatorio',true); return; }
+  await saveData('presupuestos', id, data);
+  closeModal('modal-presupuesto');
+}
+async function deletePresupuesto(id) {
+  if(!confirm('¿Eliminar este presupuesto?')) return;
+  await deleteData('presupuestos', id);
+}
+// ==============================
+// GENERIC SAVE / DELETE
+// ==============================
+async function saveData(sheet, id, data) {
+  try {
+    let res;
+    if (id) {
+      res = await api('update', sheet, { id, data });
+      const arr = DB[sheet];
+      const idx = arr.findIndex(x=>x.id===id);
+      if(idx>=0) Object.assign(arr[idx], data);
+    } else {
+      res = await api('insert', sheet, { data });
+      data.id = res.id;
+      DB[sheet].push(data);
+    }
+    toast('Guardado ✓');
+    renderAll();
+  } catch(e) { toast('Error al guardar: '+e.message, true); }
+}
+async function deleteData(sheet, id) {
+  try {
+    await api('delete', sheet, { id });
+    DB[sheet] = DB[sheet].filter(x=>x.id!==id);
+    toast('Eliminado');
+    renderAll();
+  } catch(e) { toast('Error al eliminar: '+e.message, true); }
+}
+// ==============================
+// UI HELPERS
+// ==============================
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  event.target.classList.add('active');
+}
+function openModal(id) {
+  // Reset hidden id fields
+  const idField = document.querySelector(`#${id} input[type=hidden]`);
+  if(idField) idField.value = '';
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(m => {
+  m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); });
+});
+function setStatus(ok, txt) {
+  connected = ok;
+  document.getElementById('status-dot').className = 'dot ' + (ok?'ok':'err');
+  document.getElementById('status-txt').textContent = txt;
+}
+function toast(msg, isErr=false) {
+  const wrap = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = 'toast' + (isErr?' err':'');
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+function fmtFecha(s) {
+  if(!s) return '—';
+  const d = new Date(s);
+  if(isNaN(d)) return s;
+  return d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+function escHtml(s='') { return String(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
+function decodeHtml(s='') {
+  const t = document.createElement('textarea'); t.innerHTML = s; return t.value;
+}
+function fillWorkSelects() {
+  const opts = ['<option value="">— Ninguno —</option>',
+    ...DB.trabajos.map(t=>`<option value="${t.id}">${t.cliente} — ${t.tipo_trabajo}</option>`)
+  ].join('');
+  document.getElementById('mov-trabajo').innerHTML  = opts;
+  document.getElementById('pres-trabajo').innerHTML = opts;
+}
+// ==============================
+// SETUP
+// ==============================
+function saveUrl() {
+  const url = document.getElementById('script-url-input').value.trim();
+  SCRIPT_URL = url;
+  localStorage.setItem('umepay_script_url', url);
+  document.getElementById('url-status').textContent = url ? '✓ URL guardada en este navegador' : '—';
+}
+async function testConnection() {
+  const url = document.getElementById('script-url-input').value.trim();
+  if(!url){ toast('Ingresá la URL primero',true); return; }
+  SCRIPT_URL = url;
+  localStorage.setItem('umepay_script_url', url);
+  setStatus(false, 'Probando...');
+  try {
+    const res = await fetch(url+'?action=getDashboard');
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    setStatus(true, 'Conexión exitosa ✓');
+    toast('Conexión con Google Sheets exitosa ✓');
+    loadAll();
+  } catch(e) {
+    setStatus(false, 'Error de conexión');
+    toast('No se pudo conectar: '+e.message, true);
+  }
+}
+// ==============================
+// INIT
+// ==============================
+document.addEventListener('DOMContentLoaded', () => {
+  // Set today's date in modals
+  const hoy = new Date().toISOString().split('T')[0];
+  document.getElementById('mov-fecha').value  = hoy;
+  document.getElementById('pres-fecha').value = hoy;
+  document.getElementById('trab-fecha').value = hoy;
+  // Load saved URL
+  if (SCRIPT_URL) {
+    document.getElementById('script-url-input').value = SCRIPT_URL;
+    document.getElementById('url-status').textContent = '✓ URL guardada en este navegador';
+    loadAll();
+  } else {
+    setStatus(false, 'Sin configurar — ver pestaña Configuración');
+  }
+});
+</script>
+</body>
+</html>
