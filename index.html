@@ -134,6 +134,11 @@ tr:hover td{background:var(--bg)}
 .trab-fecha{font-size:10px;color:var(--ink3)}
 .trab-monto{font-family:var(--serif);font-size:14px;font-weight:500;color:var(--green)}
 .trab-actions{display:flex;gap:6px}
+/* ── CARPETAS POR ESTADO ── */
+.carpeta{margin-bottom:24px}
+.carpeta-hdr{display:flex;align-items:center;gap:10px;margin-bottom:11px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+.carpeta-hdr .badge{font-size:11px}
+.carpeta-cnt{font-size:11px;color:var(--ink3)}
 /* ── SPINNER ── */
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);
   border-top-color:var(--green);border-radius:50%;animation:spin .6s linear infinite}
@@ -238,7 +243,7 @@ tr:hover td{background:var(--bg)}
         <option value="Finalizado">Finalizado</option>
         <option value="Cobrado">Cobrado</option>
       </select>
-      <button class="btn success" onclick="openModal('modal-trabajo')">+ Nuevo trabajo</button>
+      <button class="btn success" onclick="nuevoTrabajo()">+ Nuevo trabajo</button>
     </div>
   </div>
   <div class="trab-cards" id="trab-list"><div style="text-align:center;color:var(--ink3);padding:40px">Cargando...</div></div>
@@ -256,7 +261,7 @@ tr:hover td{background:var(--bg)}
         <option value="ingreso">Solo ingresos</option>
         <option value="egreso">Solo gastos</option>
       </select>
-      <button class="btn success" onclick="openModal('modal-movimiento')">+ Registrar movimiento</button>
+      <button class="btn success" onclick="nuevoMovimiento()">+ Registrar movimiento</button>
     </div>
   </div>
   <!-- Subtotales rápidos -->
@@ -280,7 +285,7 @@ tr:hover td{background:var(--bg)}
       <div class="sec-title">Presupuestos</div>
       <div class="sec-sub">Registro de presupuestos enviados</div>
     </div>
-    <button class="btn success" onclick="openModal('modal-presupuesto')">+ Registrar presupuesto</button>
+    <button class="btn success" onclick="nuevoPresupuesto()">+ Registrar presupuesto</button>
   </div>
   <div class="table-wrap">
     <table>
@@ -752,16 +757,11 @@ function renderTrabajos() {
     if(parseFloat(t.monto_usd)>0) parts.push('U$D '+parseFloat(t.monto_usd).toLocaleString('es-AR',{maximumFractionDigits:0}));
     return parts.join(' + ') || '';
   };
-  const wrap = document.getElementById('trab-list');
-  if(!list.length){
-    wrap.innerHTML = '<div style="text-align:center;color:var(--ink3);padding:40px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)">No hay trabajos registrados</div>';
-    return;
-  }
-  wrap.innerHTML = list.map(t => `
+  const cardHtml = t => `
     <div class="trab-card">
       <div class="trab-card-hdr">
         <div>
-          <div class="trab-cliente">${t.cliente}</div>
+          <div class="trab-cliente">${t.cliente || '(sin nombre)'}</div>
           <div class="trab-tipo">${t.tipo_trabajo}</div>
         </div>
         <div class="trab-badges">
@@ -780,7 +780,24 @@ function renderTrabajos() {
           <button class="btn sm danger" onclick="deleteTrabajo('${t.id}')">✕</button>
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  const wrap = document.getElementById('trab-list');
+  if(!list.length){
+    wrap.innerHTML = '<div style="text-align:center;color:var(--ink3);padding:40px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)">No hay trabajos registrados</div>';
+    return;
+  }
+  // Cada trabajo se clasifica en la carpeta de su estado
+  const ORDEN = ['En curso','Esperando cliente','Pausado','Finalizado','Cobrado'];
+  const otros = [...new Set(list.map(t => t.estado || 'Sin estado'))].filter(e => !ORDEN.includes(e));
+  const carpetas = filtro ? [filtro] : [...ORDEN, ...otros];
+  let html = '';
+  carpetas.forEach(est => {
+    const grupo = list.filter(t => (t.estado || 'Sin estado') === est)
+                      .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+    if(!grupo.length) return;
+    html += `<div class="carpeta"><div class="carpeta-hdr">${estadoBadge(est)}<span class="carpeta-cnt">${grupo.length} ${grupo.length===1?'trabajo':'trabajos'}</span></div>${grupo.map(cardHtml).join('')}</div>`;
+  });
+  wrap.innerHTML = html;
 }
 function openEstado(id, estado, comentario) {
   document.getElementById('est-id').value = id;
@@ -978,10 +995,30 @@ function showTab(name) {
   event.target.classList.add('active');
 }
 function openModal(id) {
-  // Reset hidden id fields
-  const idField = document.querySelector(`#${id} input[type=hidden]`);
-  if(idField) idField.value = '';
   document.getElementById(id).classList.add('open');
+}
+// Abre el formulario en blanco para crear (limpia el id oculto -> es alta, no edición)
+function nuevoTrabajo() {
+  ['trab-id','trab-cliente','trab-desc','trab-comentario','trab-monto-ars','trab-monto-usd','trab-pres-ref'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('trab-tipo').selectedIndex = 0;
+  document.getElementById('trab-estado').value = 'En curso';
+  document.getElementById('trab-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('modal-trabajo-title').textContent = 'Nuevo trabajo';
+  openModal('modal-trabajo');
+}
+function nuevoMovimiento() {
+  document.getElementById('mov-id').value = '';
+  document.getElementById('mov-desc').value = '';
+  document.getElementById('mov-monto').value = '';
+  document.getElementById('mov-tipo').selectedIndex = 0;
+  document.getElementById('mov-fecha').value = new Date().toISOString().split('T')[0];
+  updateMovLabel();
+  openModal('modal-movimiento');
+}
+function nuevoPresupuesto() {
+  ['pres-id','pres-cliente','pres-notas','pres-ars','pres-usd'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('pres-fecha').value = new Date().toISOString().split('T')[0];
+  openModal('modal-presupuesto');
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-bg').forEach(m => {
