@@ -237,6 +237,7 @@ tr:hover td{background:var(--bg)}
     <div style="display:flex;gap:8px">
       <select id="filtro-estado" class="url-input" style="width:auto;margin:0" onchange="renderTrabajos()">
         <option value="">Todos los estados</option>
+        <option value="A presupuestar">A presupuestar</option>
         <option value="En curso">En curso</option>
         <option value="Pausado">Pausado</option>
         <option value="Esperando cliente">Esperando cliente</option>
@@ -392,6 +393,7 @@ tr:hover td{background:var(--bg)}
         <div class="field">
           <label>Estado</label>
           <select id="trab-estado">
+            <option>A presupuestar</option>
             <option>En curso</option>
             <option>Pausado</option>
             <option>Esperando cliente</option>
@@ -595,6 +597,7 @@ tr:hover td{background:var(--bg)}
       <div class="field">
         <label>Estado</label>
         <select id="est-estado">
+          <option>A presupuestar</option>
           <option>En curso</option>
           <option>Pausado</option>
           <option>Esperando cliente</option>
@@ -729,7 +732,7 @@ function renderDashboardLocal() {
   }
   const porEstado = {};
   DB.trabajos.forEach(t => { porEstado[t.estado||'Sin estado'] = (porEstado[t.estado||'Sin estado']||0)+1; });
-  const estadoColors = {'En curso':'badge-green','Pausado':'badge-amber','Esperando cliente':'badge-blue',
+  const estadoColors = {'A presupuestar':'badge-amber','En curso':'badge-green','Pausado':'badge-amber','Esperando cliente':'badge-blue',
     'Finalizado':'badge-gray','Cobrado':'badge-green'};
   by('dash-estados').innerHTML = Object.entries(porEstado).map(([est,cant])=>`
     <div class="dcard">
@@ -747,7 +750,7 @@ function renderTrabajos() {
   let list = DB.trabajos.filter(t => !filtro || t.estado === filtro);
   list.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
   const estadoBadge = e => {
-    const map = {'En curso':'badge-green','Pausado':'badge-amber','Esperando cliente':'badge-blue',
+    const map = {'A presupuestar':'badge-amber','En curso':'badge-green','Pausado':'badge-amber','Esperando cliente':'badge-blue',
       'Finalizado':'badge-gray','Cobrado':'badge-green'};
     return `<span class="badge ${map[e]||'badge-gray'}">${e||'Sin estado'}</span>`;
   };
@@ -787,7 +790,7 @@ function renderTrabajos() {
     return;
   }
   // Cada trabajo se clasifica en la carpeta de su estado
-  const ORDEN = ['En curso','Esperando cliente','Pausado','Finalizado','Cobrado'];
+  const ORDEN = ['A presupuestar','En curso','Esperando cliente','Pausado','Finalizado','Cobrado'];
   const otros = [...new Set(list.map(t => t.estado || 'Sin estado'))].filter(e => !ORDEN.includes(e));
   const carpetas = filtro ? [filtro] : [...ORDEN, ...otros];
   let html = '';
