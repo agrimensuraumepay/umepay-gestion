@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Umepay — Calculadora de Honorarios + Presupuesto</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f1ea;--bg2:#ece7dd;--surface:#faf8f4;
+  --ink:#1c1917;--ink2:#57534e;--ink3:#a8a29e;
+  --green:#1e5c3a;--green2:#2d7a50;--green3:#d1fae5;
+  --amber:#92400e;--amber2:#fef3c7;
+  --blue:#1e3a5f;--blue2:#dbeafe;
+  --border:#ddd8ce;--border2:#c8c2b6;
+  --mono:'Courier New',monospace;--r:9px;
+}
+body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13px;min-height:100vh}
+.topbar{background:var(--ink);color:#fff;height:50px;display:flex;align-items:center;padding:0 20px;gap:16px;justify-content:space-between}
+.topbar-l{display:flex;align-items:center;gap:16px}
+.topbar-logo{font-size:11px;letter-spacing:.1em;border:1px solid rgba(255,255,255,.3);padding:4px 8px;line-height:1.3}
+.topbar-title{font-size:14px;color:rgba(255,255,255,.8)}
+.topbar a{color:rgba(255,255,255,.7);font-size:12px;text-decoration:none;border:1px solid rgba(255,255,255,.25);padding:5px 10px;border-radius:6px}
+.topbar a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.main{max-width:920px;margin:0 auto;padding:24px 18px}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:24px;flex-wrap:wrap}
+.tab-btn{font-family:var(--mono);font-size:12px;padding:10px 18px;border:none;background:none;cursor:pointer;color:var(--ink3);border-bottom:2px solid transparent}
+.tab-btn.active{color:var(--green);border-bottom-color:var(--green);font-weight:700}
+.panel{display:none}.panel.active{display:block}
+.section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:16px}
+.sec-title{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:14px;font-weight:700}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;color:var(--ink2);font-weight:700}
+.field input,.field select,.field textarea{font-family:var(--mono);font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;width:100%;outline:none}
+.field input:focus,.field select:focus{border-color:var(--green);background:#fff}
+.field textarea{resize:vertical;min-height:70px;line-height:1.5}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:16px}
+.rcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.rcard-lbl{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px}
+.rcard-val{font-size:20px;font-weight:700;color:var(--ink)}
+.rcard-val.green{color:var(--green)}.rcard-val.amber{color:var(--amber)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:6px;border:1px solid var(--border2);background:var(--surface);color:var(--ink);font-family:var(--mono);font-size:12px;cursor:pointer;font-weight:500}
+.btn:hover{background:var(--bg2)}
+.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.green{background:var(--green);color:#fff;border-color:var(--green)}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.hint{font-size:10px;color:var(--ink3);margin-top:3px}
+.desglose{font-size:12px}
+.desglose div{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--border)}
+.desglose div:last-child{border-bottom:none}
+.desglose .tot{font-weight:700;border-top:2px solid var(--ink);margin-top:4px;padding-top:8px}
+.pdf-preview{background:#e8e8e0;border-radius:var(--r);padding:20px;margin-top:16px}
+.prev-doc{background:white;max-width:620px;margin:0 auto;padding:36px 40px;box-shadow:0 2px 14px rgba(28,25,23,.1);font-family:Georgia,serif;font-size:12px;color:#111;line-height:1.55}
+.note{background:var(--amber2);color:var(--amber);border-radius:6px;padding:8px 12px;font-size:11px;margin-bottom:14px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-l">
+    <div class="topbar-logo">AGRIMENSURA<br>UMEPAY</div>
+    <div class="topbar-title">Calculadora de Honorarios — Arancel VS13 2026</div>
+  </div>
+  <a href="index.html">← Volver a Gestión</a>
+</div>
+<div class="main">
+<div class="note">Versión corregida según la planilla VS13 real. Verificá los montos contra tu planilla; cualquier diferencia, avisame.</div>
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('calc',this)">◈ Calculadora</button>
+  <button class="tab-btn" onclick="showTab('presupuesto',this)">◻ Presupuesto PDF</button>
+</div>
+
+<!-- ═══════════ CALCULADORA ═══════════ -->
+<div class="panel active" id="panel-calc">
+  <div class="section">
+    <div class="sec-title">Tipo de trabajo</div>
+    <div class="g2">
+      <div class="field">
+        <label>Categoría</label>
+        <select id="cat" onchange="onCat()">
+          <option value="">— Seleccionar —</option>
+          <optgroup label="Urbana">
+            <option value="men_urbana">Mensura simple urbana (Art. 53)</option>
+            <option value="men_urbana_sub">Mensura y subdivisión urbana (Art. 53+52)</option>
+            <option value="men_union_sub">Mensura, Unión y Subdivisión urbana</option>
+            <option value="vep">Verificación de estado parcelario (VEP)</option>
+            <option value="ca_urbano">Certificado de amojonamiento urbano</option>
+          </optgroup>
+          <optgroup label="Rural">
+            <option value="men_rural">Mensura simple rural (Art. 49)</option>
+            <option value="men_rural_sub">Mensura y subdivisión rural (Art. 49+50)</option>
+            <option value="men_rural_union">Mensura, Unión y Subdivisión rural</option>
+            <option value="ca_rural">Certificado de amojonamiento rural</option>
+          </optgroup>
+          <optgroup label="Topografía">
+            <option value="altimetria">Nivelación / Altimetría (Art. 43-44)</option>
+            <option value="taquimetria">Planialtimétrico / Taquimetría (Art. 45)</option>
+            <option value="dias">Por días de trabajo (Art. 28)</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="field" id="zona-field" style="display:none">
+        <label>Estado del terreno (rural)</label>
+        <select id="zona" onchange="recalc()">
+          <option value="normal">Normal (llano y limpio)</option>
+          <option value="arbustos">Arbustos o malezas (+50%)</option>
+          <option value="monte">Monte o serranía (+75%)</option>
+          <option value="cenagoso">Terreno cenagoso (+150%)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="section" id="params-section" style="display:none">
+    <div class="sec-title">Parámetros</div>
+    <div id="params-fields"></div>
+  </div>
+  <div id="results-section" style="display:none">
+    <div class="result-grid">
+      <div class="rcard"><div class="rcard-lbl">Honorario Colegio (arancel)</div><div class="rcard-val green" id="r-hon">—</div></div>
+      <div class="rcard"><div class="rcard-lbl">Aportes previsionales 18%</div><div class="rcard-val amber" id="r-ap">—</div></div>
+      <div class="rcard"><div class="rcard-lbl">Tasa 8</div><div class="rcard-val" id="r-t8">—</div></div>
+      <div class="rcard"><div class="rcard-lbl">Tasa Control Previo</div><div class="rcard-val" id="r-tcp">—</div></div>
+    </div>
+    <div class="section">
+      <div class="sec-title">Desglose del honorario</div>
+      <div class="desglose" id="desglose"></div>
+    </div>
+    <div class="section">
+      <div class="sec-title">Valor final a presupuestar</div>
+      <div class="g3">
+        <div class="field">
+          <label>Moneda</label>
+          <select id="mon-final"><option value="$">$ (ARS)</option><option value="U$D">U$D</option></select>
+        </div>
+        <div class="field">
+          <label>Monto final (comercial)</label>
+          <input type="number" id="hon-final" placeholder="Ej: 2000000">
+          <div class="hint">El honorario del Colegio es de referencia; acá ponés el valor real.</div>
+        </div>
+        <div class="field" style="justify-content:flex-end">
+          <button class="btn green" onclick="irAPresupuesto()">→ Generar presupuesto</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PRESUPUESTO ═══════════ -->
+<div class="panel" id="panel-presupuesto">
+  <div class="section">
+    <div class="sec-title">Datos del cliente</div>
+    <div class="g2">
+      <div class="field"><label>Nombre del solicitante *</label><input id="p-cliente" placeholder="Ej: GRATTONE GUILLERMO FABIAN"></div>
+      <div class="field"><label>Fecha de emisión</label><input type="date" id="p-fecha"></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="sec-title">Datos del inmueble (opcional)</div>
+    <div class="g2">
+      <div class="field"><label>Departamento</label><input id="p-depto" placeholder="Ej: Calamuchita"></div>
+      <div class="field"><label>Localidad / Pedanía</label><input id="p-loc" placeholder="Ej: Villa Yacanto"></div>
+    </div>
+    <div class="g2" style="margin-top:10px">
+      <div class="field"><label>Nro. de cuenta(s)</label><input id="p-cuenta" placeholder="Ej: 120227092748"></div>
+      <div class="field"><label>Superficie</label><input id="p-sup" placeholder="Ej: 300 m2"></div>
+    </div>
+    <div class="field" style="margin-top:10px"><label>Nomenclatura(s)</label><input id="p-nomen" placeholder="Ej: 1202390103098020"></div>
+    <div class="field" style="margin-top:10px"><label>Designación oficial</label><textarea id="p-desig" placeholder="Ej: LOTE DE TERRENO ubicado en..."></textarea></div>
+  </div>
+  <div class="section">
+    <div class="sec-title">Ítem del presupuesto</div>
+    <div class="g2">
+      <div class="field">
+        <label>Tipo de trabajo</label>
+        <select id="p-tipo" onchange="loadDescripcion()">
+          <option value="men_rural">Mensura simple rural</option>
+          <option value="men_sub">Mensura y subdivisión</option>
+          <option value="men_union_sub">Mensura, Unión y Subdivisión</option>
+          <option value="men_posesion">Mensura para posesión / usucapión</option>
+          <option value="amoj">Amojonamiento</option>
+          <option value="ca">Certificado de amojonamiento colegiado</option>
+          <option value="vep">Verificación de estado parcelario</option>
+          <option value="planialt">Relevamiento planialtimétrico</option>
+          <option value="croquis">Croquis de subdivisión</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="g2" style="gap:8px">
+        <div class="field">
+          <label>Moneda</label>
+          <select id="p-moneda"><option value="$">$ (ARS)</option><option value="U$D">U$D</option></select>
+        </div>
+        <div class="field">
+          <label>Monto *</label>
+          <input type="number" id="p-monto" placeholder="Ej: 2000000">
+        </div>
+      </div>
+    </div>
+    <div class="field" style="margin-top:10px">
+      <label>Descripción de tareas (editable)</label>
+      <textarea id="p-desc" style="min-height:120px"></textarea>
+    </div>
+  </div>
+  <div class="section">
+    <div class="sec-title">Condiciones</div>
+    <div class="g2">
+      <div class="field"><label>Tiempo estimado (vacío = se omite)</label><input id="p-plazo" placeholder="Ej: 3 a 4 meses"></div>
+      <div class="field"><label>Forma de pago</label><input id="p-pago" value="50% en concepto de seña y 50% al finalizar."></div>
+    </div>
+    <div class="field" style="margin-top:10px"><label>Validez</label><input id="p-validez" value="Presupuesto válido por 15 días a partir del día de la fecha."></div>
+    <div class="field" style="margin-top:10px"><label>Notas adicionales</label><input id="p-notas" value="El monto incluye las tasas de visado correspondientes."></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn primary" onclick="renderPreview()">👁 Vista previa</button>
+    <button class="btn green" onclick="imprimirPDF()">🖨 Imprimir / Guardar PDF</button>
+  </div>
+  <div class="pdf-preview" id="preview-wrap" style="display:none;margin-top:20px">
+    <div class="prev-doc" id="prev-doc"></div>
+  </div>
+</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// MOTOR DE CÁLCULO — Arancel VS13 2026 (constantes vigentes verificadas
+// contra la planilla "Honorarios Agrimensura 2026 VS13.xlsx")
+// ══════════════════════════════════════════════════════════════════
+const C = {
+  // Rural Art.49
+  r_base: 199682.40, r_km: 99810.34, r_add_km: 73194.84,
+  // Urbano Art.53
+  u_por_m: 1749.976, u_min: 553362.688,
+  // Subdivisión urbana Art.52 (regular / irregular: base hasta 10 lotes + excedente)
+  sub_reg_base: 73181.616, sub_reg_exc: 12624.512,
+  sub_irr_base: 129119.136, sub_irr_exc: 19937.384,
+  // Unión (valor fijo por unión = medio día de gabinete)
+  union_fijo: 66560.8,
+  // Amojonamiento / VEP (escala por lotes)
+  cert_base: 166534.24,      // < 4 lotes  (G215)
+  cert_4_10: 210120.544,     // 4-10 lotes (G219/G229)
+  cert_exc10: 71779.872,     // excedente por bloque de 10 / por lote (G220/G231)
+  vep_7_10: 281900.416,      // VEP 7-10 lotes (G230)
+  // Amojonamiento rural (por ha)
+  ca_rur_lo: 166534.24,      // < 51 ha
+  ca_rur_mid: 281900.416,    // 51-500 ha (G224)
+  ca_rur_hi: 353680.288,     // > 500 ha (G225)
+  // Topografía
+  alt_base: 246230.88, alt_pt_a: 1309.18, alt_pt_b: 3751.21, alt_L: 7436.30,
+  taq_base: 372740.48,
+  taq_K: {'1:500':65873.15,'1:1000':32932.17,'1:2000':15370.70,'1:5000':10997.96,'1:10000':6559.10},
+  dia_campo: 143559.744, dia_gab: 133121.6,
+  // Tasa 8 (ESQUEMA)
+  t8_N: 112.266, t8_N19: 646.38, t8_N21: 29937.6, t8_N22: 36989.46,
+  // Tasa Control Previo
+  tcp_rur_lo: 38400, tcp_rur_hi: 51200, tcp_rur_lote: 9600,
+  tcp_urb_base: 19200, tcp_urb_lote: 4800,
+};
+const TERR = {normal:0,arbustos:.5,monte:.75,cenagoso:1.5};
+
+// Diagrama (adicional por valor de tierra) — RURAL: tramos 1.5/1/0.8/0.6%
+function diagRural(v){
+  v=v||0; let d=0;
+  d += v>207360 ? 207360*0.015 : v*0.015;
+  if(v>207360)  d += v>2073600 ? (2073600-207360)*0.01 : (v-207360)*0.01;
+  if(v>2073600) d += v>4147200 ? (4147200-2073600)*0.008 : (v-2073600)*0.008;
+  if(v>4147200) d += (v-4147200)*0.006;
+  return d;
+}
+// Diagrama URBANO (tramos con topes altos; suele ser 0 si no se carga valor)
+function diagUrb(v){
+  v=v||0; const B1=43126831.71,B2=431268502.26,B3=862537066.22; let d=0;
+  d += v>B1 ? B1*0.015 : v*0.015;
+  if(v>B1) d += v>B2 ? (B2-B1)*0.01 : (v-B1)*0.01;
+  if(v>B2) d += v>B3 ? (B3-B2)*0.008 : (v-B2)*0.008;
+  if(v>B3) d += (v-B3)*0.006;
+  return d;
+}
+// Subdivisión Art.50 (% sobre honorario de mensura) — rural
+function subFrac(hm, frac){
+  frac=frac||0;
+  const f1=Math.min(frac,5)*.10, f2=Math.min(Math.max(frac-5,0),5)*.05,
+        f3=Math.min(Math.max(frac-10,0),10)*.04, f4=Math.min(Math.max(frac-20,0),30)*.03,
+        f5=Math.max(frac-50,0)*.02;
+  return (f1+f2+f3+f4+f5)*hm;
+}
+// Subdivisión urbana Art.52 (base hasta 10 lotes + excedente por lote)
+function subUrb(lotesReg, lotesIrr){
+  let s=0;
+  if(lotesReg>0) s += C.sub_reg_base + Math.max(0,lotesReg-10)*C.sub_reg_exc;
+  if(lotesIrr>0) s += C.sub_irr_base + Math.max(0,lotesIrr-10)*C.sub_irr_exc;
+  return s;
+}
+// Tasa 8 rural: superficie en m2, exponente 1/1.75
+function t8Rural(lotes, sup_ha, zbd){
+  lotes=lotes||1; const m2=(sup_ha||0)*10000;
+  const N=C.t8_N;
+  const variable = N*8 + N*0.16*Math.pow(m2,1/1.75) + N*2.24e-10*m2;
+  const base = C.t8_N19 + variable;
+  if(base < C.t8_N22) return C.t8_N22 + N*13*lotes;
+  return (variable + N*13*lotes + C.t8_N19) * (zbd?0.75:1);
+}
+// Tasa 8 urbana: superficie en m2, exponente 1/2.4
+function t8Urb(lotes, sup_m2){
+  lotes=lotes||1; const N=C.t8_N; sup_m2=sup_m2||0;
+  const b = N*13 + N*13*Math.pow(sup_m2,1/2.4) + N*3.64e-10*sup_m2;
+  if(b < C.t8_N21) return C.t8_N21 + N*13*lotes;
+  return b + N*13*lotes + C.t8_N19;
+}
+function tcpRural(lotes, sup_ha){ lotes=lotes||1; return (sup_ha<=100?C.tcp_rur_lo:C.tcp_rur_hi) + Math.max(0,lotes-1)*C.tcp_rur_lote; }
+function tcpUrb(lotes){ lotes=lotes||1; return lotes<=4 ? C.tcp_urb_base : lotes*C.tcp_urb_lote; }
+// Amojonamiento / VEP urbano (escala por lotes)
+function certUrb(lotes){
+  lotes=lotes||1;
+  if(lotes<4) return C.cert_base;
+  if(lotes<11) return C.cert_4_10;
+  return C.cert_4_10 + Math.floor((lotes-10)/10)*C.cert_exc10;
+}
+function vepEscala(lotes){
+  lotes=lotes||1;
+  if(lotes<4) return C.cert_base;
+  if(lotes<7) return C.cert_4_10;
+  if(lotes<11) return C.vep_7_10;
+  return C.vep_7_10 + (lotes-10)*C.cert_exc10;
+}
+
+const PARAMS = {
+  men_urbana: [
+    {id:'perim_m',label:'Perímetro terreno (m)',ph:'Ej: 80'},
+    {id:'edif_m',label:'Perímetro edificado (m) — 0 si no tiene',ph:'0'},
+    {id:'vt',label:'Valor de tierra ($) — opcional',ph:'0 (dejar vacío si no aplica)'},
+  ],
+  men_urbana_sub: [
+    {id:'perim_m',label:'Perímetro terreno (m)',ph:'Ej: 160'},
+    {id:'edif_m',label:'Perímetro edificado (m)',ph:'0'},
+    {id:'lot_reg',label:'Lotes regulares',ph:'2'},
+    {id:'lot_irr',label:'Lotes irregulares',ph:'0'},
+    {id:'sup_m2',label:'Superficie total (m2) — Tasa 8',ph:'Ej: 600'},
+  ],
+  men_union_sub: [
+    {id:'perim_m',label:'Perímetro terreno unido (m)',ph:'Ej: 110'},
+    {id:'edif_m',label:'Perímetro edificado suma (m)',ph:'Ej: 80'},
+    {id:'unions',label:'Cantidad de uniones',ph:'1'},
+    {id:'lot_reg',label:'Lotes regulares resultantes',ph:'2'},
+    {id:'lot_irr',label:'Lotes irregulares',ph:'0'},
+    {id:'sup_m2',label:'Superficie total (m2) — Tasa 8',ph:'Ej: 600'},
+  ],
+  vep: [
+    {id:'lotes',label:'Cantidad de parcelas / certificados',ph:'1'},
+  ],
+  ca_urbano: [
+    {id:'lotes',label:'Cantidad de lotes a amojonar',ph:'1'},
+  ],
+  men_rural: [
+    {id:'perim',label:'Perímetro total (km)',ph:'Ej: 12.5'},
+    {id:'sup_ha',label:'Superficie (ha)',ph:'Ej: 500'},
+    {id:'vt',label:'Valor de tierra — Base Imponible ($)',ph:'Del reporte Catastro'},
+    {id:'adic_km',label:'Adicional km (si SUP < perímetro)',ph:'0'},
+    {id:'lotes',label:'Lotes (Tasa 8)',ph:'1'},
+  ],
+  men_rural_sub: [
+    {id:'perim',label:'Perímetro total (km)',ph:'Ej: 8'},
+    {id:'sup_ha',label:'Superficie (ha)',ph:'Ej: 200'},
+    {id:'frac',label:'Fracciones resultantes',ph:'2'},
+    {id:'vt',label:'Valor de tierra ($)',ph:'Del reporte Catastro'},
+    {id:'adic_km',label:'Adicional km',ph:'0'},
+    {id:'lotes',label:'Lotes (Tasa 8)',ph:'2'},
+  ],
+  men_rural_union: [
+    {id:'perim',label:'Perímetro total unido (km)',ph:'Ej: 10'},
+    {id:'sup_ha',label:'Superficie total (ha)',ph:'Ej: 400'},
+    {id:'unions',label:'Cantidad de uniones',ph:'1'},
+    {id:'frac',label:'Fracciones subdivisión',ph:'2'},
+    {id:'vt',label:'Valor de tierra ($)',ph:'Del reporte Catastro'},
+    {id:'adic_km',label:'Adicional km',ph:'0'},
+    {id:'lotes',label:'Lotes (Tasa 8)',ph:'2'},
+  ],
+  ca_rural: [
+    {id:'has',label:'Superficie (ha)',ph:'Ej: 50'},
+    {id:'lotes',label:'Lotes (Tasa Control)',ph:'1'},
+  ],
+  altimetria: [
+    {id:'puntos',label:'Nro. de puntos de mira',ph:'50'},
+    {id:'transv',label:'¿Con transversales?',type:'select',opts:['No','Sí']},
+    {id:'long_km',label:'Longitud planimetría km (0 = solo nivelación)',ph:'0'},
+  ],
+  taquimetria: [
+    {id:'sup_ha',label:'Superficie (ha)',ph:'5'},
+    {id:'escala',label:'Escala del plano',type:'select',opts:['1:500','1:1000','1:2000','1:5000','1:10000']},
+  ],
+  dias: [
+    {id:'d_campo',label:'Días de campo',ph:'2'},
+    {id:'d_gab',label:'Días de gabinete',ph:'1'},
+  ],
+};
+const RURALES = ['men_rural','men_rural_sub','men_rural_union','ca_rural'];
+let lastResult = {};
+function gv(id){ const e=document.getElementById('p_'+id); if(!e) return 0; return e.tagName==='SELECT'?e.value:(parseFloat(e.value)||0); }
+function gs(id){ const e=document.getElementById('p_'+id); return e?e.value:''; }
+
+function onCat(){
+  const cat=document.getElementById('cat').value;
+  const ps=document.getElementById('params-section'), pf=document.getElementById('params-fields'), rs=document.getElementById('results-section');
+  document.getElementById('zona-field').style.display = RURALES.includes(cat) && cat!=='ca_rural' ? 'flex':'none';
+  if(!cat){ ps.style.display='none'; rs.style.display='none'; return; }
+  const fields=PARAMS[cat]||[];
+  pf.innerHTML=`<div class="g2" style="gap:12px">${fields.map(f=>{
+    if(f.type==='select') return `<div class="field"><label>${f.label}</label><select id="p_${f.id}" onchange="recalc()">${f.opts.map(o=>`<option>${o}</option>`).join('')}</select></div>`;
+    return `<div class="field"><label>${f.label}</label><input type="number" id="p_${f.id}" placeholder="${f.ph}" oninput="recalc()"></div>`;
+  }).join('')}</div>`;
+  ps.style.display='block'; rs.style.display='block'; recalc();
+}
+
+function recalc(){
+  const cat=document.getElementById('cat').value; if(!cat) return;
+  const terr=TERR[document.getElementById('zona').value]||0;
+  let hon=0, det=[], t8=0, tcp=0;
+
+  if(RURALES.includes(cat) && cat!=='ca_rural'){
+    const P=gv('perim'),S=gv('sup_ha'),VT=gv('vt'),adic=gv('adic_km');
+    const E9 = C.r_base + C.r_km*P + diagRural(VT) + (adic>0 ? C.r_add_km*adic : 0);
+    const mensura = Math.max(E9, C.u_min);
+    let sub=0, uni=0;
+    if(cat==='men_rural_sub'){ sub=subFrac(E9, gv('frac')); }
+    if(cat==='men_rural_union'){ uni=gv('unions')*C.union_fijo; sub=subFrac(E9, gv('frac')); }
+    let p11 = mensura + sub + uni;
+    const inc = p11*terr;
+    hon = p11 + inc;
+    const N=gv('lotes')||1;
+    t8 = t8Rural(N, S); tcp = tcpRural(N, S);
+    det=[{k:'Mensura Art.49 (con adicional valor tierra)',v:mensura}];
+    if(sub>0) det.push({k:'Subdivisión Art.50',v:sub});
+    if(uni>0) det.push({k:'Unión (fijo)',v:uni});
+    if(inc>0) det.push({k:'Incremento por estado del terreno',v:inc});
+  }
+  else if(['men_urbana','men_urbana_sub','men_union_sub'].includes(cat)){
+    const L=gv('perim_m'),Ed=gv('edif_m'),VT=gv('vt');
+    const mensura = Math.max(C.u_por_m*(L+Ed) + diagUrb(VT), C.u_min);
+    let sub=0, uni=0;
+    if(cat!=='men_urbana'){ sub=subUrb(gv('lot_reg'), gv('lot_irr')); }
+    if(cat==='men_union_sub'){ uni=gv('unions')*C.union_fijo; }
+    hon = mensura + sub + uni;
+    const lotes=(gv('lot_reg')||0)+(gv('lot_irr')||0)||1, S2=gv('sup_m2');
+    t8 = t8Urb(lotes, S2); tcp = tcpUrb(lotes);
+    det=[{k:'Mensura Art.53',v:mensura}];
+    if(sub>0) det.push({k:'Subdivisión Art.52',v:sub});
+    if(uni>0) det.push({k:'Unión (fijo)',v:uni});
+  }
+  else if(cat==='vep'){
+    const n=gv('lotes')||1; hon=vepEscala(n); t8=C.t8_N21; tcp=0;
+    det=[{k:`VEP (${n} parcela${n>1?'s':''})`,v:hon}];
+  }
+  else if(cat==='ca_urbano'){
+    const n=gv('lotes')||1; hon=certUrb(n); t8=0; tcp=0;
+    det=[{k:`Amojonamiento urbano (${n} lote${n>1?'s':''})`,v:hon}];
+  }
+  else if(cat==='ca_rural'){
+    const ha=gv('has'); hon = ha<51?C.ca_rur_lo : ha<501?C.ca_rur_mid : C.ca_rur_hi;
+    tcp = tcpRural(gv('lotes')||1, ha); t8=0;
+    det=[{k:'Amojonamiento rural',v:hon}];
+  }
+  else if(cat==='altimetria'){
+    const n=gv('puntos'),L=gv('long_km'),tr=gs('transv');
+    if(L>0) hon=C.alt_base+C.alt_pt_b*n+C.alt_L*L;
+    else if(tr==='Sí') hon=C.alt_base+C.alt_pt_a*n;
+    else hon=C.alt_base+C.alt_pt_b*n;
+    det=[{k:'Altimetría / Nivelación',v:hon}];
+  }
+  else if(cat==='taquimetria'){
+    const S=gv('sup_ha'),K=C.taq_K[gs('escala')]||C.taq_K['1:1000'];
+    hon=C.taq_base+K*Math.sqrt(S); det=[{k:'Taquimetría / Planialtimétrico',v:hon}];
+  }
+  else if(cat==='dias'){
+    hon=gv('d_campo')*C.dia_campo+gv('d_gab')*C.dia_gab; det=[{k:'Por días de trabajo',v:hon}];
+  }
+
+  const ap=hon*0.18; hon=Math.round(hon);
+  lastResult={hon,ap:Math.round(ap),t8:Math.round(t8),tcp:Math.round(tcp),det};
+  const fmt=v=>'$ '+Math.round(v).toLocaleString('es-AR');
+  document.getElementById('r-hon').textContent=fmt(hon);
+  document.getElementById('r-ap').textContent=fmt(ap);
+  document.getElementById('r-t8').textContent=t8>0?fmt(t8):'—';
+  document.getElementById('r-tcp').textContent=tcp>0?fmt(tcp):'—';
+  document.getElementById('hon-final').placeholder='Arancel Colegio: '+fmt(hon);
+  document.getElementById('desglose').innerHTML =
+    det.map(d=>`<div><span>${d.k}</span><span>${fmt(d.v)}</span></div>`).join('') +
+    `<div class="tot"><span>Total honorarios (Colegio)</span><span>${fmt(hon)}</span></div>`+
+    `<div><span>+ Aportes 18%</span><span>${fmt(ap)}</span></div>`+
+    (t8>0?`<div><span>+ Tasa 8</span><span>${fmt(t8)}</span></div>`:'')+
+    (tcp>0?`<div><span>+ Tasa Control Previo</span><span>${fmt(tcp)}</span></div>`:'');
+}
+
+function irAPresupuesto(){
+  const m=parseFloat(document.getElementById('hon-final').value)||lastResult.hon||'';
+  document.getElementById('p-monto').value=m;
+  showTab('presupuesto', document.querySelectorAll('.tab-btn')[1]);
+}
+
+// ── Descripciones por tipo ──
+const DESC={
+  men_rural:'• Relevamiento topográfico: levantamiento de precisión incluyendo cercos, construcciones y referencias físicas existentes.\n• Análisis de antecedentes y gabinete: estudio de títulos y documentación dominial para la determinación de la parcela y confección del plano de mensura bajo normativa vigente.\n• Gestión administrativa y registro: tramitación, seguimiento y presentación del expediente ante el Colegio de Agrimensores, Catastro Provincial, Visado Municipal y Vialidad (según corresponda).',
+  men_sub:'• Levantamiento del terreno, incluyendo cercos, construcciones y referencias físicas próximas.\n• Marcación en el campo de los vértices definidos en la mensura.\n• Elaboración de planos para su presentación ante el Colegio de Agrimensores, con las gestiones de informes en el Registro de la Propiedad y en la DGR.\n• Gestión administrativa: confección, seguimiento y presentación del expediente para su aprobación en Catastro Provincial.',
+  men_union_sub:'• Levantamiento del terreno, incluyendo cercos, construcciones y referencias físicas próximas.\n• Marcación física en el terreno de los nuevos vértices y límites definidos en el proyecto de subdivisión mediante la colocación de mojones.\n• Elaboración de planos para su presentación ante el Colegio de Agrimensores, con las gestiones de informes en el Registro de la Propiedad y en la DGR.\n• Gestión administrativa: confección, seguimiento y presentación del expediente para su aprobación en Catastro Provincial.',
+  men_posesion:'• Levantamiento del terreno, incluyendo cercos, construcciones y referencias físicas próximas.\n• Marcación en el campo de los vértices definidos en la mensura.\n• Elaboración de planos para su presentación ante el Colegio de Agrimensores.\n• Gestión administrativa: confección, seguimiento y presentación del expediente para su aprobación en Catastro Provincial.',
+  amoj:'• Señalización y materialización en el terreno de los límites y vértices del lote a amojonar.',
+  ca:'• Señalización y materialización en el terreno de los límites y vértices del lote a amojonar.\n• Confección del plano correspondiente al amojonamiento.\n• Presentación y visado del plano en el Colegio de Agrimensores.',
+  vep:'• Medición de precisión para verificar la concordancia entre el título y la realidad física, relevando límites del terreno y construcciones existentes.\n• Elaboración del certificado bajo normativa vigente, incluyendo el visado ante el Colegio de Agrimensores.\n• Tramitación, seguimiento y presentación final para la validación del estado parcelario ante Catastro Provincial y DGR.',
+  planialt:'• Levantamiento taquimétrico del terreno con confección de planos con curvas de nivel.\n• Determinación de superficies y cotas.',
+  croquis:'• Elaboración de croquis georreferenciado en el que se identifican claramente las partes indivisas de cada lote y las áreas comunes.',
+  otro:'',
+};
+const NOMBRES={men_rural:'Mensura simple rural',men_sub:'Mensura y subdivisión',men_union_sub:'Mensura, Unión y Subdivisión',men_posesion:'Mensura para posesión / usucapión',amoj:'Amojonamiento',ca:'Certificado de amojonamiento colegiado',vep:'Verificación de estado parcelario',planialt:'Relevamiento planialtimétrico',croquis:'Croquis de subdivisión',otro:'Trabajo de agrimensura'};
+function loadDescripcion(){ document.getElementById('p-desc').value=DESC[document.getElementById('p-tipo').value]||''; }
+function fmtFecha(s){ if(!s) return new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}); const [y,m,d]=s.split('-'); const ms=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']; return `${parseInt(d)} de ${ms[m-1]} de ${y}`; }
+function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtMonto(m,mon){ return mon+' '+parseFloat(m).toLocaleString('es-AR',{maximumFractionDigits:0}); }
+
+function buildDoc(){
+  const g=id=>document.getElementById(id).value;
+  const cliente=g('p-cliente')||'—', fecha=fmtFecha(g('p-fecha'));
+  const depto=g('p-depto'),loc=g('p-loc'),cuenta=g('p-cuenta'),nomen=g('p-nomen'),desig=g('p-desig'),sup=g('p-sup');
+  const tipo=g('p-tipo'),moneda=g('p-moneda'),monto=g('p-monto'),desc=g('p-desc');
+  const plazo=g('p-plazo'),pago=g('p-pago'),validez=g('p-validez'),notas=g('p-notas');
+  const nombre=NOMBRES[tipo]||tipo, hasInm=depto||loc||cuenta||nomen||desig||sup;
+  let inm='';
+  if(hasInm){
+    const rows=[];
+    const r=(l,v)=>v?`<tr><td style="font-weight:700;padding-right:10px;white-space:nowrap;vertical-align:top">${l}:</td><td>${esc(v)}</td></tr>`:'';
+    rows.push(r('Departamento',depto),r('Localidad',loc),r('Nro. de cuenta',cuenta),r('Superficie',sup),r('Nomenclatura',nomen));
+    if(desig) rows.push(`<tr><td colspan="2" style="font-size:10px;color:#555;font-style:italic;padding-top:4px">${esc(desig)}</td></tr>`);
+    inm=`<div style="margin-bottom:16px;font-family:sans-serif"><p style="font-size:13px;font-weight:700;text-decoration:underline;margin-bottom:7px">Datos de inmueble:</p><table style="border-collapse:collapse;font-size:12px;width:100%">${rows.join('')}</table></div>`;
+  }
+  const descHTML=desc?desc.split('\n').map(l=>`<p style="font-size:11px;color:#555;margin:3px 0 3px 10px">${esc(l)}</p>`).join(''):'';
+  const totalStr=monto?fmtMonto(monto,moneda):'—';
+  return `
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+    <div><div style="font-family:'Arial Black',sans-serif;font-size:30px;font-weight:900;letter-spacing:2px;line-height:1">PRESUPUESTO</div>
+    <div style="font-family:sans-serif;font-size:13px;margin-top:5px">${fecha}</div></div>
+    <div style="text-align:right;font-family:sans-serif">
+      <div style="display:inline-block;background:#111;color:#fff;padding:10px 14px;font-family:'Arial Black',sans-serif;letter-spacing:2px;font-size:15px">A&nbsp;|&nbsp;U</div>
+      <div style="font-size:10px;letter-spacing:.12em;margin-top:3px">AGRIMENSURA UMEPAY</div>
+      <div style="font-size:13px;font-weight:700;margin-top:8px">Datos del cliente:</div>
+      <div style="font-size:13px">${esc(cliente)}</div>
+    </div>
+  </div>
+  ${inm}
+  <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-family:sans-serif">
+    <thead><tr style="background:#e5e5e5">
+      <th style="padding:8px 10px;text-align:left;font-size:12px;font-weight:500;border-bottom:.5px solid #bbb">Descripción</th>
+      <th style="padding:8px 10px;text-align:right;font-size:12px;font-weight:500;border-bottom:.5px solid #bbb">Valor</th></tr></thead>
+    <tbody>
+      <tr style="border-bottom:.5px solid #ddd">
+        <td style="padding:9px 10px;font-weight:700;font-size:12px">${esc(nombre)}</td>
+        <td style="padding:9px 10px;font-weight:700;font-size:12px;text-align:right;white-space:nowrap">${esc(totalStr)}</td></tr>
+      ${descHTML?`<tr style="border-bottom:.5px solid #eee"><td colspan="2" style="padding:4px 10px 10px">${descHTML}</td></tr>`:''}
+    </tbody>
+  </table>
+  <div style="background:#111;color:white;padding:10px 14px;text-align:right;letter-spacing:3px;font-family:'Arial Black',sans-serif;font-size:14px;font-weight:900;margin-bottom:16px">TOTAL: ${esc(totalStr)}</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;border-top:1.5px solid #111;padding-top:12px;font-family:sans-serif">
+    <div style="font-size:11px">
+      ${plazo?`<p style="font-weight:700;margin-bottom:3px">TIEMPO ESTIMADO:</p><p style="margin-bottom:10px">${esc(plazo)}</p>`:''}
+      ${pago?`<p style="font-weight:700;margin-bottom:3px">FORMA DE PAGO:</p><p>${esc(pago)}</p>`:''}
+    </div>
+    <div style="font-size:11px">
+      <p style="font-weight:700;margin-bottom:3px">DATOS DE CONTACTO</p>
+      <p>agrimensuraumepay@gmail.com</p><p>Tel.: 2346-335364</p>
+      <p style="margin-top:2px">Umepay, Villa Yacanto (5197).<br>Santa Rosa de Calamuchita. Prov. de Córdoba</p>
+    </div>
+  </div>
+  ${validez?`<p style="font-family:sans-serif;font-size:11px;margin-top:10px">${esc(validez)}</p>`:''}
+  ${notas?`<p style="font-family:sans-serif;font-size:10px;color:#555;margin-top:4px">${esc(notas)}</p>`:''}`;
+}
+function renderPreview(){ document.getElementById('prev-doc').innerHTML=buildDoc(); document.getElementById('preview-wrap').style.display='block'; }
+function imprimirPDF(){
+  const inner=buildDoc();
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Presupuesto Umepay</title><style>*{box-sizing:border-box;margin:0;padding:0}body{background:#fff}.doc{max-width:700px;margin:0 auto;padding:42px 48px;font-size:12px;color:#111;line-height:1.55;font-family:Georgia,serif}@media print{@page{margin:12mm 15mm}}</style></head><body><div class="doc">${inner}</div><script>window.onload=()=>window.print();<\/script></body></html>`);
+  win.document.close();
+}
+function showTab(name,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+// Auto-test de control (consola)
+function selfTest(){
+  const r=t8Rural(1,1893); console.log('Tasa8 rural 1893ha/1lote =', Math.round(r), '(esperado ~261.671)');
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('p-fecha').value=new Date().toISOString().split('T')[0];
+  loadDescripcion(); selfTest();
+});
+</script>
+</body>
+</html>
