@@ -623,7 +623,10 @@ tr:hover td{background:var(--bg)}
 // ==============================
 // CONFIG & STATE
 // ==============================
-let SCRIPT_URL = localStorage.getItem('umepay_script_url') || '';
+// URL del Apps Script por defecto: permite que la app funcione en cualquier
+// navegador sin tener que configurarla. Se puede sobrescribir desde Configuración.
+const SCRIPT_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbwzHetjPSymULtE8kjPQ0xkuUP3Qh8hgbyeczL43sAWhZBwfUKVVYIMOCYtV5swsdLk/exec';
+let SCRIPT_URL = localStorage.getItem('umepay_script_url') || SCRIPT_URL_DEFAULT;
 let DB = { trabajos: [], movimientos: [], presupuestos: [] };
 let connected = false;
 // ==============================
