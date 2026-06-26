@@ -44,6 +44,33 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);min-height:10
 .subnav-btn:hover{color:var(--ink)}
 .subnav-btn.active{color:var(--green);border-bottom-color:var(--green);font-weight:500}
 .calc-frame{width:100%;border:none;min-height:640px;background:transparent;display:block}
+/* ── CALENDARIO ── */
+.cal-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px;margin-bottom:24px;box-shadow:var(--sh)}
+.cal-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.cal-title{font-family:var(--serif);font-size:18px;font-weight:500;text-transform:capitalize;min-width:160px}
+.cal-nav{display:flex;gap:6px;align-items:center}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-dow{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);
+  text-align:center;padding:4px 0;font-weight:500}
+.cal-cell{min-height:80px;background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:4px;cursor:pointer;display:flex;flex-direction:column;gap:2px;overflow:hidden;transition:border .12s}
+.cal-cell:hover{border-color:var(--border2)}
+.cal-cell.empty{background:transparent;border:none;cursor:default}
+.cal-cell.today{border-color:var(--green);background:var(--green3)}
+.cal-daynum{font-size:11px;color:var(--ink2);font-weight:500}
+.cal-cell.today .cal-daynum{color:var(--green);font-weight:700}
+.cal-ev{font-size:9px;line-height:1.3;padding:2px 4px;border-radius:3px;color:#fff;cursor:pointer;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-ev.t-reunion{background:var(--blue)}
+.cal-ev.t-campo{background:var(--green)}
+.cal-ev.t-venc{background:var(--red)}
+.cal-ev.t-entrega{background:var(--amber)}
+.cal-ev.t-otro{background:var(--ink3)}
+.cal-ev.done{opacity:.55;text-decoration:line-through}
+.cal-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:10px;color:var(--ink3)}
+.cal-legend span{display:inline-flex;align-items:center;gap:5px}
+.cal-dot{width:9px;height:9px;border-radius:2px;display:inline-block}
 /* ── MAIN ── */
 .main{max-width:1100px;margin:0 auto;padding:24px 20px}
 .tab{display:none}.tab.active{display:block}
@@ -196,6 +223,26 @@ tr:hover td{background:var(--bg)}
 <div class="main">
 <!-- ═══════════════ DASHBOARD ═══════════════ -->
 <div class="tab active" id="tab-dashboard">
+  <!-- Calendario de reuniones / compromisos -->
+  <div class="cal-wrap">
+    <div class="cal-top">
+      <div class="cal-title" id="cal-title">—</div>
+      <div class="cal-nav">
+        <button class="btn sm" onclick="calHoy()">Hoy</button>
+        <button class="btn sm" onclick="calPrev()">‹</button>
+        <button class="btn sm" onclick="calNext()">›</button>
+        <button class="btn success sm" onclick="nuevoCompromiso()">+ Evento</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-legend">
+      <span><i class="cal-dot t-reunion" style="background:var(--blue)"></i>Reunión</span>
+      <span><i class="cal-dot t-campo" style="background:var(--green)"></i>Visita / Campo</span>
+      <span><i class="cal-dot t-venc" style="background:var(--red)"></i>Vencimiento</span>
+      <span><i class="cal-dot t-entrega" style="background:var(--amber)"></i>Entrega</span>
+      <span><i class="cal-dot t-otro" style="background:var(--ink3)"></i>Otro</span>
+    </div>
+  </div>
   <div class="sec-hdr" style="margin-bottom:20px">
     <div>
       <div class="sec-title">Resumen del estudio</div>
@@ -640,6 +687,68 @@ tr:hover td{background:var(--bg)}
     </div>
   </div>
 </div>
+<!-- Modal Compromiso / Evento -->
+<div class="modal-bg" id="modal-compromiso">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="modal-comp-title">Nuevo evento</div>
+      <button class="modal-close" onclick="closeModal('modal-compromiso')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="comp-id">
+      <div class="field">
+        <label>Título *</label>
+        <input id="comp-titulo" placeholder="Ej: Reunión con Molina por la aplicación">
+      </div>
+      <div class="g3">
+        <div class="field">
+          <label>Fecha *</label>
+          <input type="date" id="comp-fecha">
+        </div>
+        <div class="field">
+          <label>Hora</label>
+          <input type="time" id="comp-hora">
+        </div>
+        <div class="field">
+          <label>Tipo</label>
+          <select id="comp-tipo">
+            <option>Reunión</option>
+            <option>Visita / Campo</option>
+            <option>Vencimiento</option>
+            <option>Entrega</option>
+            <option>Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="field">
+          <label>Lugar</label>
+          <input id="comp-lugar" placeholder="Ej: Municipalidad de Yacanto">
+        </div>
+        <div class="field">
+          <label>Estado</label>
+          <select id="comp-estado">
+            <option>Pendiente</option>
+            <option>Hecho</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Trabajo vinculado (opcional)</label>
+        <select id="comp-trabajo"><option value="">— Ninguno —</option></select>
+      </div>
+      <div class="field">
+        <label>Nota</label>
+        <textarea id="comp-nota" placeholder="Detalles del compromiso..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn danger" id="comp-del-btn" onclick="deleteCompromiso()" style="margin-right:auto;display:none">Eliminar</button>
+      <button class="btn" onclick="closeModal('modal-compromiso')">Cancelar</button>
+      <button class="btn success" onclick="saveCompromiso()">Guardar</button>
+    </div>
+  </div>
+</div>
 <!-- TOASTS -->
 <div class="toast-wrap" id="toasts"></div>
 <script>
@@ -650,7 +759,7 @@ tr:hover td{background:var(--bg)}
 // navegador sin tener que configurarla. Se puede sobrescribir desde Configuración.
 const SCRIPT_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbwzHetjPSymULtE8kjPQ0xkuUP3Qh8hgbyeczL43sAWhZBwfUKVVYIMOCYtV5swsdLk/exec';
 let SCRIPT_URL = localStorage.getItem('umepay_script_url') || SCRIPT_URL_DEFAULT;
-let DB = { trabajos: [], movimientos: [], presupuestos: [] };
+let DB = { trabajos: [], movimientos: [], presupuestos: [], compromisos: [] };
 let connected = false;
 // ==============================
 // API
@@ -683,14 +792,16 @@ async function apiGet(action, params = {}) {
 async function loadAll() {
   if (!SCRIPT_URL) { setStatus(false, 'Sin URL configurada'); return; }
   try {
-    const [trab, movs, pres] = await Promise.all([
+    const [trab, movs, pres, comp] = await Promise.all([
       apiGet('getAll', { sheet: 'trabajos' }),
       apiGet('getAll', { sheet: 'movimientos' }),
-      apiGet('getAll', { sheet: 'presupuestos' })
+      apiGet('getAll', { sheet: 'presupuestos' }),
+      apiGet('getAll', { sheet: 'compromisos' })
     ]);
     DB.trabajos     = trab.rows || [];
     DB.movimientos  = movs.rows || [];
     DB.presupuestos = pres.rows || [];
+    DB.compromisos  = comp.rows || [];
     setStatus(true, `Conectado — ${new Date().toLocaleTimeString('es-AR')}`);
     renderAll();
   } catch(e) {
@@ -710,6 +821,7 @@ function renderAll() {
   renderMovimientos();
   renderPresupuestos();
   renderDashboardLocal();
+  renderCalendar();
   fillWorkSelects();
 }
 // ==============================
@@ -1011,6 +1123,97 @@ async function deletePresupuesto(id) {
   await deleteData('presupuestos', id);
 }
 // ==============================
+// CALENDARIO / COMPROMISOS
+// ==============================
+const CAL_MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const CAL_DOW   = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+let calY, calM; // año y mes (0-11) visibles
+function tipoClase(t) {
+  return {'Reunión':'t-reunion','Visita / Campo':'t-campo','Vencimiento':'t-venc','Entrega':'t-entrega'}[t] || 't-otro';
+}
+function renderCalendar() {
+  const grid = document.getElementById('cal-grid');
+  if(!grid) return;
+  if(calY === undefined){ const t = new Date(); calY = t.getFullYear(); calM = t.getMonth(); }
+  document.getElementById('cal-title').textContent = CAL_MESES[calM] + ' ' + calY;
+  // Agrupar eventos por día (clave YYYY-MM-DD)
+  const porDia = {};
+  DB.compromisos.forEach(c => {
+    const k = (c.fecha || '').split('T')[0];
+    if(k) (porDia[k] = porDia[k] || []).push(c);
+  });
+  const primero = new Date(calY, calM, 1);
+  let inicio = (primero.getDay() + 6) % 7;       // lunes = 0
+  const dias = new Date(calY, calM + 1, 0).getDate();
+  const hoy = new Date().toISOString().split('T')[0];
+  let html = CAL_DOW.map(d => `<div class="cal-dow">${d}</div>`).join('');
+  for(let i = 0; i < inicio; i++) html += '<div class="cal-cell empty"></div>';
+  for(let d = 1; d <= dias; d++) {
+    const key = `${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const evs = (porDia[key] || []).sort((a,b) => (a.hora||'').localeCompare(b.hora||''));
+    const chips = evs.map(c => {
+      const lbl = (c.hora ? c.hora + ' ' : '') + (c.titulo || '(sin título)');
+      return `<div class="cal-ev ${tipoClase(c.tipo)}${c.estado==='Hecho'?' done':''}" title="${escHtml(lbl)}"
+        onclick="event.stopPropagation();editCompromiso('${c.id}')">${escHtml(lbl)}</div>`;
+    }).join('');
+    html += `<div class="cal-cell${key===hoy?' today':''}" onclick="nuevoCompromiso('${key}')">
+      <div class="cal-daynum">${d}</div>${chips}</div>`;
+  }
+  grid.innerHTML = html;
+}
+function calPrev() { calM--; if(calM < 0){ calM = 11; calY--; } renderCalendar(); }
+function calNext() { calM++; if(calM > 11){ calM = 0; calY++; } renderCalendar(); }
+function calHoy()  { const t = new Date(); calY = t.getFullYear(); calM = t.getMonth(); renderCalendar(); }
+function nuevoCompromiso(fecha) {
+  ['comp-id','comp-titulo','comp-hora','comp-lugar','comp-nota'].forEach(i => document.getElementById(i).value = '');
+  document.getElementById('comp-fecha').value = fecha || new Date().toISOString().split('T')[0];
+  document.getElementById('comp-tipo').selectedIndex = 0;
+  document.getElementById('comp-estado').selectedIndex = 0;
+  document.getElementById('comp-trabajo').value = '';
+  document.getElementById('modal-comp-title').textContent = 'Nuevo evento';
+  document.getElementById('comp-del-btn').style.display = 'none';
+  openModal('modal-compromiso');
+}
+function editCompromiso(id) {
+  const c = DB.compromisos.find(x => x.id === id);
+  if(!c) return;
+  document.getElementById('comp-id').value      = c.id;
+  document.getElementById('comp-titulo').value  = c.titulo || '';
+  document.getElementById('comp-fecha').value   = (c.fecha || '').split('T')[0];
+  document.getElementById('comp-hora').value    = c.hora || '';
+  document.getElementById('comp-tipo').value    = c.tipo || 'Reunión';
+  document.getElementById('comp-lugar').value   = c.lugar || '';
+  document.getElementById('comp-estado').value  = c.estado || 'Pendiente';
+  document.getElementById('comp-trabajo').value = c.trabajo_id || '';
+  document.getElementById('comp-nota').value    = c.nota || '';
+  document.getElementById('modal-comp-title').textContent = 'Editar evento';
+  document.getElementById('comp-del-btn').style.display = 'inline-flex';
+  openModal('modal-compromiso');
+}
+async function saveCompromiso() {
+  const id = document.getElementById('comp-id').value;
+  const data = {
+    titulo:     document.getElementById('comp-titulo').value,
+    fecha:      document.getElementById('comp-fecha').value,
+    hora:       document.getElementById('comp-hora').value,
+    lugar:      document.getElementById('comp-lugar').value,
+    tipo:       document.getElementById('comp-tipo').value,
+    trabajo_id: document.getElementById('comp-trabajo').value,
+    estado:     document.getElementById('comp-estado').value,
+    nota:       document.getElementById('comp-nota').value,
+  };
+  if(!data.titulo || !data.fecha){ toast('Completá título y fecha',true); return; }
+  await saveData('compromisos', id, data);
+  closeModal('modal-compromiso');
+}
+async function deleteCompromiso() {
+  const id = document.getElementById('comp-id').value;
+  if(!id) return;
+  if(!confirm('¿Eliminar este evento?')) return;
+  await deleteData('compromisos', id);
+  closeModal('modal-compromiso');
+}
+// ==============================
 // GENERIC SAVE / DELETE
 // ==============================
 async function saveData(sheet, id, data) {
@@ -1125,6 +1328,7 @@ function fillWorkSelects() {
   ].join('');
   document.getElementById('mov-trabajo').innerHTML  = opts;
   document.getElementById('pres-trabajo').innerHTML = opts;
+  document.getElementById('comp-trabajo').innerHTML = opts;
 }
 // ==============================
 // SETUP
@@ -1162,6 +1366,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('mov-fecha').value  = hoy;
   document.getElementById('pres-fecha').value = hoy;
   document.getElementById('trab-fecha').value = hoy;
+  renderCalendar(); // dibuja la grilla del mes aunque todavía no hayan llegado los datos
   // Load saved URL
   if (SCRIPT_URL) {
     document.getElementById('script-url-input').value = SCRIPT_URL;
