@@ -214,7 +214,9 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
   <div class="btn-row">
     <button class="btn primary" onclick="renderPreview()">👁 Vista previa</button>
     <button class="btn green" onclick="imprimirPDF()">🖨 Imprimir / Guardar PDF</button>
+    <button class="btn" onclick="guardarEnDrive()">☁ Guardar en Drive</button>
   </div>
+  <div id="drive-status" class="hint" style="margin-top:8px"></div>
   <div class="pdf-preview" id="preview-wrap" style="display:none;margin-top:20px">
     <div class="prev-doc" id="prev-doc"></div>
   </div>
@@ -570,11 +572,37 @@ function buildDoc(){
   ${notas?`<p style="font-family:sans-serif;font-size:10px;color:#555;margin-top:4px">${esc(notas)}</p>`:''}`;
 }
 function renderPreview(){ document.getElementById('prev-doc').innerHTML=buildDoc(); document.getElementById('preview-wrap').style.display='block'; }
-function imprimirPDF(){
+// Documento HTML completo del presupuesto (withPrint=true agrega el auto-imprimir).
+function docHTML(withPrint){
   const inner=buildDoc();
+  const ps = withPrint ? '<scr'+'ipt>window.onload=()=>window.print();<\/scr'+'ipt>' : '';
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Presupuesto Umepay</title><style>*{box-sizing:border-box;margin:0;padding:0}body{background:#fff}.doc{max-width:700px;margin:0 auto;padding:42px 48px;font-size:12px;color:#111;line-height:1.55;font-family:Georgia,serif}@media print{@page{margin:12mm 15mm}}</style></head><body><div class="doc">${inner}</div>${ps}</body></html>`;
+}
+function imprimirPDF(){
   const win=window.open('','_blank');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Presupuesto Umepay</title><style>*{box-sizing:border-box;margin:0;padding:0}body{background:#fff}.doc{max-width:700px;margin:0 auto;padding:42px 48px;font-size:12px;color:#111;line-height:1.55;font-family:Georgia,serif}@media print{@page{margin:12mm 15mm}}</style></head><body><div class="doc">${inner}</div><script>window.onload=()=>window.print();<\/script></body></html>`);
+  win.document.write(docHTML(true));
   win.document.close();
+}
+// Guarda el presupuesto como PDF en Google Drive (carpeta AgriApp/Presupuestos).
+const SCRIPT_URL_DEFAULT='https://script.google.com/macros/s/AKfycbwzHetjPSymULtE8kjPQ0xkuUP3Qh8hgbyeczL43sAWhZBwfUKVVYIMOCYtV5swsdLk/exec';
+const SCRIPT_URL = localStorage.getItem('umepay_script_url') || SCRIPT_URL_DEFAULT;
+async function guardarEnDrive(){
+  const cliente=(document.getElementById('p-cliente').value||'Presupuesto').trim();
+  const fecha=document.getElementById('p-fecha').value||'';
+  const filename='Presupuesto - '+cliente+(fecha?' - '+fecha:'');
+  const st=document.getElementById('drive-status');
+  st.style.color='var(--ink2)'; st.textContent='Guardando en Drive…';
+  try{
+    const res=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action:'guardarPresupuesto',data:{html:docHTML(false),filename}})});
+    const d=await res.json();
+    if(d.error) throw new Error(d.error);
+    st.style.color='var(--green)';
+    st.innerHTML='✓ Guardado en Drive — <a href="'+d.url+'" target="_blank" rel="noopener">abrir el PDF</a>';
+  }catch(e){
+    st.style.color='var(--amber)';
+    st.textContent='No se pudo guardar en Drive: '+e.message;
+  }
 }
 function showTab(name,btn){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
@@ -586,10 +614,22 @@ function showTab(name,btn){
 function selfTest(){
   const r=t8Rural(1,1893); console.log('Tasa8 rural 1893ha/1lote =', Math.round(r), '(esperado ~261.671)');
 }
+// Modo embebido: cuando la calculadora se muestra DENTRO de la pestaña Presupuestos
+// (index.html la carga con ?embed=1), ocultamos su barra superior propia y le
+// avisamos al contenedor cuánto mide para que no quede cortada.
+const EMBED = new URLSearchParams(location.search).get('embed')==='1';
+function reportHeight(){ if(EMBED) parent.postMessage({type:'umepayCalcHeight',height:document.body.scrollHeight},'*'); }
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('p-fecha').value=new Date().toISOString().split('T')[0];
   loadDescripcion(); selfTest();
+  if(EMBED){
+    document.querySelector('.topbar').style.display='none';
+    document.querySelector('.main').style.padding='4px 0 0';
+    if(window.ResizeObserver) new ResizeObserver(reportHeight).observe(document.body);
+    reportHeight();
+  }
 });
+window.addEventListener('load', reportHeight);
 </script>
 </body>
 </html>

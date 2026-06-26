@@ -16,7 +16,12 @@
  *     Copiá la URL /exec y pegala en la pestaña "Configuración" de la app.
  ****************************************************************************/
 
-var HOJAS = ['trabajos', 'movimientos', 'presupuestos'];
+var HOJAS = ['trabajos', 'movimientos', 'presupuestos', 'compromisos'];
+
+// Subcarpetas de Drive, creadas DENTRO de la carpeta donde vive la planilla
+// (por ej. "AgriApp"). Así todo lo de la app queda junto al Sheet.
+var CARPETA_COMPROBANTES = 'Comprobantes';
+var CARPETA_PRESUPUESTOS = 'Presupuestos';
 
 // Orden y nombre de columnas de cada hoja (solo para que queden prolijas).
 var COLUMNAS = {
@@ -24,9 +29,12 @@ var COLUMNAS = {
              'comentario', 'fecha_estado', 'fecha_inicio', 'monto_ars',
              'monto_usd', 'presupuesto_ref', 'forma_cobro', 'created_at'],
   movimientos: ['id', 'tipo', 'fecha', 'descripcion', 'monto', 'moneda',
-                'forma_pago', 'quien_pago', 'categoria', 'trabajo_id', 'created_at'],
+                'forma_pago', 'quien_pago', 'categoria', 'trabajo_id',
+                'comprobante_url', 'comprobante_nombre', 'created_at'],
   presupuestos: ['id', 'cliente', 'fecha', 'tipo_trabajo', 'monto_ars',
-                 'monto_usd', 'estado', 'trabajo_id', 'notas', 'created_at']
+                 'monto_usd', 'estado', 'trabajo_id', 'notas', 'created_at'],
+  compromisos: ['id', 'titulo', 'fecha', 'hora', 'lugar', 'tipo',
+                'trabajo_id', 'nota', 'estado', 'created_at']
 };
 
 /* ========================================================================
@@ -58,6 +66,8 @@ function ruta(req) {
       case 'insert':       out = withLock(function () { return insertRow(req.sheet, req.data); }); break;
       case 'update':       out = withLock(function () { return updateRow(req.sheet, req.id, req.data); }); break;
       case 'delete':       out = withLock(function () { return deleteRow(req.sheet, req.id); }); break;
+      case 'uploadComprobante':   out = uploadComprobante(req.data); break;
+      case 'guardarPresupuesto':  out = guardarPresupuestoPDF(req.data); break;
       default:             out = { error: 'Acción desconocida: ' + action };
     }
     return json(out);
@@ -190,6 +200,52 @@ function deleteRow(name, id) {
 function getDashboard() {
   // La app calcula el dashboard localmente; acá solo confirmamos la conexión.
   return { ok: true, ts: new Date().toISOString() };
+}
+
+/* ========================================================================
+ *  COMPROBANTES — guarda el archivo en una carpeta de Google Drive y
+ *  devuelve el link para verlo desde la app.
+ * ===================================================================== */
+// Carpeta raíz de la app = la carpeta donde está guardada esta planilla (AgriApp).
+function getCarpetaApp() {
+  try {
+    var ssId = SpreadsheetApp.getActiveSpreadsheet().getId();
+    var parents = DriveApp.getFileById(ssId).getParents();
+    if (parents.hasNext()) return parents.next();
+  } catch (e) { /* sin acceso al padre: usamos la raíz */ }
+  return DriveApp.getRootFolder();
+}
+
+// Devuelve (o crea si no existe) una subcarpeta con ese nombre dentro de "base".
+function getSubcarpeta(base, nombre) {
+  var it = base.getFoldersByName(nombre);
+  return it.hasNext() ? it.next() : base.createFolder(nombre);
+}
+
+function getCarpetaComprobantes() { return getSubcarpeta(getCarpetaApp(), CARPETA_COMPROBANTES); }
+function getCarpetaPresupuestos() { return getSubcarpeta(getCarpetaApp(), CARPETA_PRESUPUESTOS); }
+
+function uploadComprobante(data) {
+  data = data || {};
+  if (!data.base64 || !data.filename) throw new Error('Falta el archivo del comprobante');
+  var bytes = Utilities.base64Decode(data.base64);
+  var blob = Utilities.newBlob(bytes, data.mimeType || 'application/octet-stream', data.filename);
+  var file = getCarpetaComprobantes().createFile(blob);
+  // Link abrible por quien tenga el enlace (para verlo desde el celular sin loguearse).
+  try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) {}
+  return { ok: true, url: file.getUrl(), id: file.getId(), nombre: data.filename };
+}
+
+// Recibe el HTML del presupuesto, lo convierte a PDF y lo guarda en AgriApp/Presupuestos.
+function guardarPresupuestoPDF(data) {
+  data = data || {};
+  if (!data.html) throw new Error('Falta el contenido del presupuesto');
+  var nombre = (data.filename || 'Presupuesto').replace(/[\\\/:*?"<>|]/g, '-') + '.pdf';
+  var htmlBlob = Utilities.newBlob(data.html, 'text/html', 'doc.html');
+  var pdf = htmlBlob.getAs('application/pdf').setName(nombre);
+  var file = getCarpetaPresupuestos().createFile(pdf);
+  try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) {}
+  return { ok: true, url: file.getUrl(), id: file.getId(), nombre: nombre };
 }
 
 /* ========================================================================

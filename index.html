@@ -37,6 +37,13 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);min-height:10
   white-space:nowrap;transition:all .12s;letter-spacing:.02em}
 .nav-btn:hover{color:var(--ink)}
 .nav-btn.active{color:var(--green);border-bottom-color:var(--green);font-weight:500}
+/* ── SUB-NAV (dentro de una pestaña) ── */
+.subnav{display:flex;gap:2px;margin-bottom:18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.subnav-btn{font-family:var(--mono);font-size:12px;padding:9px 16px;border:none;background:none;
+  cursor:pointer;color:var(--ink3);border-bottom:2px solid transparent;transition:all .12s}
+.subnav-btn:hover{color:var(--ink)}
+.subnav-btn.active{color:var(--green);border-bottom-color:var(--green);font-weight:500}
+.calc-frame{width:100%;border:none;min-height:640px;background:transparent;display:block}
 /* ── MAIN ── */
 .main{max-width:1100px;margin:0 auto;padding:24px 20px}
 .tab{display:none}.tab.active{display:block}
@@ -183,7 +190,6 @@ tr:hover td{background:var(--bg)}
   <button class="nav-btn" onclick="showTab('trabajos')">◎ Trabajos</button>
   <button class="nav-btn" onclick="showTab('movimientos')">⇄ Ingresos / Gastos</button>
   <button class="nav-btn" onclick="showTab('presupuestos')">◻ Presupuestos</button>
-  <a class="nav-btn" href="presupuestos.html" style="text-decoration:none;display:inline-flex;align-items:center">🧮 Calculadora</a>
   <button class="nav-btn" onclick="showTab('setup')">⚙ Configuración</button>
 </div>
 <!-- MAIN -->
@@ -282,23 +288,34 @@ tr:hover td{background:var(--bg)}
 </div>
 <!-- ═══════════════ PRESUPUESTOS ═══════════════ -->
 <div class="tab" id="tab-presupuestos">
-  <div class="sec-hdr">
-    <div>
-      <div class="sec-title">Presupuestos</div>
-      <div class="sec-sub">Registro de presupuestos enviados</div>
-    </div>
-    <button class="btn success" onclick="nuevoPresupuesto()">+ Registrar presupuesto</button>
+  <div class="subnav">
+    <button class="subnav-btn active" onclick="showPresView('registro',this)">◻ Registro</button>
+    <button class="subnav-btn" onclick="showPresView('calc',this)">🧮 Calculadora de honorarios</button>
   </div>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Fecha</th><th>Cliente</th><th>Trabajo</th><th>Monto ARS</th>
-          <th>Monto USD</th><th>Estado</th><th>Notas</th><th></th>
-        </tr>
-      </thead>
-      <tbody id="pres-tbody"><tr class="empty-row"><td colspan="8">Cargando...</td></tr></tbody>
-    </table>
+  <!-- Vista: Registro de presupuestos enviados -->
+  <div id="pres-view-registro">
+    <div class="sec-hdr">
+      <div>
+        <div class="sec-title">Presupuestos</div>
+        <div class="sec-sub">Registro de presupuestos enviados</div>
+      </div>
+      <button class="btn success" onclick="nuevoPresupuesto()">+ Registrar presupuesto</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Cliente</th><th>Trabajo</th><th>Monto ARS</th>
+            <th>Monto USD</th><th>Estado</th><th>Notas</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="pres-tbody"><tr class="empty-row"><td colspan="8">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <!-- Vista: Calculadora de honorarios (página presupuestos.html embebida) -->
+  <div id="pres-view-calc" style="display:none">
+    <iframe id="calc-frame" class="calc-frame" title="Calculadora de honorarios"></iframe>
   </div>
 </div>
 <!-- ═══════════════ SETUP ═══════════════ -->
@@ -508,6 +525,11 @@ tr:hover td{background:var(--bg)}
         <select id="mov-trabajo">
           <option value="">— Ninguno —</option>
         </select>
+      </div>
+      <div class="field">
+        <label>📎 Comprobante (foto o PDF) — opcional</label>
+        <input type="file" id="mov-comprobante" accept="image/*,application/pdf,.pdf">
+        <div class="field-hint">Se guarda en tu Google Drive, carpeta «Umepay - Comprobantes».</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -887,7 +909,7 @@ function renderMovimientos() {
     return `<tr>
       <td>${fmtFecha(m.fecha)}</td>
       <td><span class="badge ${isIng?'badge-green':'badge-amber'}">${isIng?'Ingreso':'Gasto'}</span></td>
-      <td>${m.descripcion}</td>
+      <td>${m.descripcion||''}${m.comprobante_url?` <a href="${m.comprobante_url}" target="_blank" rel="noopener" title="Ver comprobante" style="text-decoration:none">📎</a>`:''}</td>
       <td style="font-weight:500;color:${isIng?'var(--green)':'var(--amber)'}">${montoStr}</td>
       <td>${m.forma_pago}</td>
       <td>${m.quien_pago}</td>
@@ -900,6 +922,15 @@ function updateMovLabel() {
   const tipo = document.getElementById('mov-tipo').value;
   document.getElementById('mov-desc-label').textContent = tipo==='ingreso' ? 'Descripción del cobro' : 'Descripción del gasto';
   document.getElementById('mov-quien-label').textContent = tipo==='ingreso' ? '¿Quién cobró?' : '¿Quién pagó?';
+}
+// Lee un archivo y lo devuelve como texto base64 (sin el prefijo "data:...").
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload  = () => resolve(String(r.result).split(',')[1] || '');
+    r.onerror = () => reject(new Error('No se pudo leer el archivo'));
+    r.readAsDataURL(file);
+  });
 }
 async function saveMovimiento() {
   const id = document.getElementById('mov-id').value;
@@ -915,6 +946,21 @@ async function saveMovimiento() {
     trabajo_id: document.getElementById('mov-trabajo').value,
   };
   if(!data.monto || !data.fecha){ toast('Completá monto y fecha',true); return; }
+  // Si adjuntó un comprobante, lo subimos a Drive y guardamos el link.
+  const file = document.getElementById('mov-comprobante').files[0];
+  if (file) {
+    try {
+      toast('Subiendo comprobante…');
+      const base64 = await fileToBase64(file);
+      const up = await api('uploadComprobante', 'movimientos',
+        { data: { base64, filename: file.name, mimeType: file.type } });
+      data.comprobante_url    = up.url;
+      data.comprobante_nombre = up.nombre || file.name;
+    } catch(e) {
+      toast('No se pudo subir el comprobante: ' + e.message, true);
+      return; // no guardamos el movimiento si falló la subida
+    }
+  }
   await saveData('movimientos', id, data);
   closeModal('modal-movimiento');
 }
@@ -1004,6 +1050,24 @@ function showTab(name) {
 function openModal(id) {
   document.getElementById(id).classList.add('open');
 }
+// Sub-pestañas de Presupuestos: Registro / Calculadora
+function showPresView(view, btn) {
+  document.querySelectorAll('#tab-presupuestos .subnav-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.getElementById('pres-view-registro').style.display = view==='registro' ? 'block' : 'none';
+  document.getElementById('pres-view-calc').style.display     = view==='calc'     ? 'block' : 'none';
+  if(view==='calc') {
+    const f = document.getElementById('calc-frame');
+    if(!f.getAttribute('src')) f.setAttribute('src','presupuestos.html?embed=1'); // carga sólo la primera vez
+  }
+}
+// La calculadora embebida nos avisa su alto para que no quede cortada ni con scroll doble
+window.addEventListener('message', e => {
+  if(e.data && e.data.type === 'umepayCalcHeight') {
+    const f = document.getElementById('calc-frame');
+    if(f) f.style.height = (e.data.height + 24) + 'px';
+  }
+});
 // Abre el formulario en blanco para crear (limpia el id oculto -> es alta, no edición)
 function nuevoTrabajo() {
   ['trab-id','trab-cliente','trab-desc','trab-comentario','trab-monto-ars','trab-monto-usd','trab-pres-ref'].forEach(i=>document.getElementById(i).value='');
@@ -1019,6 +1083,7 @@ function nuevoMovimiento() {
   document.getElementById('mov-monto').value = '';
   document.getElementById('mov-tipo').selectedIndex = 0;
   document.getElementById('mov-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('mov-comprobante').value = '';
   updateMovLabel();
   openModal('modal-movimiento');
 }
