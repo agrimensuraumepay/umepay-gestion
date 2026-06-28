@@ -80,6 +80,10 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);min-height:10
 .cal-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:10px;color:var(--ink3)}
 .cal-legend span{display:inline-flex;align-items:center;gap:5px}
 .cal-dot{width:9px;height:9px;border-radius:2px;display:inline-block}
+/* ── APUNTES / NORMATIVAS ── */
+.apunte-cont{font-size:12px;color:var(--ink2);line-height:1.6;margin-bottom:8px;white-space:normal}
+.apunte-fuente{font-size:11px;color:var(--ink3);margin-bottom:8px;word-break:break-word}
+.apunte-fuente a{color:var(--green)}
 /* ── MAIN ── */
 .main{max-width:1100px;margin:0 auto;padding:24px 20px}
 .tab{display:none}.tab.active{display:block}
@@ -252,6 +256,7 @@ tr:hover td{background:var(--bg)}
   <button class="nav-btn" onclick="showTab('trabajos')">◎ Trabajos</button>
   <button class="nav-btn" onclick="showTab('movimientos')">⇄ Ingresos / Gastos</button>
   <button class="nav-btn" onclick="showTab('presupuestos')">◻ Presupuestos</button>
+  <button class="nav-btn" onclick="showTab('apuntes')">📚 Normativas</button>
   <button class="nav-btn" onclick="showTab('setup')">⚙ Configuración</button>
 </div>
 <!-- MAIN -->
@@ -399,6 +404,30 @@ tr:hover td{background:var(--bg)}
   <div id="pres-view-calc" style="display:none">
     <iframe id="calc-frame" class="calc-frame" title="Calculadora de honorarios"></iframe>
   </div>
+</div>
+<!-- ═══════════════ NORMATIVAS / APUNTES ═══════════════ -->
+<div class="tab" id="tab-apuntes">
+  <div class="sec-hdr">
+    <div>
+      <div class="sec-title">Normativas y apuntes</div>
+      <div class="sec-sub">Normativas, trámites y cosas que vamos aprendiendo en el camino</div>
+    </div>
+    <button class="btn success" onclick="nuevoApunte()">+ Nuevo apunte</button>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <input id="apunte-buscar" class="url-input" style="flex:1;min-width:180px;margin:0"
+      placeholder="🔍 Buscar por palabra (título, contenido, categoría…)" oninput="renderApuntes()">
+    <select id="apunte-filtro-cat" class="url-input" style="width:auto;margin:0" onchange="renderApuntes()">
+      <option value="">Todas las categorías</option>
+      <option>Normativa</option>
+      <option>Trámite</option>
+      <option>Apunte</option>
+      <option>Link útil</option>
+      <option>Contacto</option>
+      <option>Otro</option>
+    </select>
+  </div>
+  <div class="trab-cards" id="apuntes-list"><div style="text-align:center;color:var(--ink3);padding:40px">Cargando...</div></div>
 </div>
 <!-- ═══════════════ SETUP ═══════════════ -->
 <div class="tab" id="tab-setup">
@@ -722,6 +751,49 @@ tr:hover td{background:var(--bg)}
     </div>
   </div>
 </div>
+<!-- Modal Apunte / Normativa -->
+<div class="modal-bg" id="modal-apunte">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="modal-apunte-title">Nuevo apunte</div>
+      <button class="modal-close" onclick="closeModal('modal-apunte')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="apunte-id">
+      <div class="g2">
+        <div class="field">
+          <label>Título *</label>
+          <input id="apunte-titulo" placeholder="Ej: Plazo de validez del estado parcelario">
+        </div>
+        <div class="field">
+          <label>Categoría</label>
+          <select id="apunte-cat">
+            <option>Normativa</option>
+            <option>Trámite</option>
+            <option>Apunte</option>
+            <option>Link útil</option>
+            <option>Contacto</option>
+            <option>Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Contenido *</label>
+        <textarea id="apunte-contenido" style="min-height:140px"
+          placeholder="Escribí acá la normativa, el resumen o lo aprendido. Podés usar varios renglones."></textarea>
+      </div>
+      <div class="field">
+        <label>Fuente / Link (opcional)</label>
+        <input id="apunte-fuente" placeholder="Ej: https://catastro.cba.gov.ar  o  «Ley 5057, art. 12»">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn danger" id="apunte-del-btn" onclick="deleteApunte()" style="margin-right:auto;display:none">Eliminar</button>
+      <button class="btn" onclick="closeModal('modal-apunte')">Cancelar</button>
+      <button class="btn success" onclick="saveApunte()">Guardar</button>
+    </div>
+  </div>
+</div>
 <!-- Modal Compromiso / Evento -->
 <div class="modal-bg" id="modal-compromiso">
   <div class="modal" style="max-width:480px">
@@ -794,7 +866,7 @@ tr:hover td{background:var(--bg)}
 // navegador sin tener que configurarla. Se puede sobrescribir desde Configuración.
 const SCRIPT_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbwzHetjPSymULtE8kjPQ0xkuUP3Qh8hgbyeczL43sAWhZBwfUKVVYIMOCYtV5swsdLk/exec';
 let SCRIPT_URL = localStorage.getItem('umepay_script_url') || SCRIPT_URL_DEFAULT;
-let DB = { trabajos: [], movimientos: [], presupuestos: [], compromisos: [] };
+let DB = { trabajos: [], movimientos: [], presupuestos: [], compromisos: [], apuntes: [] };
 let connected = false;
 // ==============================
 // API
@@ -827,16 +899,19 @@ async function apiGet(action, params = {}) {
 async function loadAll() {
   if (!SCRIPT_URL) { setStatus(false, 'Sin URL configurada'); return; }
   try {
-    const [trab, movs, pres, comp] = await Promise.all([
+    const [trab, movs, pres, comp, ap] = await Promise.all([
       apiGet('getAll', { sheet: 'trabajos' }),
       apiGet('getAll', { sheet: 'movimientos' }),
       apiGet('getAll', { sheet: 'presupuestos' }),
-      apiGet('getAll', { sheet: 'compromisos' })
+      apiGet('getAll', { sheet: 'compromisos' }),
+      // apuntes: hoja nueva; si el backend todavía no la tiene, no rompe el resto
+      apiGet('getAll', { sheet: 'apuntes' }).catch(() => ({ rows: [] }))
     ]);
     DB.trabajos     = trab.rows || [];
     DB.movimientos  = movs.rows || [];
     DB.presupuestos = pres.rows || [];
     DB.compromisos  = comp.rows || [];
+    DB.apuntes      = ap.rows || [];
     setStatus(true, `Conectado — ${new Date().toLocaleTimeString('es-AR')}`);
     renderAll();
   } catch(e) {
@@ -857,6 +932,7 @@ function renderAll() {
   renderPresupuestos();
   renderDashboardLocal();
   renderCalendar();
+  renderApuntes();
   fillWorkSelects();
 }
 // ==============================
@@ -1247,6 +1323,97 @@ async function deleteCompromiso() {
   if(!confirm('¿Eliminar este evento?')) return;
   await deleteData('compromisos', id);
   closeModal('modal-compromiso');
+}
+// ==============================
+// NORMATIVAS / APUNTES
+// ==============================
+function categoriaBadge(c) {
+  const map = {'Normativa':'badge-blue','Trámite':'badge-amber','Apunte':'badge-green',
+    'Link útil':'badge-gray','Contacto':'badge-gray','Otro':'badge-gray'};
+  return `<span class="badge ${map[c]||'badge-gray'}">${c||'Otro'}</span>`;
+}
+function renderApuntes() {
+  const wrap = document.getElementById('apuntes-list');
+  if(!wrap) return;
+  const q   = (document.getElementById('apunte-buscar').value || '').toLowerCase().trim();
+  const cat = document.getElementById('apunte-filtro-cat').value;
+  let list = DB.apuntes.filter(a => {
+    if(cat && a.categoria !== cat) return false;
+    if(q) {
+      const blob = ((a.titulo||'')+' '+(a.contenido||'')+' '+(a.categoria||'')+' '+(a.fuente||'')).toLowerCase();
+      if(!blob.includes(q)) return false;
+    }
+    return true;
+  });
+  list.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+  if(!list.length) {
+    wrap.innerHTML = `<div style="text-align:center;color:var(--ink3);padding:40px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)">${
+      DB.apuntes.length ? 'No hay apuntes que coincidan con la búsqueda' : 'Todavía no hay apuntes. Tocá «+ Nuevo apunte» para cargar el primero.'}</div>`;
+    return;
+  }
+  wrap.innerHTML = list.map(a => {
+    const cont = escHtml(a.contenido||'').replace(/\n/g,'<br>');
+    let fuente = '';
+    if(a.fuente) {
+      const f = a.fuente.trim();
+      fuente = /^https?:\/\//i.test(f)
+        ? `<div class="apunte-fuente">🔗 <a href="${escHtml(f)}" target="_blank" rel="noopener">${escHtml(f)}</a></div>`
+        : `<div class="apunte-fuente">Fuente: ${escHtml(f)}</div>`;
+    }
+    return `<div class="trab-card">
+      <div class="trab-card-hdr">
+        <div><div class="trab-cliente">${escHtml(a.titulo||'(sin título)')}</div></div>
+        <div class="trab-badges">${categoriaBadge(a.categoria)}</div>
+      </div>
+      <div class="apunte-cont">${cont}</div>
+      ${fuente}
+      <div class="trab-footer">
+        <div class="trab-fecha">${a.created_at ? fmtFecha(a.created_at) : ''}</div>
+        <div class="trab-actions">
+          <button class="btn sm" onclick="editApunte('${a.id}')">✎ Editar</button>
+          <button class="btn sm danger" onclick="deleteApunte('${a.id}')">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function nuevoApunte() {
+  ['apunte-id','apunte-titulo','apunte-contenido','apunte-fuente'].forEach(i => document.getElementById(i).value = '');
+  document.getElementById('apunte-cat').selectedIndex = 0;
+  document.getElementById('modal-apunte-title').textContent = 'Nuevo apunte';
+  document.getElementById('apunte-del-btn').style.display = 'none';
+  openModal('modal-apunte');
+}
+function editApunte(id) {
+  const a = DB.apuntes.find(x => x.id === id);
+  if(!a) return;
+  document.getElementById('apunte-id').value        = a.id;
+  document.getElementById('apunte-titulo').value    = a.titulo || '';
+  document.getElementById('apunte-cat').value       = a.categoria || 'Normativa';
+  document.getElementById('apunte-contenido').value = a.contenido || '';
+  document.getElementById('apunte-fuente').value    = a.fuente || '';
+  document.getElementById('modal-apunte-title').textContent = 'Editar apunte';
+  document.getElementById('apunte-del-btn').style.display = 'inline-flex';
+  openModal('modal-apunte');
+}
+async function saveApunte() {
+  const id = document.getElementById('apunte-id').value;
+  const data = {
+    titulo:    document.getElementById('apunte-titulo').value,
+    categoria: document.getElementById('apunte-cat').value,
+    contenido: document.getElementById('apunte-contenido').value,
+    fuente:    document.getElementById('apunte-fuente').value,
+  };
+  if(!data.titulo || !data.contenido){ toast('Completá título y contenido',true); return; }
+  await saveData('apuntes', id, data);
+  closeModal('modal-apunte');
+}
+async function deleteApunte(id) {
+  id = id || document.getElementById('apunte-id').value;
+  if(!id) return;
+  if(!confirm('¿Eliminar este apunte?')) return;
+  await deleteData('apuntes', id);
+  closeModal('modal-apunte');
 }
 // ==============================
 // GENERIC SAVE / DELETE

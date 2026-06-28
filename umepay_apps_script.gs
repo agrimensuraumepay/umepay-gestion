@@ -16,7 +16,7 @@
  *     Copiá la URL /exec y pegala en la pestaña "Configuración" de la app.
  ****************************************************************************/
 
-var HOJAS = ['trabajos', 'movimientos', 'presupuestos', 'compromisos'];
+var HOJAS = ['trabajos', 'movimientos', 'presupuestos', 'compromisos', 'apuntes'];
 
 // Subcarpetas de Drive, creadas DENTRO de la carpeta donde vive la planilla
 // (por ej. "AgriApp"). Así todo lo de la app queda junto al Sheet.
@@ -34,7 +34,8 @@ var COLUMNAS = {
   presupuestos: ['id', 'cliente', 'fecha', 'tipo_trabajo', 'monto_ars',
                  'monto_usd', 'estado', 'trabajo_id', 'notas', 'created_at'],
   compromisos: ['id', 'titulo', 'fecha', 'hora', 'lugar', 'tipo',
-                'trabajo_id', 'nota', 'estado', 'created_at']
+                'trabajo_id', 'nota', 'estado', 'created_at'],
+  apuntes: ['id', 'titulo', 'categoria', 'contenido', 'fuente', 'created_at']
 };
 
 /* ========================================================================
