@@ -22,6 +22,7 @@ var HOJAS = ['trabajos', 'movimientos', 'presupuestos', 'compromisos', 'apuntes'
 // (por ej. "AgriApp"). Así todo lo de la app queda junto al Sheet.
 var CARPETA_COMPROBANTES = 'Comprobantes';
 var CARPETA_PRESUPUESTOS = 'Presupuestos';
+var CARPETA_APUNTES      = 'Normativas';
 
 // Orden y nombre de columnas de cada hoja (solo para que queden prolijas).
 var COLUMNAS = {
@@ -35,7 +36,8 @@ var COLUMNAS = {
                  'monto_usd', 'estado', 'trabajo_id', 'notas', 'created_at'],
   compromisos: ['id', 'titulo', 'fecha', 'hora', 'lugar', 'tipo',
                 'trabajo_id', 'nota', 'estado', 'created_at'],
-  apuntes: ['id', 'titulo', 'categoria', 'contenido', 'fuente', 'created_at']
+  apuntes: ['id', 'titulo', 'categoria', 'contenido', 'fuente',
+            'archivo_url', 'archivo_nombre', 'created_at']
 };
 
 /* ========================================================================
@@ -68,6 +70,7 @@ function ruta(req) {
       case 'update':       out = withLock(function () { return updateRow(req.sheet, req.id, req.data); }); break;
       case 'delete':       out = withLock(function () { return deleteRow(req.sheet, req.id); }); break;
       case 'uploadComprobante':   out = uploadComprobante(req.data); break;
+      case 'uploadArchivo':       out = uploadArchivo(req.data); break;
       case 'guardarPresupuesto':  out = guardarPresupuestoPDF(req.data); break;
       default:             out = { error: 'Acción desconocida: ' + action };
     }
@@ -225,6 +228,19 @@ function getSubcarpeta(base, nombre) {
 
 function getCarpetaComprobantes() { return getSubcarpeta(getCarpetaApp(), CARPETA_COMPROBANTES); }
 function getCarpetaPresupuestos() { return getSubcarpeta(getCarpetaApp(), CARPETA_PRESUPUESTOS); }
+function getCarpetaApuntes()      { return getSubcarpeta(getCarpetaApp(), CARPETA_APUNTES); }
+
+// Sube un archivo (PDF, imagen…) a la subcarpeta indicada por data.carpeta.
+function uploadArchivo(data) {
+  data = data || {};
+  if (!data.base64 || !data.filename) throw new Error('Falta el archivo');
+  var carpeta = data.carpeta === 'apuntes' ? getCarpetaApuntes() : getCarpetaComprobantes();
+  var bytes = Utilities.base64Decode(data.base64);
+  var blob = Utilities.newBlob(bytes, data.mimeType || 'application/octet-stream', data.filename);
+  var file = carpeta.createFile(blob);
+  try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) {}
+  return { ok: true, url: file.getUrl(), id: file.getId(), nombre: data.filename };
+}
 
 function uploadComprobante(data) {
   data = data || {};

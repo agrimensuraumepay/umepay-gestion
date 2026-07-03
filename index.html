@@ -786,6 +786,12 @@ tr:hover td{background:var(--bg)}
         <label>Fuente / Link (opcional)</label>
         <input id="apunte-fuente" placeholder="Ej: https://catastro.cba.gov.ar  o  «Ley 5057, art. 12»">
       </div>
+      <div class="field">
+        <label>📎 Archivo (PDF, imagen) — opcional</label>
+        <input type="file" id="apunte-archivo" accept="image/*,application/pdf,.pdf">
+        <div class="field-hint" id="apunte-archivo-actual"></div>
+        <div class="field-hint">Se guarda en tu Google Drive, carpeta «AgriApp / Normativas».</div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn danger" id="apunte-del-btn" onclick="deleteApunte()" style="margin-right:auto;display:none">Eliminar</button>
@@ -1360,6 +1366,9 @@ function renderApuntes() {
         ? `<div class="apunte-fuente">🔗 <a href="${escHtml(f)}" target="_blank" rel="noopener">${escHtml(f)}</a></div>`
         : `<div class="apunte-fuente">Fuente: ${escHtml(f)}</div>`;
     }
+    const adjunto = a.archivo_url
+      ? `<div class="apunte-fuente">📎 <a href="${escHtml(a.archivo_url)}" target="_blank" rel="noopener">${escHtml(a.archivo_nombre||'Archivo adjunto')}</a></div>`
+      : '';
     return `<div class="trab-card">
       <div class="trab-card-hdr">
         <div><div class="trab-cliente">${escHtml(a.titulo||'(sin título)')}</div></div>
@@ -1367,6 +1376,7 @@ function renderApuntes() {
       </div>
       <div class="apunte-cont">${cont}</div>
       ${fuente}
+      ${adjunto}
       <div class="trab-footer">
         <div class="trab-fecha">${a.created_at ? fmtFecha(a.created_at) : ''}</div>
         <div class="trab-actions">
@@ -1378,8 +1388,9 @@ function renderApuntes() {
   }).join('');
 }
 function nuevoApunte() {
-  ['apunte-id','apunte-titulo','apunte-contenido','apunte-fuente'].forEach(i => document.getElementById(i).value = '');
+  ['apunte-id','apunte-titulo','apunte-contenido','apunte-fuente','apunte-archivo'].forEach(i => document.getElementById(i).value = '');
   document.getElementById('apunte-cat').selectedIndex = 0;
+  document.getElementById('apunte-archivo-actual').innerHTML = '';
   document.getElementById('modal-apunte-title').textContent = 'Nuevo apunte';
   document.getElementById('apunte-del-btn').style.display = 'none';
   openModal('modal-apunte');
@@ -1392,6 +1403,10 @@ function editApunte(id) {
   document.getElementById('apunte-cat').value       = a.categoria || 'Normativa';
   document.getElementById('apunte-contenido').value = a.contenido || '';
   document.getElementById('apunte-fuente').value    = a.fuente || '';
+  document.getElementById('apunte-archivo').value   = '';
+  document.getElementById('apunte-archivo-actual').innerHTML = a.archivo_url
+    ? `Adjunto actual: <a href="${escHtml(a.archivo_url)}" target="_blank" rel="noopener">${escHtml(a.archivo_nombre||'ver archivo')}</a> · elegí otro para reemplazarlo`
+    : '';
   document.getElementById('modal-apunte-title').textContent = 'Editar apunte';
   document.getElementById('apunte-del-btn').style.display = 'inline-flex';
   openModal('modal-apunte');
@@ -1405,6 +1420,21 @@ async function saveApunte() {
     fuente:    document.getElementById('apunte-fuente').value,
   };
   if(!data.titulo || !data.contenido){ toast('Completá título y contenido',true); return; }
+  // Si adjuntó un archivo, lo subimos a Drive (AgriApp/Normativas) y guardamos el link.
+  const file = document.getElementById('apunte-archivo').files[0];
+  if (file) {
+    try {
+      toast('Subiendo archivo…');
+      const base64 = await fileToBase64(file);
+      const up = await api('uploadArchivo', 'apuntes',
+        { data: { base64, filename: file.name, mimeType: file.type, carpeta: 'apuntes' } });
+      data.archivo_url    = up.url;
+      data.archivo_nombre = up.nombre || file.name;
+    } catch(e) {
+      toast('No se pudo subir el archivo: ' + e.message, true);
+      return;
+    }
+  }
   await saveData('apuntes', id, data);
   closeModal('modal-apunte');
 }
