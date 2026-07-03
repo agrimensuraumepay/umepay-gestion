@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Umepay — Calculadora de Honorarios + Presupuesto</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -148,6 +149,14 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
 
 <!-- ═══════════ PRESUPUESTO ═══════════ -->
 <div class="panel" id="panel-presupuesto">
+  <div class="section" style="border-color:var(--green)">
+    <div class="sec-title">📄 Cargar desde reporte de Catastro</div>
+    <div class="field">
+      <label>Reporte de Cuenta (PDF de Catastro Córdoba)</label>
+      <input type="file" id="pdf-reporte" accept="application/pdf,.pdf" onchange="leerReporte(this.files[0])">
+      <div class="hint" id="pdf-status">Subí el «Reporte de Cuenta» y completo solos la nomenclatura, cuenta, designación, departamento, superficie y titular.</div>
+    </div>
+  </div>
   <div class="section">
     <div class="sec-title">Datos del cliente</div>
     <div class="g2">
@@ -603,6 +612,67 @@ async function guardarEnDrive(){
     st.style.color='var(--amber)';
     st.textContent='No se pudo guardar en Drive: '+e.message;
   }
+}
+// ══════════════════════════════════════════════════════════════════
+// LECTOR DE REPORTE DE CATASTRO (PDF → autocompleta el presupuesto)
+// ══════════════════════════════════════════════════════════════════
+async function leerReporte(file){
+  if(!file) return;
+  const st=document.getElementById('pdf-status');
+  const show=(msg,color)=>{ st.textContent=msg; st.style.color=color; };
+  if(!window.pdfjsLib){ show('No se pudo cargar el lector de PDF. ¿Hay internet?','var(--amber)'); return; }
+  show('Leyendo el reporte…','var(--ink2)');
+  try{
+    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const buf=await file.arrayBuffer();
+    const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+    let text='';
+    for(let p=1;p<=pdf.numPages;p++){
+      const page=await pdf.getPage(p);
+      const tc=await page.getTextContent();
+      text += tc.items.map(i=>i.str).join(' ')+'\n';
+    }
+    const d=parseReporte(text, file.name);
+    aplicarReporte(d);
+    if(!d.nomenclatura && !d.cuenta){
+      show('No reconocí los datos. ¿Es un «Reporte de Cuenta» de Catastro Córdoba? Podés completar a mano.','var(--amber)');
+    } else {
+      show('✓ Datos cargados'+(d.cuenta?` (cuenta ${d.cuenta})`:'')+'. Revisá y ajustá lo que haga falta.','var(--green)');
+    }
+  }catch(e){ show('No se pudo leer el PDF: '+e.message,'var(--amber)'); }
+}
+function parseReporte(T, filename){
+  const clean=s=>s?s.replace(/\s+/g,' ').trim():'';
+  const grab=re=>{ const m=T.match(re); return m?clean(m[1]):''; };
+  const d={};
+  d.cuenta       = (filename && (filename.match(/ReporteCuenta_(\d+)/i)||[])[1]) || grab(/Numero de cuenta\s+(\d{9,})/) || grab(/\b(\d{11,12})\b/);
+  d.nomenclatura = grab(/\b(\d{16})\b/);
+  d.rural        = /RESUMEN TIERRA RURAL/i.test(T) || /Tipo de parcela\s+Rural/i.test(T);
+  d.depto        = grab(/(?:Departamento|DPTO\.?)\s+([A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú]+(?:\s+[A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú]+)?)/);
+  d.pedania      = grab(/(?:Pedan[ií]a|Ped\.?|PED\.?)\s+([A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú\.]+(?:\s+[A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú\.]+)?)/);
+  d.localidad    = grab(/ubicad[ao] en\s+([A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú]+)/);
+  d.titular      = grab(/([A-ZÁÉÍÓÚÜÑ]{2,}(?:\s+[A-ZÁÉÍÓÚÜÑ]{2,}){0,4})\s+F[íi]sica\b/).replace(/^TITULARES\s+/i,'').trim();
+  d.valorTierra  = grab(/Base Imponible\s*\$?\s*\(Peso\)\s*([\d.,]+)/i);
+  // superficie: rural "2 Has 6540 m²" / urbana "SUP. DE 410 MTS.2"
+  let m=T.match(/([\d.,]+)\s*Has?\.?\s*([\d.,]+)\s*(?:m²|m2|MS2|MTS)/i);
+  if(m) d.superficie=`${m[1]} ha ${m[2]} m²`;
+  else { m=T.match(/SUP\.?\s*(?:TOTAL|DE)?\.?\s*([\d.,]+)\s*(?:MTS?\.?\s*2|m2|m²|MS2)/i); if(m) d.superficie=`${m[1]} m²`; }
+  // descripción de dominio: entre "Convertido a FRE" y "F. Real:" (si no, arranca en LOTE/FRACCION)
+  m=T.match(/Convertido\s*a FRE\s*([\s\S]*?)\s*F\.\s*Real\s*:/i)
+    || T.match(/INFORMACION DE DOMINIO[\s\S]*?((?:LOTE|FRACCI[OÓ]N)[\s\S]*?)\s*F\.\s*Real\s*:/i);
+  d.designacion = m ? clean(m[1]) : '';
+  return d;
+}
+function aplicarReporte(d){
+  const set=(id,v)=>{ if(v){ const e=document.getElementById(id); if(e) e.value=v; } };
+  set('p-cliente', d.titular);
+  set('p-depto',   d.depto);
+  set('p-loc',     d.localidad || d.pedania);
+  set('p-cuenta',  d.cuenta);
+  set('p-sup',     d.superficie);
+  set('p-nomen',   d.nomenclatura);
+  set('p-desig',   d.designacion);
+  window.reporteData = d; // por si luego sirve para la calculadora (valor tierra, superficie)
 }
 function showTab(name,btn){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
