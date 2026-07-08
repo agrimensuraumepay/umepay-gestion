@@ -438,6 +438,11 @@ function onCat(){
     sf('p_vt', rd.valorTierraNum);
     if(rd.supM2){ sf('p_sup_m2', Math.round(rd.supM2)); sf('p_sup_ha', +(rd.supM2/10000).toFixed(4)); }
   }
+  // Reflejar el tipo de trabajo en el presupuesto (ítem + descripción)
+  if(CAT_TO_PRES[cat]){
+    const pt=document.getElementById('p-tipo');
+    if(pt){ pt.value=CAT_TO_PRES[cat]; if(typeof loadDescripcion==='function') loadDescripcion(); }
+  }
   recalc();
 }
 
@@ -547,6 +552,8 @@ const DESC={
   otro:'',
 };
 const NOMBRES={men_rural:'Mensura simple rural',men_sub:'Mensura y subdivisión',men_union_sub:'Mensura, Unión y Subdivisión',men_posesion:'Mensura para posesión / usucapión',amoj:'Amojonamiento',ca:'Certificado de amojonamiento colegiado',vep:'Verificación de estado parcelario',planialt:'Relevamiento planialtimétrico',croquis:'Croquis de subdivisión',otro:'Trabajo de agrimensura'};
+// Mapea la categoría de la CALCULADORA al tipo de trabajo del PRESUPUESTO (ítem)
+const CAT_TO_PRES={men_urbana_sub:'men_sub',men_union_sub:'men_union_sub',men_rural:'men_rural',men_rural_sub:'men_sub',men_rural_union:'men_union_sub',vep:'vep',ca_urbano:'ca',ca_rural:'ca',altimetria:'planialt',taquimetria:'planialt'};
 function loadDescripcion(){ document.getElementById('p-desc').value=DESC[document.getElementById('p-tipo').value]||''; }
 function fmtFecha(s){ if(!s) return new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}); const [y,m,d]=s.split('-'); const ms=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']; return `${parseInt(d)} de ${ms[m-1]} de ${y}`; }
 function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -607,11 +614,21 @@ function buildDoc(){
   ${notas?`<p style="font-family:sans-serif;font-size:10px;color:#555;margin-top:4px">${esc(notas)}</p>`:''}`;
 }
 function renderPreview(){ document.getElementById('prev-doc').innerHTML=buildDoc(); document.getElementById('preview-wrap').style.display='block'; }
+// Nombre de archivo: Presupuesto_Apellido_TipoDeTrabajo (sin espacios ni acentos)
+function nombreArchivo(){
+  const camel = s => (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^A-Za-z0-9 ]/g,' ').split(/\s+/)
+    .filter(w=>w && !['y','e','o','de','del','la','el','los','las','para','con','a'].includes(w.toLowerCase()))
+    .map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join('');
+  const apellido = ((document.getElementById('p-cliente').value||'').trim().split(/\s+/)[0]) || 'Cliente';
+  const tipo = NOMBRES[document.getElementById('p-tipo').value] || 'Trabajo';
+  return `Presupuesto_${camel(apellido)}_${camel(tipo)}`;
+}
 // Documento HTML completo del presupuesto (withPrint=true agrega el auto-imprimir).
 function docHTML(withPrint){
   const inner=buildDoc();
   const ps = withPrint ? '<scr'+'ipt>window.onload=()=>window.print();<\/scr'+'ipt>' : '';
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Presupuesto Umepay</title><style>*{box-sizing:border-box;margin:0;padding:0}body{background:#fff}.doc{max-width:700px;margin:0 auto;padding:42px 48px;font-size:12px;color:#111;line-height:1.55;font-family:Georgia,serif}@media print{@page{margin:12mm 15mm}}</style></head><body><div class="doc">${inner}</div>${ps}</body></html>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${nombreArchivo()}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{background:#fff}.doc{max-width:700px;margin:0 auto;padding:42px 48px;font-size:12px;color:#111;line-height:1.55;font-family:Georgia,serif}@media print{@page{margin:12mm 15mm}}</style></head><body><div class="doc">${inner}</div>${ps}</body></html>`;
 }
 function imprimirPDF(){
   const win=window.open('','_blank');
@@ -674,20 +691,30 @@ function parseReporte(T, filename){
   d.cuenta       = (filename && (filename.match(/ReporteCuenta_(\d+)/i)||[])[1]) || grab(/Numero de cuenta\s+(\d{9,})/) || grab(/\b(\d{11,12})\b/);
   d.nomenclatura = grab(/\b(\d{16})\b/);
   d.rural        = /RESUMEN TIERRA RURAL/i.test(T) || /Tipo de parcela\s+Rural/i.test(T);
-  d.depto        = grab(/(?:Departamento|DPTO\.?)\s+([A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú]+(?:\s+[A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú]+)?)/);
+  d.depto        = grab(/(?:Departamento|DEPARTAMENTO|Depto\.?|DPTO\.?)\s+([A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú]+(?:\s+[A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú]+)?)/);
   d.pedania      = grab(/(?:Pedan[ií]a|Ped\.?|PED\.?)\s+([A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú\.]+(?:\s+[A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú\.]+)?)/);
-  d.localidad    = grab(/ubicad[ao] en\s+([A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú]+)/);
+  d.localidad    = grab(/municipio de\s+([A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú ]+?)\s*[,;]/i) || grab(/ubicad[ao] en\s+([A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú]+)/);
   d.titular      = grab(/([A-ZÁÉÍÓÚÜÑ]{2,}(?:\s+[A-ZÁÉÍÓÚÜÑ]{2,}){0,4})\s+F[íi]sica\b/).replace(/^TITULARES\s+/i,'').trim();
   d.valorTierra  = grab(/Base Imponible\s*\$?\s*\(Peso\)\s*([\d.,]+)/i);
   d.valorTierraNum = d.valorTierra ? parseFloat(String(d.valorTierra).replace(/,/g,'')) : 0;
-  // superficie: rural "2 Has 6540 m²" / urbana "SUP. DE 410 MTS.2"
+  // superficie del TERRENO (no la edificada). Prioridad:
+  // 1) rural "2 Has 6540 m²"  2) urbana: 1er número de "RESUMEN TIERRA URBANA"  3) "SUP. DE 410 MTS.2"
   let m=T.match(/([\d.,]+)\s*Has?\.?\s*([\d.,]+)\s*(?:m²|m2|MS2|MTS)/i);
-  if(m){ d.superficie=`${m[1]} ha ${m[2]} m²`; d.supM2 = parseFloat(m[1])*10000 + parseFloat(m[2]); }
-  else { m=T.match(/SUP\.?\s*(?:TOTAL|DE)?\.?\s*([\d.,]+)\s*(?:MTS?\.?\s*2|m2|m²|MS2)/i); if(m){ d.superficie=`${m[1]} m²`; d.supM2 = parseFloat(m[1]); } }
+  if(m){ d.supM2 = parseFloat(m[1])*10000 + parseFloat(m[2]); }
+  else { m=T.match(/RESUMEN TIERRA URBANA\s+([\d.,]+)/i); if(m) d.supM2 = parseFloat(m[1]);
+    else { m=T.match(/SUP\.?\s*(?:TOTAL|DE)?\.?\s*([\d.,]+)\s*(?:MTS?\.?\s*2|m2|m²|MS2)/i); if(m) d.supM2 = parseFloat(m[1]); } }
+  if(d.supM2){
+    const ha=d.supM2/10000, haR=Math.round(ha);
+    d.superficie = (haR>=1 && Math.abs(ha-haR)<0.01) ? `${haR} ha`
+      : (d.supM2>=10000 ? `${d.supM2.toLocaleString('es-AR',{maximumFractionDigits:2})} m²` : `${Math.round(d.supM2)} m²`);
+  }
   // descripción de dominio: entre "Convertido a FRE" y "F. Real:" (si no, arranca en LOTE/FRACCION)
   m=T.match(/Convertido\s*a FRE\s*([\s\S]*?)\s*F\.\s*Real\s*:/i)
     || T.match(/INFORMACION DE DOMINIO[\s\S]*?((?:LOTE|FRACCI[OÓ]N)[\s\S]*?)\s*F\.\s*Real\s*:/i);
-  d.designacion = m ? clean(m[1]) : '';
+  let desig = m ? clean(m[1]) : '';
+  desig = desig.split(/,?\s*(?:y\s+)?(?:que\s+)?miden?\s+y\s+lindan?/i)[0];   // saca el "mide y linda..."
+  desig = desig.replace(/\bdesdigna\b/gi,'designa').replace(/[;,.\s]+$/,'').trim();
+  d.designacion = desig;
   return d;
 }
 function aplicarReporte(d){
