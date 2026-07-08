@@ -74,6 +74,14 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
 
 <!-- ═══════════ CALCULADORA ═══════════ -->
 <div class="panel active" id="panel-calc">
+  <div class="section" style="border-color:var(--green)">
+    <div class="sec-title">📄 Cargar valuación desde reporte de Catastro</div>
+    <div class="field">
+      <label>Reporte de Cuenta (PDF)</label>
+      <input type="file" id="pdf-reporte-calc" accept="application/pdf,.pdf" onchange="leerReporte(this.files[0],'calc')">
+      <div class="hint" id="pdf-status-calc">Subí el reporte y tomo la valuación de tierra y la superficie para el cálculo.</div>
+    </div>
+  </div>
   <div class="section">
     <div class="sec-title">Tipo de trabajo</div>
     <div class="g2">
@@ -245,6 +253,8 @@ const C = {
   // Subdivisión urbana Art.52 (regular / irregular: base hasta 10 lotes + excedente)
   sub_reg_base: 73181.616, sub_reg_exc: 12624.512,
   sub_irr_base: 129119.136, sub_irr_exc: 19937.384,
+  // Amojonamiento urbano por lote (Art.53, dentro de mensura+subdivisión)
+  amoj_urb_lote: 12624.512,
   // Unión (valor fijo por unión = medio día de gabinete)
   union_fijo: 66560.8,
   // Amojonamiento / VEP (escala por lotes)
@@ -344,6 +354,7 @@ const PARAMS = {
   men_urbana_sub: [
     {id:'perim_m',label:'Perímetro terreno (m)',ph:'Ej: 160'},
     {id:'edif_m',label:'Perímetro edificado (m)',ph:'0'},
+    {id:'vt',label:'Valuación de tierra ($) — del reporte de Catastro',ph:'Ej: 32015278'},
     {id:'lot_reg',label:'Lotes regulares',ph:'2'},
     {id:'lot_irr',label:'Lotes irregulares',ph:'0'},
     {id:'sup_m2',label:'Superficie total (m2) — Tasa 8',ph:'Ej: 600'},
@@ -351,6 +362,7 @@ const PARAMS = {
   men_union_sub: [
     {id:'perim_m',label:'Perímetro terreno unido (m)',ph:'Ej: 110'},
     {id:'edif_m',label:'Perímetro edificado suma (m)',ph:'Ej: 80'},
+    {id:'vt',label:'Valuación de tierra ($) — del reporte de Catastro',ph:'Ej: 32015278'},
     {id:'unions',label:'Cantidad de uniones',ph:'1'},
     {id:'lot_reg',label:'Lotes regulares resultantes',ph:'2'},
     {id:'lot_irr',label:'Lotes irregulares',ph:'0'},
@@ -419,7 +431,14 @@ function onCat(){
     if(f.type==='select') return `<div class="field"><label>${f.label}</label><select id="p_${f.id}" onchange="recalc()">${f.opts.map(o=>`<option>${o}</option>`).join('')}</select></div>`;
     return `<div class="field"><label>${f.label}</label><input type="number" id="p_${f.id}" placeholder="${f.ph}" oninput="recalc()"></div>`;
   }).join('')}</div>`;
-  ps.style.display='block'; rs.style.display='block'; recalc();
+  ps.style.display='block'; rs.style.display='block';
+  // Si ya se cargó un reporte de Catastro, precargar valuación y superficie
+  if(window.reporteData){
+    const rd=window.reporteData, sf=(id,v)=>{ const e=document.getElementById(id); if(e&&v&&!e.value) e.value=v; };
+    sf('p_vt', rd.valorTierraNum);
+    if(rd.supM2){ sf('p_sup_m2', Math.round(rd.supM2)); sf('p_sup_ha', +(rd.supM2/10000).toFixed(4)); }
+  }
+  recalc();
 }
 
 function recalc(){
@@ -447,15 +466,22 @@ function recalc(){
   else if(['men_urbana','men_urbana_sub','men_union_sub'].includes(cat)){
     const L=gv('perim_m'),Ed=gv('edif_m'),VT=gv('vt');
     const mensura = Math.max(C.u_por_m*(L+Ed) + diagUrb(VT), C.u_min);
-    let sub=0, uni=0;
-    if(cat!=='men_urbana'){ sub=subUrb(gv('lot_reg'), gv('lot_irr')); }
+    let sub=0, amoj=0, uni=0;
+    if(cat!=='men_urbana'){
+      const lr=gv('lot_reg'), li=gv('lot_irr');
+      // Art.52: subdivisión = cantidad de lotes × base (regular / irregular)
+      sub  = lr*C.sub_reg_base + li*C.sub_irr_base;
+      // Art.53: amojonamiento por cada lote
+      amoj = (lr+li)*C.amoj_urb_lote;
+    }
     if(cat==='men_union_sub'){ uni=gv('unions')*C.union_fijo; }
-    hon = mensura + sub + uni;
+    hon = mensura + sub + amoj + uni;
     const lotes=(gv('lot_reg')||0)+(gv('lot_irr')||0)||1, S2=gv('sup_m2');
     t8 = t8Urb(lotes, S2); tcp = tcpUrb(lotes);
     det=[{k:'Mensura Art.53',v:mensura}];
-    if(sub>0) det.push({k:'Subdivisión Art.52',v:sub});
-    if(uni>0) det.push({k:'Unión (fijo)',v:uni});
+    if(sub>0)  det.push({k:'Subdivisión Art.52',v:sub});
+    if(amoj>0) det.push({k:'Amojonamiento Art.53',v:amoj});
+    if(uni>0)  det.push({k:'Unión (fijo)',v:uni});
   }
   else if(cat==='vep'){
     const n=gv('lotes')||1; hon=vepEscala(n); t8=C.t8_N21; tcp=0;
@@ -616,9 +642,9 @@ async function guardarEnDrive(){
 // ══════════════════════════════════════════════════════════════════
 // LECTOR DE REPORTE DE CATASTRO (PDF → autocompleta el presupuesto)
 // ══════════════════════════════════════════════════════════════════
-async function leerReporte(file){
+async function leerReporte(file, ctx){
   if(!file) return;
-  const st=document.getElementById('pdf-status');
+  const st=document.getElementById(ctx==='calc'?'pdf-status-calc':'pdf-status');
   const show=(msg,color)=>{ st.textContent=msg; st.style.color=color; };
   if(!window.pdfjsLib){ show('No se pudo cargar el lector de PDF. ¿Hay internet?','var(--amber)'); return; }
   show('Leyendo el reporte…','var(--ink2)');
@@ -653,10 +679,11 @@ function parseReporte(T, filename){
   d.localidad    = grab(/ubicad[ao] en\s+([A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú]+)/);
   d.titular      = grab(/([A-ZÁÉÍÓÚÜÑ]{2,}(?:\s+[A-ZÁÉÍÓÚÜÑ]{2,}){0,4})\s+F[íi]sica\b/).replace(/^TITULARES\s+/i,'').trim();
   d.valorTierra  = grab(/Base Imponible\s*\$?\s*\(Peso\)\s*([\d.,]+)/i);
+  d.valorTierraNum = d.valorTierra ? parseFloat(String(d.valorTierra).replace(/,/g,'')) : 0;
   // superficie: rural "2 Has 6540 m²" / urbana "SUP. DE 410 MTS.2"
   let m=T.match(/([\d.,]+)\s*Has?\.?\s*([\d.,]+)\s*(?:m²|m2|MS2|MTS)/i);
-  if(m) d.superficie=`${m[1]} ha ${m[2]} m²`;
-  else { m=T.match(/SUP\.?\s*(?:TOTAL|DE)?\.?\s*([\d.,]+)\s*(?:MTS?\.?\s*2|m2|m²|MS2)/i); if(m) d.superficie=`${m[1]} m²`; }
+  if(m){ d.superficie=`${m[1]} ha ${m[2]} m²`; d.supM2 = parseFloat(m[1])*10000 + parseFloat(m[2]); }
+  else { m=T.match(/SUP\.?\s*(?:TOTAL|DE)?\.?\s*([\d.,]+)\s*(?:MTS?\.?\s*2|m2|m²|MS2)/i); if(m){ d.superficie=`${m[1]} m²`; d.supM2 = parseFloat(m[1]); } }
   // descripción de dominio: entre "Convertido a FRE" y "F. Real:" (si no, arranca en LOTE/FRACCION)
   m=T.match(/Convertido\s*a FRE\s*([\s\S]*?)\s*F\.\s*Real\s*:/i)
     || T.match(/INFORMACION DE DOMINIO[\s\S]*?((?:LOTE|FRACCI[OÓ]N)[\s\S]*?)\s*F\.\s*Real\s*:/i);
@@ -665,6 +692,7 @@ function parseReporte(T, filename){
 }
 function aplicarReporte(d){
   const set=(id,v)=>{ if(v){ const e=document.getElementById(id); if(e) e.value=v; } };
+  // Campos del presupuesto
   set('p-cliente', d.titular);
   set('p-depto',   d.depto);
   set('p-loc',     d.localidad || d.pedania);
@@ -672,7 +700,12 @@ function aplicarReporte(d){
   set('p-sup',     d.superficie);
   set('p-nomen',   d.nomenclatura);
   set('p-desig',   d.designacion);
-  window.reporteData = d; // por si luego sirve para la calculadora (valor tierra, superficie)
+  window.reporteData = d;
+  // Campos de la calculadora (si ya están creados): valuación de tierra y superficie
+  set('p_vt', d.valorTierraNum || '');
+  if(d.supM2){ set('p_sup_m2', Math.round(d.supM2)); set('p_sup_ha', +(d.supM2/10000).toFixed(4)); }
+  const cat=document.getElementById('cat');
+  if(typeof recalc==='function' && cat && cat.value) recalc();
 }
 function showTab(name,btn){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
