@@ -362,22 +362,26 @@ tr:hover td{background:var(--bg)}
     <div class="dcard"><div class="dcard-label">Presupuestos</div><div class="dcard-val" id="d-pres">—</div></div>
   </div>
   <div class="balance-card">
-    <div class="balance-title">Balance entre socios (gastos pagados)</div>
+    <div class="balance-title">Balance entre socios — plata sin repartir</div>
     <div class="balance-row">
       <div class="balance-who">Santiago</div>
       <div class="balance-amounts">
-        <span id="bs-stg-ars">ARS —</span>
-        <span id="bs-stg-usd">USD —</span>
+        <span id="bs-stg-ars">—</span>
+        <span id="bs-stg-usd">—</span>
       </div>
     </div>
     <div class="balance-row">
       <div class="balance-who">Julia</div>
       <div class="balance-amounts">
-        <span id="bs-jul-ars">ARS —</span>
-        <span id="bs-jul-usd">USD —</span>
+        <span id="bs-jul-ars">—</span>
+        <span id="bs-jul-usd">—</span>
       </div>
     </div>
     <div class="balance-verdict" id="balance-verdict">—</div>
+    <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <div style="font-size:11px;color:var(--ink3);max-width:420px">Cuenta solo lo que todavía no se dividió. Cuando se repartan la plata, tocá el botón — o marcá movimiento por movimiento desde Ingresos/Gastos.</div>
+      <button class="btn sm success" onclick="saldarTodo()">💸 Ya repartimos</button>
+    </div>
   </div>
   <div class="sec-hdr"><div class="sec-title">Trabajos por estado</div></div>
   <div id="dash-estados" class="dash-grid"></div>
@@ -726,6 +730,13 @@ tr:hover td{background:var(--bg)}
         </select>
       </div>
       <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;text-transform:none;letter-spacing:0">
+          <input type="checkbox" id="mov-repartido" style="width:auto;margin:0">
+          💸 Esta plata ya está repartida entre los socios
+        </label>
+        <div class="field-hint">Si la marcás, no suma al balance de «quién le debe a quién» del Dashboard.</div>
+      </div>
+      <div class="field">
         <label>📎 Comprobante (foto o PDF) — opcional</label>
         <input type="file" id="mov-comprobante" accept="image/*,application/pdf,.pdf">
         <div class="field-hint">Se guarda en tu Google Drive, carpeta «Umepay - Comprobantes».</div>
@@ -1061,11 +1072,12 @@ function renderDashboardLocal() {
   const gastUSD = gastos.filter(m=>m.moneda==='U$D').reduce((a,b)=>a+n(b.monto),0);
   const balARS  = ingARS - gastARS;
   const balUSD  = ingUSD - gastUSD;
-  const stgARS  = gastos.filter(m=>m.quien_pago==='Santiago'&&m.moneda==='$').reduce((a,b)=>a+n(b.monto),0);
-  const julARS  = gastos.filter(m=>m.quien_pago==='Julia'&&m.moneda==='$').reduce((a,b)=>a+n(b.monto),0);
-  const stgUSD  = gastos.filter(m=>m.quien_pago==='Santiago'&&m.moneda==='U$D').reduce((a,b)=>a+n(b.monto),0);
-  const julUSD  = gastos.filter(m=>m.quien_pago==='Julia'&&m.moneda==='U$D').reduce((a,b)=>a+n(b.monto),0);
-  const difARS  = stgARS - julARS;
+  // Balance entre socios: solo cuenta movimientos SIN repartir ("Ambos" ya nació dividido)
+  const pendRep = movs.filter(m => !esRepartido(m) && m.quien_pago !== 'Ambos');
+  const sumP = (tipo, quien, mon) => pendRep.filter(m=>m.tipo===tipo&&m.quien_pago===quien&&m.moneda===mon).reduce((a,b)=>a+n(b.monto),0);
+  // positivo → Santiago le debe a Julia: mitad de lo que Julia puso + mitad de lo que Santiago cobró
+  const neto = mon => (sumP('egreso','Julia',mon) + sumP('ingreso','Santiago',mon)
+                     - sumP('egreso','Santiago',mon) - sumP('ingreso','Julia',mon)) / 2;
   const by = id => document.getElementById(id);
   const fmt = (v,mon) => mon + ' ' + Math.abs(v).toLocaleString('es-AR',{maximumFractionDigits:0});
   by('d-ing-ars').textContent = fmt(ingARS,'$');
@@ -1086,20 +1098,34 @@ function renderDashboardLocal() {
   });
   by('d-cobrar-ars').textContent = fmt(pcARS,'$');
   by('d-cobrar-usd').textContent = fmt(pcUSD,'U$D');
-  by('bs-stg-ars').textContent = '$ ' + stgARS.toLocaleString('es-AR',{maximumFractionDigits:0});
-  by('bs-stg-usd').textContent = 'U$D ' + stgUSD.toLocaleString('es-AR',{maximumFractionDigits:0});
-  by('bs-jul-ars').textContent = '$ ' + julARS.toLocaleString('es-AR',{maximumFractionDigits:0});
-  by('bs-jul-usd').textContent = 'U$D ' + julUSD.toLocaleString('es-AR',{maximumFractionDigits:0});
+  // Qué cobró y qué puso cada uno (solo lo pendiente de repartir)
+  const resumenP = (quien, mon) => {
+    const c = sumP('ingreso', quien, mon), g = sumP('egreso', quien, mon);
+    if(!c && !g) return '';
+    const partes = [];
+    if(c) partes.push('cobró ' + fmtPlata(c, mon));
+    if(g) partes.push('puso ' + fmtPlata(g, mon));
+    return partes.join(' · ');
+  };
+  by('bs-stg-ars').textContent = resumenP('Santiago','$') || '—';
+  by('bs-stg-usd').textContent = resumenP('Santiago','U$D');
+  by('bs-jul-ars').textContent = resumenP('Julia','$') || '—';
+  by('bs-jul-usd').textContent = resumenP('Julia','U$D');
   const verd = by('balance-verdict');
-  if (Math.abs(difARS) < 500) {
+  const frases = [];
+  [['$',500],['U$D',1]].forEach(([mon,tol]) => {
+    const v = neto(mon);
+    if(Math.abs(v) < tol) return;
+    const deudor   = v > 0 ? 'Santiago' : 'Julia';
+    const acreedor = v > 0 ? 'Julia' : 'Santiago';
+    frases.push(`${deudor} le debe ${fmtPlata(Math.abs(v), mon)} a ${acreedor}`);
+  });
+  if (!frases.length) {
     verd.className = 'balance-verdict even';
-    verd.textContent = '✓ Los gastos están equilibrados entre los dos socios';
+    verd.textContent = '✓ Están a mano — no hay plata pendiente de repartir';
   } else {
     verd.className = 'balance-verdict uneven';
-    const deudor = difARS > 0 ? 'Julia' : 'Santiago';
-    const acreedor = difARS > 0 ? 'Santiago' : 'Julia';
-    const monto = Math.abs(difARS).toLocaleString('es-AR',{maximumFractionDigits:0});
-    verd.textContent = `${deudor} le debe $ ${monto} ARS a ${acreedor} para equilibrar los gastos`;
+    verd.textContent = frases.join(' · ') + ' para quedar a mano';
   }
   const porEstado = {};
   DB.trabajos.forEach(t => { porEstado[t.estado||'Sin estado'] = (porEstado[t.estado||'Sin estado']||0)+1; });
@@ -1522,6 +1548,28 @@ async function deleteTrabajo(id) {
 // ==============================
 // MOVIMIENTOS
 // ==============================
+// ¿Este movimiento ya fue repartido entre los socios? (la planilla puede devolver '1', 1 o TRUE)
+function esRepartido(m){ return ['1','true'].includes(String(m.repartido||'').toLowerCase()); }
+async function toggleRepartido(id){
+  const m = DB.movimientos.find(x=>x.id===id);
+  if(!m) return;
+  await saveData('movimientos', id, { repartido: esRepartido(m) ? '' : '1' });
+}
+// Botón del Dashboard: cuando se dividen la plata, marca todo lo pendiente como repartido
+async function saldarTodo(){
+  const pend = DB.movimientos.filter(m => !esRepartido(m) && m.quien_pago !== 'Ambos');
+  if(!pend.length){ toast('No hay nada pendiente de repartir ✓'); return; }
+  if(!confirm(`Se van a marcar ${pend.length} movimiento(s) como repartidos y el balance queda en cero. ¿Ya se dividieron la plata?`)) return;
+  toast('Guardando…');
+  try {
+    for(const m of pend){
+      await api('update', 'movimientos', { id: m.id, data: { repartido: '1' } });
+      m.repartido = '1';
+    }
+    toast('Balance saldado ✓ Están a mano');
+  } catch(e){ toast('Error al saldar: ' + e.message, true); }
+  renderAll();
+}
 function renderMovimientos() {
   const filtro = document.getElementById('filtro-tipo').value;
   let list = DB.movimientos.filter(m => !filtro || m.tipo === filtro);
@@ -1543,13 +1591,17 @@ function renderMovimientos() {
   tbody.innerHTML = list.map(m => {
     const isIng = m.tipo === 'ingreso';
     const montoStr = (isIng?'+':'-') + ' ' + m.moneda + ' ' + Math.abs(parseFloat(m.monto)||0).toLocaleString('es-AR',{maximumFractionDigits:0});
+    // "Ambos" ya nació dividido; para el resto, badge tocable pendiente/repartido
+    const rep = esRepartido(m);
+    const repBadge = m.quien_pago === 'Ambos' ? '' :
+      ` <span class="badge ${rep?'badge-green':'badge-amber'}" style="cursor:pointer" title="Tocar para marcar ${rep?'pendiente':'repartido'}" onclick="toggleRepartido('${m.id}')">${rep?'✓ Repartido':'½ Pendiente'}</span>`;
     return `<tr>
       <td>${fmtFecha(m.fecha)}</td>
       <td><span class="badge ${isIng?'badge-green':'badge-amber'}">${isIng?'Ingreso':'Gasto'}</span></td>
       <td>${m.descripcion||''}${m.comprobante_url?` <a href="${m.comprobante_url}" target="_blank" rel="noopener" title="Ver comprobante" style="text-decoration:none">📎</a>`:''}</td>
       <td style="font-weight:500;color:${isIng?'var(--green)':'var(--amber)'}">${montoStr}</td>
       <td>${m.forma_pago}</td>
-      <td>${m.quien_pago}</td>
+      <td>${m.quien_pago}${repBadge}</td>
       <td><span class="badge badge-gray">${m.categoria}</span></td>
       <td><button class="btn sm danger" onclick="deleteMovimiento('${m.id}')">✕</button></td>
     </tr>`;
@@ -1581,6 +1633,7 @@ async function saveMovimiento() {
     quien_pago: document.getElementById('mov-quien').value,
     categoria:  document.getElementById('mov-cat').value,
     trabajo_id: document.getElementById('mov-trabajo').value,
+    repartido:  document.getElementById('mov-repartido').checked ? '1' : '',
   };
   if(!data.monto || !data.fecha){ toast('Completá monto y fecha',true); return; }
   // Si adjuntó un comprobante, lo subimos a Drive y guardamos el link.
@@ -1963,6 +2016,7 @@ function nuevoMovimiento() {
   document.getElementById('mov-tipo').selectedIndex = 0;
   document.getElementById('mov-fecha').value = new Date().toISOString().split('T')[0];
   document.getElementById('mov-comprobante').value = '';
+  document.getElementById('mov-repartido').checked = false;
   updateMovLabel();
   openModal('modal-movimiento');
 }
