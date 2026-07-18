@@ -399,7 +399,7 @@ tr:hover td{background:var(--bg)}
         <option value="Pausado">Pausado</option>
         <option value="Esperando cliente">Esperando cliente</option>
         <option value="Finalizado">Finalizado</option>
-        <option value="Cobrado">Cobrado</option>
+        <option value="Cobrado">Terminado y cobrado</option>
       </select>
       <button class="btn success" onclick="nuevoTrabajo()">+ Nuevo trabajo</button>
     </div>
@@ -590,7 +590,7 @@ tr:hover td{background:var(--bg)}
             <option>Pausado</option>
             <option>Esperando cliente</option>
             <option>Finalizado</option>
-            <option>Cobrado</option>
+            <option value="Cobrado">Terminado y cobrado</option>
           </select>
         </div>
         <div class="field">
@@ -825,7 +825,7 @@ tr:hover td{background:var(--bg)}
             <option>Pausado</option>
             <option>Esperando cliente</option>
             <option>Finalizado</option>
-            <option>Cobrado</option>
+            <option value="Cobrado">Terminado y cobrado</option>
           </select>
         </div>
         <div class="field">
@@ -1217,6 +1217,48 @@ function cobradoDe(t){
   };
 }
 function fmtPlata(v, mon){ return (mon==='U$D'?'U$D ':'$ ') + Math.round(v).toLocaleString('es-AR'); }
+// Agrega una línea a la bitácora del trabajo sin pisar lo anterior
+async function anotarEnBitacora(t, texto){
+  const ahora = new Date().toISOString();
+  const hist = historialDe(t);
+  if(!hist.length && t.comentario)
+    hist.push({ f: t.fecha_estado || t.created_at || ahora, t: t.comentario, e: t.estado || '' });
+  hist.push({ f: ahora, t: texto, e: t.estado || '' });
+  await saveData('trabajos', t.id, { historial: JSON.stringify(hist), fecha_estado: ahora });
+}
+// Saldo pendiente de cobro de un trabajo, por moneda
+function saldoDe(t){
+  const c = cobradoDe(t);
+  return {
+    ars: (parseFloat(t.monto_ars)||0) - c.ars,
+    usd: (parseFloat(t.monto_usd)||0) - c.usd
+  };
+}
+// Botón «💰 Cobro» de la tarjeta: abre el ingreso pre-completado con el saldo pendiente.
+// Registra la plata sin tocar el estado del trabajo (cobrado no es lo mismo que terminado).
+function registrarCobro(id){
+  const t = DB.trabajos.find(x=>x.id===id);
+  if(!t) return;
+  const s = saldoDe(t);
+  const [monto, moneda] = s.ars > 0 ? [s.ars,'$'] : (s.usd > 0 ? [s.usd,'U$D'] : [0,'$']);
+  nuevoMovimiento();
+  document.getElementById('mov-tipo').value = 'ingreso';
+  updateMovLabel();
+  document.getElementById('mov-desc').value = `Cobro ${t.cliente} — ${t.tipo_trabajo}`;
+  if(monto > 0) document.getElementById('mov-monto').value = monto;
+  document.getElementById('mov-moneda').value = moneda;
+  document.getElementById('mov-cat').value = 'Honorarios';
+  document.getElementById('mov-trabajo').value = t.id;
+  if(s.ars > 0 && s.usd > 0) toast('Ojo: también queda saldo en U$D, cargalo aparte');
+}
+// Al marcar un trabajo como Terminado y cobrado: si falta registrar plata, ofrece cargar el ingreso
+function ofrecerIngresoPorCobro(t){
+  const s = saldoDe(t);
+  const [monto, moneda] = s.ars > 0 ? [s.ars,'$'] : (s.usd > 0 ? [s.usd,'U$D'] : [0,'']);
+  if(monto <= 0) return;
+  if(!confirm(`${t.cliente}: falta registrar el cobro de ${fmtPlata(monto,moneda)}. ¿Cargarlo ahora en Ingresos?`)) return;
+  registrarCobro(t.id);
+}
 function diasDesde(s){
   if(!s) return null;
   const d = new Date(s); if(isNaN(d)) return null;
@@ -1297,6 +1339,8 @@ function renderTrabajos() {
     const hist = historialDe(t);
     const venc = proxVencimientoDe(t);
     const limite = t.fecha_limite ? diasDesde(t.fecha_limite) : null; // negativo = faltan días
+    const s = saldoDe(t);
+    const tieneSaldo = t.estado !== 'Cobrado' && (s.ars > 0 || s.usd > 0);
     return `
     <div class="trab-card">
       <div class="trab-card-hdr">
@@ -1322,6 +1366,7 @@ function renderTrabajos() {
         <div class="trab-fecha">${t.fecha_inicio ? 'Inicio: ' + fmtFecha(t.fecha_inicio) : ''}</div>
         <div class="trab-monto">${fmtMonto(t)}</div>
         <div class="trab-actions">
+          ${tieneSaldo ? `<button class="btn sm success" onclick="registrarCobro('${t.id}')" title="Registrar un pago de este trabajo">💰 Cobro</button>` : ''}
           <button class="btn sm" onclick="openEstado('${t.id}')">＋ Actualización</button>
           <button class="btn sm" onclick="editTrabajo('${t.id}')">✎ Editar</button>
           <button class="btn sm danger" onclick="deleteTrabajo('${t.id}')">✕</button>
@@ -1376,6 +1421,7 @@ async function saveEstado() {
   if(!t) return;
   const ahora = new Date().toISOString();
   const estado = document.getElementById('est-estado').value;
+  const estadoAnterior = t.estado;
   const texto  = document.getElementById('est-comentario').value.trim();
   const data = {
     estado,
@@ -1394,6 +1440,8 @@ async function saveEstado() {
   }
   await saveData('trabajos', id, data);
   closeModal('modal-estado');
+  // Si lo marcó como Cobrado y falta registrar el ingreso, lo ofrece pre-cargado
+  if (estado === 'Cobrado' && estadoAnterior !== 'Cobrado') ofrecerIngresoPorCobro(t);
 }
 // Etapas que se están editando en el modal de trabajo
 let modalEtapas = [];
@@ -1431,6 +1479,7 @@ async function saveTrabajo() {
   if(!data.cliente){ toast('El cliente es obligatorio',true); return; }
   // Si cambió el comentario, el anterior no se pierde: va al historial
   const t = id ? DB.trabajos.find(x=>x.id===id) : null;
+  const estadoAnterior = t ? t.estado : '';
   if (t && data.comentario.trim() && data.comentario.trim() !== (t.comentario||'').trim()) {
     const hist = historialDe(t);
     if(!hist.length && t.comentario)
@@ -1442,6 +1491,8 @@ async function saveTrabajo() {
   if (!t) data.fecha_estado = ahora;
   await saveData('trabajos', id, data);
   closeModal('modal-trabajo');
+  // Si lo marcó como Cobrado y falta registrar el ingreso, lo ofrece pre-cargado
+  if (t && data.estado === 'Cobrado' && estadoAnterior !== 'Cobrado') ofrecerIngresoPorCobro(t);
 }
 function editTrabajo(id) {
   const t = DB.trabajos.find(x=>x.id===id);
@@ -1547,8 +1598,28 @@ async function saveMovimiento() {
       return; // no guardamos el movimiento si falló la subida
     }
   }
+  const esNuevo = !id;
   await saveData('movimientos', id, data);
   closeModal('modal-movimiento');
+  // Si es un cobro nuevo vinculado a un trabajo, queda anotado solo en la bitácora
+  if (esNuevo && data.tipo === 'ingreso' && data.trabajo_id) {
+    const t = DB.trabajos.find(x => x.id === data.trabajo_id);
+    if (t) {
+      const monto = parseFloat(data.monto) || 0;
+      const texto = `Cobro registrado: ${fmtPlata(monto, data.moneda)} (${data.forma_pago})${data.descripcion ? ' — ' + data.descripcion : ''}`;
+      await anotarEnBitacora(t, texto);
+      const c = cobradoDe(t);
+      const totA = parseFloat(t.monto_ars) || 0, totU = parseFloat(t.monto_usd) || 0;
+      const completo = (totA > 0 || totU > 0) && c.ars >= totA && c.usd >= totU;
+      // Pagado no es lo mismo que terminado: solo ofrece archivar si el trabajo ya estaba Finalizado
+      if (completo && t.estado === 'Finalizado' &&
+          confirm(`${t.cliente}: quedó todo pagado y el trabajo estaba Finalizado. ¿Pasarlo a "Terminado y cobrado"?`)) {
+        await saveData('trabajos', t.id, { estado: 'Cobrado', fecha_estado: new Date().toISOString() });
+      } else if (completo && t.estado !== 'Cobrado') {
+        toast(`${t.cliente}: quedó todo pagado ✓ — el trabajo sigue activo`);
+      }
+    }
+  }
 }
 async function deleteMovimiento(id) {
   if(!confirm('¿Eliminar este movimiento?')) return;
