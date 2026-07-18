@@ -79,6 +79,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 .cal-ev.t-entrega{background:var(--amber)}
 .cal-ev.t-otro{background:var(--ink3)}
 .cal-ev.done{opacity:.55;text-decoration:line-through}
+.cal-ev.nohecho{opacity:.4;background:var(--ink3);text-decoration:line-through}
 .cal-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:10px;color:var(--ink3)}
 .cal-legend span{display:inline-flex;align-items:center;gap:5px}
 .cal-dot{width:9px;height:9px;border-radius:2px;display:inline-block}
@@ -960,6 +961,7 @@ tr:hover td{background:var(--bg)}
           <select id="comp-estado">
             <option>Pendiente</option>
             <option>Hecho</option>
+            <option>No se hizo</option>
           </select>
         </div>
       </div>
@@ -1154,14 +1156,18 @@ function renderAccionPanel() {
   const activos = DB.trabajos.filter(ACTIVOS);
   // 1) Vencen pronto: eventos pendientes (vencidos o dentro de 7 días) + fechas límite de trabajos
   const items1 = [];
-  DB.compromisos.filter(c => c.estado !== 'Hecho' && c.fecha).forEach(c => {
+  DB.compromisos.filter(c => !['Hecho','No se hizo'].includes(c.estado) && c.fecha).forEach(c => {
     const f = (c.fecha||'').split('T')[0];
     const dd = diasDesde(f);
     if(dd === null) return;
     const dias = -dd; // positivo = faltan días
     if(dias > 7) return;
+    // Si ya pasó, botones rápidos para resolverlo sin abrir el evento
+    const extra = dias < 0 ? `<span style="display:flex;gap:4px;margin-left:auto">
+      <button class="btn sm" onclick="event.stopPropagation();marcarCompromiso('${c.id}','Hecho')" title="La reunión se tuvo">✓ Se hizo</button>
+      <button class="btn sm" onclick="event.stopPropagation();marcarCompromiso('${c.id}','No se hizo')" title="No se concretó">✗ No</button></span>` : '';
     items1.push({ f, dias, html: `<b>${escHtml(c.titulo||'(sin título)')}</b>${c.tipo?` · ${escHtml(c.tipo)}`:''}`,
-      onclick: `editCompromiso('${c.id}')` });
+      onclick: `editCompromiso('${c.id}')`, extra });
   });
   activos.filter(t => t.fecha_limite).forEach(t => {
     const f = t.fecha_limite.split('T')[0];
@@ -1196,7 +1202,7 @@ function renderAccionPanel() {
   panel.style.display = 'block';
   grid.innerHTML = `
     <div><div class="accion-col-t">⏰ Vence pronto</div>${
-      items1.map(i=>`<div class="accion-item" onclick="${i.onclick}"><span>${fmtFecha(i.f).slice(0,5)}</span><span>${i.html}</span>${cuando(i.dias)}</div>`).join('') || vacio}</div>
+      items1.map(i=>`<div class="accion-item" onclick="${i.onclick}"><span>${fmtFecha(i.f).slice(0,5)}</span><span>${i.html}</span>${cuando(i.dias)}${i.extra||''}</div>`).join('') || vacio}</div>
     <div><div class="accion-col-t">▸ Próximos pasos</div>${items2.join('') || vacio}</div>
     <div><div class="accion-col-t">⚠ Sin novedades</div>${items3.join('') || vacio}</div>`;
 }
@@ -1346,7 +1352,7 @@ async function toggleEtapaCard(id, idx){
 function proxVencimientoDe(t){
   const hoy = new Date().toISOString().split('T')[0];
   return DB.compromisos
-    .filter(c => c.trabajo_id === t.id && c.estado !== 'Hecho' && (c.fecha||'').split('T')[0] >= hoy)
+    .filter(c => c.trabajo_id === t.id && !['Hecho','No se hizo'].includes(c.estado) && (c.fecha||'').split('T')[0] >= hoy)
     .sort((a,b) => new Date(a.fecha) - new Date(b.fecha))[0];
 }
 function renderTrabajos() {
@@ -1763,7 +1769,7 @@ function renderCalendar() {
     const chips = evs.map(c => {
       const hora = fmtHora(c.hora);
       const lbl = (hora ? hora + ' ' : '') + (c.titulo || '(sin título)');
-      return `<div class="cal-ev ${tipoClase(c.tipo)}${c.estado==='Hecho'?' done':''}" title="${escHtml(lbl)}"
+      return `<div class="cal-ev ${tipoClase(c.tipo)}${c.estado==='Hecho'?' done':(c.estado==='No se hizo'?' nohecho':'')}" title="${escHtml(lbl)}"
         onclick="event.stopPropagation();editCompromiso('${c.id}')">${escHtml(lbl)}</div>`;
     }).join('');
     html += `<div class="cal-cell${key===hoy?' today':''}" onclick="nuevoCompromiso('${key}')">
@@ -1815,6 +1821,10 @@ async function saveCompromiso() {
   if(!data.titulo || !data.fecha){ toast('Completá título y fecha',true); return; }
   await saveData('compromisos', id, data);
   closeModal('modal-compromiso');
+}
+// Botones rápidos del panel "Vence pronto": marca el evento sin abrir el modal
+async function marcarCompromiso(id, estado){
+  await saveData('compromisos', id, { estado });
 }
 async function deleteCompromiso() {
   const id = document.getElementById('comp-id').value;
