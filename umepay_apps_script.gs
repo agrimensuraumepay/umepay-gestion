@@ -128,7 +128,16 @@ function ensureColumns(sh, headers, keys) {
 
 function cellToStr(v) {
   if (v === null || v === undefined) return '';
-  if (Object.prototype.toString.call(v) === '[object Date]') return v.toISOString();
+  if (Object.prototype.toString.call(v) === '[object Date]') {
+    // Las celdas de HORA llegan como fechas del año 1899 (formato interno de
+    // Sheets). Se devuelven como "HH:mm" en la zona horaria de la planilla,
+    // para que la app no muestre fechas raras tipo "1899-12-30T...".
+    if (v.getFullYear() < 1970) {
+      var tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+      return Utilities.formatDate(v, tz, 'HH:mm');
+    }
+    return v.toISOString();
+  }
   return String(v);
 }
 

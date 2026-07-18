@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Umepay">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,wght@0,300;0,500;0,700;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,wght@0,300;0,500;0,700;1,300&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -24,10 +24,12 @@
   --red:#9b1c1c;--red2:#fee2e2;
   --blue:#1e3a5f;--blue2:#dbeafe;
   --border:#ddd8ce;--border2:#c8c2b6;
-  --mono:'DM Mono',monospace;--serif:'Fraunces',serif;
+  --mono:'DM Mono',monospace;--serif:'Fraunces',serif;--sans:'Inter',system-ui,sans-serif;
   --r:9px;--sh:0 1px 3px rgba(28,25,23,.07),0 4px 12px rgba(28,25,23,.05);
 }
-body{font-family:var(--mono);background:var(--bg);color:var(--ink);min-height:100vh;font-size:13px}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;font-size:13.5px}
+/* Números siempre alineados (tablas, montos) */
+.num,.dcard-val,.trab-monto,td{font-variant-numeric:tabular-nums}
 /* ── TOPBAR ── */
 .topbar{background:var(--ink);color:#fff;height:50px;display:flex;align-items:center;
   justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:100}
@@ -41,14 +43,14 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);min-height:10
 /* ── NAV TABS ── */
 .nav{background:var(--surface);border-bottom:1px solid var(--border);
   display:flex;gap:2px;padding:0 20px;overflow-x:auto}
-.nav-btn{font-family:var(--mono);font-size:12px;padding:12px 18px;border:none;
+.nav-btn{font-family:var(--sans);font-size:12.5px;padding:12px 18px;border:none;
   background:none;cursor:pointer;color:var(--ink3);border-bottom:2px solid transparent;
   white-space:nowrap;transition:all .12s;letter-spacing:.02em}
 .nav-btn:hover{color:var(--ink)}
 .nav-btn.active{color:var(--green);border-bottom-color:var(--green);font-weight:500}
 /* ── SUB-NAV (dentro de una pestaña) ── */
 .subnav{display:flex;gap:2px;margin-bottom:18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
-.subnav-btn{font-family:var(--mono);font-size:12px;padding:9px 16px;border:none;background:none;
+.subnav-btn{font-family:var(--sans);font-size:12.5px;padding:9px 16px;border:none;background:none;
   cursor:pointer;color:var(--ink3);border-bottom:2px solid transparent;transition:all .12s}
 .subnav-btn:hover{color:var(--ink)}
 .subnav-btn.active{color:var(--green);border-bottom-color:var(--green);font-weight:500}
@@ -113,7 +115,7 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);min-height:10
 /* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;
   border:1px solid var(--border2);background:var(--surface);color:var(--ink);
-  font-family:var(--mono);font-size:12px;cursor:pointer;transition:all .12s;white-space:nowrap}
+  font-family:var(--sans);font-size:12.5px;cursor:pointer;transition:all .12s;white-space:nowrap}
 .btn:hover{background:var(--bg2);border-color:var(--ink3)}
 .btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
 .btn.primary:hover{background:#333}
@@ -156,7 +158,7 @@ tr:hover td{background:var(--bg)}
 .field:last-child{margin-bottom:0}
 .field label{font-size:11px;letter-spacing:.04em;color:var(--ink2);font-weight:500}
 .field input,.field select,.field textarea{
-  font-family:var(--mono);font-size:13px;color:var(--ink);
+  font-family:var(--sans);font-size:13.5px;color:var(--ink);
   background:var(--bg);border:1px solid var(--border2);border-radius:6px;
   padding:8px 10px;width:100%;outline:none;transition:border .12s}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green);background:#fff}
@@ -181,11 +183,61 @@ tr:hover td{background:var(--bg)}
 .trab-fecha{font-size:10px;color:var(--ink3)}
 .trab-monto{font-family:var(--serif);font-size:14px;font-weight:500;color:var(--green)}
 .trab-actions{display:flex;gap:6px}
+/* ── PRÓXIMA ACCIÓN ── */
+.trab-proxima{display:flex;align-items:flex-start;gap:7px;background:var(--green3);
+  border-left:3px solid var(--green);padding:8px 12px;border-radius:0 6px 6px 0;
+  font-size:12px;color:var(--green);font-weight:500;margin-bottom:8px;line-height:1.45}
+/* ── HISTORIAL (bitácora) ── */
+.hist-details{margin-bottom:8px}
+.hist-details summary{font-size:11px;color:var(--ink3);cursor:pointer;padding:2px 0;user-select:none}
+.hist-details summary:hover{color:var(--ink)}
+.hist-list{margin-top:6px;border-left:2px solid var(--border2);padding-left:12px;
+  display:flex;flex-direction:column;gap:8px}
+.hist-item{font-size:11px;color:var(--ink2);line-height:1.5}
+.hist-fecha{font-family:var(--mono);font-size:10px;color:var(--ink3);display:block}
+.hist-item .badge{font-size:9px;padding:1px 6px;margin-left:4px}
+/* ── COBRO / SALDO ── */
+.cobro-wrap{margin-bottom:8px}
+.cobro-bar{height:5px;background:var(--bg2);border-radius:3px;overflow:hidden;margin-top:4px}
+.cobro-fill{height:100%;background:var(--green);border-radius:3px;transition:width .3s}
+.cobro-txt{font-size:11px;color:var(--ink2);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.cobro-txt .saldo{color:var(--amber);font-weight:600}
+.cobro-txt .pagado{color:var(--green);font-weight:600}
+/* ── ETAPAS ── */
+.etapas-row{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
+.etapa-chip{font-size:10px;padding:3px 8px;border-radius:12px;border:1px solid var(--border2);
+  background:var(--bg);color:var(--ink3);cursor:pointer;user-select:none;transition:all .12s;line-height:1.2}
+.etapa-chip:hover{border-color:var(--ink3)}
+.etapa-chip.done{background:var(--green3);border-color:var(--green2);color:var(--green);text-decoration:line-through}
+.etapa-chip.next{border-color:var(--green);color:var(--green);font-weight:600}
+.etapas-prog{font-family:var(--mono);font-size:10px;color:var(--ink3)}
+/* ── PANEL REQUIERE ACCIÓN ── */
+.accion-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px;margin-bottom:20px;box-shadow:var(--sh)}
+.accion-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+.accion-col-t{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);
+  font-weight:600;margin-bottom:9px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.accion-item{font-size:12px;color:var(--ink2);padding:5px 0;line-height:1.45;cursor:pointer;
+  display:flex;gap:7px;align-items:flex-start;border-radius:4px}
+.accion-item:hover{color:var(--ink)}
+.accion-item b{color:var(--ink);font-weight:600}
+.accion-cuando{font-family:var(--mono);font-size:10px;color:var(--ink3);white-space:nowrap;margin-top:2px}
+.accion-cuando.urgente{color:var(--red);font-weight:500}
+.accion-vacio{font-size:12px;color:var(--ink3);font-style:italic;padding:4px 0}
+.prio-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.prio-alta{background:var(--red)}.prio-media{background:var(--amber)}.prio-baja{background:var(--ink3)}
+.badge-prio-alta{background:var(--red2);color:var(--red)}
 /* ── CARPETAS POR ESTADO ── */
 .carpeta{margin-bottom:24px}
-.carpeta-hdr{display:flex;align-items:center;gap:10px;margin-bottom:11px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+.carpeta-hdr{display:flex;align-items:center;gap:10px;margin-bottom:11px;padding-bottom:7px;
+  border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
 .carpeta-hdr .badge{font-size:11px}
 .carpeta-cnt{font-size:11px;color:var(--ink3)}
+.carpeta-flecha{margin-left:auto;font-size:10px;color:var(--ink3);transition:transform .15s}
+.carpeta.cerrada .carpeta-flecha{transform:rotate(-90deg)}
+.carpeta.cerrada .carpeta-body{display:none}
+.dcard.clickable{cursor:pointer;transition:border .12s}
+.dcard.clickable:hover{border-color:var(--ink3)}
 /* ── SPINNER ── */
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);
   border-top-color:var(--green);border-radius:50%;animation:spin .6s linear infinite}
@@ -207,7 +259,7 @@ tr:hover td{background:var(--bg)}
 .step-content{flex:1}
 .step-title{font-weight:500;margin-bottom:4px}
 .step-desc{font-size:11px;color:var(--ink2);line-height:1.5}
-.url-input{font-family:var(--mono);font-size:12px;background:var(--bg);border:1px solid var(--border2);
+.url-input{font-family:var(--sans);font-size:12.5px;background:var(--bg);border:1px solid var(--border2);
   border-radius:6px;padding:8px 10px;width:100%;outline:none;margin-top:8px}
 .url-input:focus{border-color:var(--green)}
 /* ── TELÉFONO (pantallas chicas) ── */
@@ -235,6 +287,9 @@ tr:hover td{background:var(--bg)}
   .cal-daynum{font-size:10px}
   .cal-ev{font-size:8px;padding:1px 3px}
   .cal-legend{gap:8px;font-size:9px}
+  .accion-panel{padding:13px}
+  .accion-grid{gap:14px}
+  #trab-buscar{flex:1;min-width:140px;width:auto}
 }
 </style>
 </head>
@@ -252,17 +307,21 @@ tr:hover td{background:var(--bg)}
 </div>
 <!-- NAV -->
 <div class="nav">
-  <button class="nav-btn active" onclick="showTab('dashboard')">◈ Dashboard</button>
-  <button class="nav-btn" onclick="showTab('trabajos')">◎ Trabajos</button>
-  <button class="nav-btn" onclick="showTab('movimientos')">⇄ Ingresos / Gastos</button>
-  <button class="nav-btn" onclick="showTab('presupuestos')">◻ Presupuestos</button>
-  <button class="nav-btn" onclick="showTab('apuntes')">📚 Normativas</button>
-  <button class="nav-btn" onclick="showTab('setup')">⚙ Configuración</button>
+  <button class="nav-btn active" data-tab="dashboard" onclick="showTab('dashboard',this)">◈ Dashboard</button>
+  <button class="nav-btn" data-tab="trabajos" onclick="showTab('trabajos',this)">◎ Trabajos</button>
+  <button class="nav-btn" data-tab="movimientos" onclick="showTab('movimientos',this)">⇄ Ingresos / Gastos</button>
+  <button class="nav-btn" data-tab="presupuestos" onclick="showTab('presupuestos',this)">◻ Presupuestos</button>
+  <button class="nav-btn" data-tab="apuntes" onclick="showTab('apuntes',this)">📚 Normativas</button>
+  <button class="nav-btn" data-tab="setup" onclick="showTab('setup',this)">⚙ Configuración</button>
 </div>
 <!-- MAIN -->
 <div class="main">
 <!-- ═══════════════ DASHBOARD ═══════════════ -->
 <div class="tab active" id="tab-dashboard">
+  <!-- Panel: qué requiere atención hoy -->
+  <div class="accion-panel" id="accion-panel" style="display:none">
+    <div class="accion-grid" id="accion-grid"></div>
+  </div>
   <!-- Calendario de reuniones / compromisos -->
   <div class="cal-wrap">
     <div class="cal-top">
@@ -297,6 +356,8 @@ tr:hover td{background:var(--bg)}
     <div class="dcard"><div class="dcard-label">Gastos USD</div><div class="dcard-val" id="d-gast-usd">—</div></div>
     <div class="dcard"><div class="dcard-label">Balance ARS</div><div class="dcard-val" id="d-bal-ars">—</div></div>
     <div class="dcard"><div class="dcard-label">Balance USD</div><div class="dcard-val" id="d-bal-usd">—</div></div>
+    <div class="dcard"><div class="dcard-label">Por cobrar ARS</div><div class="dcard-val warn" id="d-cobrar-ars">—</div><div class="dcard-sub">de trabajos presupuestados</div></div>
+    <div class="dcard"><div class="dcard-label">Por cobrar USD</div><div class="dcard-val warn" id="d-cobrar-usd">—</div><div class="dcard-sub">de trabajos presupuestados</div></div>
     <div class="dcard"><div class="dcard-label">Trabajos activos</div><div class="dcard-val" id="d-trab">—</div></div>
     <div class="dcard"><div class="dcard-label">Presupuestos</div><div class="dcard-val" id="d-pres">—</div></div>
   </div>
@@ -328,7 +389,9 @@ tr:hover td{background:var(--bg)}
       <div class="sec-title">Trabajos</div>
       <div class="sec-sub">Seguimiento de expedientes y trabajos en curso</div>
     </div>
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input id="trab-buscar" class="url-input" style="width:170px;margin:0"
+        placeholder="🔍 Cliente, lugar…" oninput="renderTrabajos()">
       <select id="filtro-estado" class="url-input" style="width:auto;margin:0" onchange="renderTrabajos()">
         <option value="">Todos los estados</option>
         <option value="A presupuestar">A presupuestar</option>
@@ -498,7 +561,7 @@ tr:hover td{background:var(--bg)}
         </div>
         <div class="field">
           <label>Tipo de trabajo</label>
-          <select id="trab-tipo">
+          <select id="trab-tipo" onchange="modalTipoChanged()">
             <option>Mensura simple rural</option>
             <option>Mensura y subdivisión</option>
             <option>Mensura y unión</option>
@@ -539,9 +602,33 @@ tr:hover td{background:var(--bg)}
           <input id="trab-pres-ref" placeholder="Nro. o descripción">
         </div>
       </div>
+      <div class="g2">
+        <div class="field">
+          <label>Prioridad</label>
+          <select id="trab-prioridad">
+            <option value="Media">● Media</option>
+            <option value="Alta">● Alta</option>
+            <option value="Baja">● Baja</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Fecha límite (opcional)</label>
+          <input type="date" id="trab-limite">
+        </div>
+      </div>
+      <div class="field">
+        <label>▸ Próxima acción (el siguiente paso concreto)</label>
+        <input id="trab-proxima" placeholder="Ej: Llamar a Nina / Presentar en Catastro / Numerar calles">
+      </div>
       <div class="field">
         <label>Comentario / última actualización</label>
         <textarea id="trab-comentario" placeholder="Ej: Esperando respuesta negativa de carta documento enviada al propietario registral..."></textarea>
+        <div class="field-hint">Si lo cambiás, el comentario anterior queda guardado en el historial del trabajo.</div>
+      </div>
+      <div class="field" id="trab-etapas-field" style="display:none">
+        <label>Etapas del trabajo</label>
+        <div class="etapas-row" id="trab-etapas-chips" style="margin-bottom:0"></div>
+        <div class="field-hint">Tocá una etapa para marcarla hecha / pendiente.</div>
       </div>
       <div class="g2">
         <div class="field">
@@ -553,6 +640,7 @@ tr:hover td{background:var(--bg)}
           <input type="number" id="trab-monto-usd" placeholder="0">
         </div>
       </div>
+      <div class="field-hint" style="margin-top:-6px">El «cobrado» se calcula solo, con los ingresos vinculados a este trabajo en Ingresos / Gastos.</div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('modal-trabajo')">Cancelar</button>
@@ -728,26 +816,44 @@ tr:hover td{background:var(--bg)}
     </div>
     <div class="modal-body">
       <input type="hidden" id="est-id">
-      <div class="field">
-        <label>Estado</label>
-        <select id="est-estado">
-          <option>A presupuestar</option>
-          <option>En curso</option>
-          <option>Pausado</option>
-          <option>Esperando cliente</option>
-          <option>Finalizado</option>
-          <option>Cobrado</option>
-        </select>
+      <div class="g2">
+        <div class="field">
+          <label>Estado</label>
+          <select id="est-estado">
+            <option>A presupuestar</option>
+            <option>En curso</option>
+            <option>Pausado</option>
+            <option>Esperando cliente</option>
+            <option>Finalizado</option>
+            <option>Cobrado</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Prioridad</label>
+          <select id="est-prioridad">
+            <option value="Media">● Media</option>
+            <option value="Alta">● Alta</option>
+            <option value="Baja">● Baja</option>
+          </select>
+        </div>
       </div>
       <div class="field">
-        <label>Comentario / actualización</label>
-        <textarea id="est-comentario" style="min-height:100px"
-          placeholder="Describí el estado actual del trabajo..."></textarea>
+        <label>Nueva actualización</label>
+        <textarea id="est-comentario" style="min-height:90px"
+          placeholder="¿Qué pasó con este trabajo? Se agrega al historial con la fecha de hoy."></textarea>
+      </div>
+      <div class="field">
+        <label>▸ Próxima acción</label>
+        <input id="est-proxima" placeholder="El siguiente paso concreto">
+      </div>
+      <div class="field" id="est-hist-wrap" style="display:none">
+        <label>Historial</label>
+        <div class="hist-list" id="est-hist-list"></div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('modal-estado')">Cancelar</button>
-      <button class="btn primary" onclick="saveEstado()">Actualizar</button>
+      <button class="btn primary" onclick="saveEstado()">Guardar actualización</button>
     </div>
   </div>
 </div>
@@ -970,6 +1076,16 @@ function renderDashboardLocal() {
   by('d-bal-usd').textContent = fmt(balUSD,'U$D');    by('d-bal-usd').className = 'dcard-val ' + (balUSD>=0?'pos':'neg');
   by('d-trab').textContent = DB.trabajos.filter(t=>!['Cobrado','Finalizado'].includes(t.estado)).length;
   by('d-pres').textContent = DB.presupuestos.length;
+  // Por cobrar: saldo pendiente de todos los trabajos presupuestados aún no cobrados
+  let pcARS = 0, pcUSD = 0;
+  DB.trabajos.filter(t => t.estado !== 'Cobrado').forEach(t => {
+    const c = cobradoDe(t);
+    const mARS = n(t.monto_ars), mUSD = n(t.monto_usd);
+    if(mARS > 0) pcARS += Math.max(mARS - c.ars, 0);
+    if(mUSD > 0) pcUSD += Math.max(mUSD - c.usd, 0);
+  });
+  by('d-cobrar-ars').textContent = fmt(pcARS,'$');
+  by('d-cobrar-usd').textContent = fmt(pcUSD,'U$D');
   by('bs-stg-ars').textContent = '$ ' + stgARS.toLocaleString('es-AR',{maximumFractionDigits:0});
   by('bs-stg-usd').textContent = 'U$D ' + stgUSD.toLocaleString('es-AR',{maximumFractionDigits:0});
   by('bs-jul-ars').textContent = '$ ' + julARS.toLocaleString('es-AR',{maximumFractionDigits:0});
@@ -989,105 +1105,341 @@ function renderDashboardLocal() {
   DB.trabajos.forEach(t => { porEstado[t.estado||'Sin estado'] = (porEstado[t.estado||'Sin estado']||0)+1; });
   const estadoColors = {'A presupuestar':'badge-amber','En curso':'badge-green','Pausado':'badge-amber','Esperando cliente':'badge-blue',
     'Finalizado':'badge-gray','Cobrado':'badge-green'};
-  by('dash-estados').innerHTML = Object.entries(porEstado).map(([est,cant])=>`
-    <div class="dcard">
+  const ORDEN_EST = ['En curso','A presupuestar','Esperando cliente','Pausado','Finalizado','Cobrado'];
+  by('dash-estados').innerHTML = Object.entries(porEstado)
+    .sort((a,b) => (ORDEN_EST.indexOf(a[0])+99) - (ORDEN_EST.indexOf(b[0])+99))
+    .map(([est,cant])=>`
+    <div class="dcard clickable" onclick="irATrabajos('${est.replace(/'/g,"\\'")}')" title="Ver estos trabajos">
       <div class="dcard-label"><span class="badge ${estadoColors[est]||'badge-gray'}">${est}</span></div>
       <div class="dcard-val">${cant}</div>
-      <div class="dcard-sub">${cant===1?'trabajo':'trabajos'}</div>
+      <div class="dcard-sub">${cant===1?'trabajo':'trabajos'} →</div>
     </div>`).join('') || '<div style="color:var(--ink3);font-size:12px">Sin trabajos registrados</div>';
   by('dash-fecha').textContent = 'Actualizado: ' + new Date().toLocaleString('es-AR');
+  renderAccionPanel();
+}
+// ==============================
+// PANEL "REQUIERE ACCIÓN"
+// ==============================
+function renderAccionPanel() {
+  const panel = document.getElementById('accion-panel');
+  const grid  = document.getElementById('accion-grid');
+  if(!panel) return;
+  const hoyStr = new Date().toISOString().split('T')[0];
+  const activos = DB.trabajos.filter(ACTIVOS);
+  // 1) Vencen pronto: eventos pendientes (vencidos o dentro de 7 días) + fechas límite de trabajos
+  const items1 = [];
+  DB.compromisos.filter(c => c.estado !== 'Hecho' && c.fecha).forEach(c => {
+    const f = (c.fecha||'').split('T')[0];
+    const dd = diasDesde(f);
+    if(dd === null) return;
+    const dias = -dd; // positivo = faltan días
+    if(dias > 7) return;
+    items1.push({ f, dias, html: `<b>${escHtml(c.titulo||'(sin título)')}</b>${c.tipo?` · ${escHtml(c.tipo)}`:''}`,
+      onclick: `editCompromiso('${c.id}')` });
+  });
+  activos.filter(t => t.fecha_limite).forEach(t => {
+    const f = t.fecha_limite.split('T')[0];
+    const dd = diasDesde(f);
+    if(dd === null) return;
+    const dias = -dd;
+    if(dias > 7) return;
+    items1.push({ f, dias, html: `<b>${escHtml(t.cliente)}</b> · fecha límite del trabajo`,
+      onclick: `openEstado('${t.id}')` });
+  });
+  items1.sort((a,b) => a.f.localeCompare(b.f));
+  const cuando = d => d < 0 ? `<span class="accion-cuando urgente">¡vencido hace ${-d} d!</span>`
+    : d === 0 ? '<span class="accion-cuando urgente">HOY</span>'
+    : d === 1 ? '<span class="accion-cuando urgente">mañana</span>'
+    : `<span class="accion-cuando">en ${d} días</span>`;
+  // 2) Próximos pasos: la próxima acción de cada trabajo activo, prioridades altas primero
+  const items2 = activos
+    .filter(t => t.proxima_accion || t.prioridad === 'Alta')
+    .sort((a,b) => (PRIO_ORDEN[a.prioridad||'']??1) - (PRIO_ORDEN[b.prioridad||'']??1))
+    .map(t => `<div class="accion-item" onclick="openEstado('${t.id}')">
+      <span class="prio-dot prio-${(t.prioridad||'media').toLowerCase()}"></span>
+      <span><b>${escHtml(t.cliente)}</b> — ${escHtml(t.proxima_accion || '(definir próxima acción)')}</span></div>`);
+  // 3) Sin novedades hace 14+ días (activos, sin contar pausados)
+  const items3 = activos
+    .filter(t => t.estado !== 'Pausado')
+    .map(t => ({ t, dias: diasDesde(t.fecha_estado || t.created_at) }))
+    .filter(x => x.dias !== null && x.dias >= 14)
+    .sort((a,b) => b.dias - a.dias)
+    .map(x => `<div class="accion-item" onclick="openEstado('${x.t.id}')">
+      <span>⚠</span><span><b>${escHtml(x.t.cliente)}</b> — sin novedades hace ${x.dias} días</span></div>`);
+  const vacio = '<div class="accion-vacio">Nada pendiente ✓</div>';
+  panel.style.display = 'block';
+  grid.innerHTML = `
+    <div><div class="accion-col-t">⏰ Vence pronto</div>${
+      items1.map(i=>`<div class="accion-item" onclick="${i.onclick}"><span>${fmtFecha(i.f).slice(0,5)}</span><span>${i.html}</span>${cuando(i.dias)}</div>`).join('') || vacio}</div>
+    <div><div class="accion-col-t">▸ Próximos pasos</div>${items2.join('') || vacio}</div>
+    <div><div class="accion-col-t">⚠ Sin novedades</div>${items3.join('') || vacio}</div>`;
+}
+function irATrabajos(estado) {
+  document.getElementById('filtro-estado').value = estado || '';
+  showTab('trabajos');
+  renderTrabajos();
 }
 // ==============================
 // TRABAJOS
 // ==============================
+// Etapas típicas según el tipo de trabajo (plantillas)
+const ETAPAS_MENSURA = ['Antecedentes','Medición','Plano','Visado Colegio','Catastro','Aprobado','Entrega'];
+const ETAPAS_TPL = {
+  'Mensura simple rural': ETAPAS_MENSURA,
+  'Mensura y subdivisión': ETAPAS_MENSURA,
+  'Mensura y unión': ETAPAS_MENSURA,
+  'Mensura, unión y subdivisión': ETAPAS_MENSURA,
+  'Mensura para posesión/usucapión': ETAPAS_MENSURA,
+  'Amojonamiento': ['Antecedentes','Cálculo','Amojonamiento en campo','Entrega'],
+  'Cert. de amojonamiento colegiado': ['Antecedentes','Cálculo','Amojonamiento en campo','Certificado','Entrega'],
+  'Verificación de estado parcelario': ['Antecedentes','Medición','Informe','Entrega'],
+  'Relevamiento planialtimétrico': ['Medición','Procesamiento','Plano / Informe','Entrega'],
+  'Loteo': ['Antecedentes','Anteproyecto','Medición','Plano','Visado Colegio','Catastro','Entrega'],
+  'Croquis de subdivisión': ['Medición','Croquis','Entrega'],
+};
+const PRIO_ORDEN = {'Alta':0,'Media':1,'':1,'Baja':2};
+const ACTIVOS = t => !['Finalizado','Cobrado'].includes(t.estado);
+function parseJson(s, fallback){ try { const v = JSON.parse(s); return Array.isArray(v)?v:fallback; } catch(e){ return fallback; } }
+function historialDe(t){ return parseJson(t.historial, []); }
+function etapasDe(t){
+  const guardadas = parseJson(t.etapas, null);
+  if(guardadas) return guardadas;
+  const tpl = ETAPAS_TPL[t.tipo_trabajo];
+  return tpl ? tpl.map(n=>({n, d:0})) : [];
+}
+// Cobrado real = ingresos vinculados a este trabajo en Ingresos/Gastos
+function cobradoDe(t){
+  const movs = DB.movimientos.filter(m => m.tipo==='ingreso' && m.trabajo_id === t.id);
+  const n = v => parseFloat(v)||0;
+  return {
+    ars: movs.filter(m=>m.moneda==='$').reduce((a,b)=>a+n(b.monto),0),
+    usd: movs.filter(m=>m.moneda==='U$D').reduce((a,b)=>a+n(b.monto),0)
+  };
+}
+function fmtPlata(v, mon){ return (mon==='U$D'?'U$D ':'$ ') + Math.round(v).toLocaleString('es-AR'); }
+function diasDesde(s){
+  if(!s) return null;
+  const d = new Date(s); if(isNaN(d)) return null;
+  return Math.floor((Date.now() - d.getTime()) / 86400000);
+}
+function estadoBadge(e) {
+  const map = {'A presupuestar':'badge-amber','En curso':'badge-green','Pausado':'badge-amber','Esperando cliente':'badge-blue',
+    'Finalizado':'badge-gray','Cobrado':'badge-green'};
+  return `<span class="badge ${map[e]||'badge-gray'}">${e||'Sin estado'}</span>`;
+}
+// Carpetas Finalizado/Cobrado arrancan cerradas para no ocupar pantalla
+const carpetasCerradas = {'Finalizado':true,'Cobrado':true};
+function toggleCarpeta(est){ carpetasCerradas[est] = !carpetasCerradas[est]; renderTrabajos(); }
+function histListHtml(hist){
+  return [...hist].reverse().map(h => `
+    <div class="hist-item">
+      <span class="hist-fecha">${fmtFecha(h.f)}${h.e?` · ${escHtml(h.e)}`:''}</span>
+      ${escHtml(h.t).replace(/\n/g,'<br>')}
+    </div>`).join('');
+}
+function cobroHtml(t){
+  const c = cobradoDe(t);
+  const bloques = [];
+  [['ars','$'],['usd','U$D']].forEach(([k,mon]) => {
+    const monto = parseFloat(t['monto_'+k])||0;
+    if(monto <= 0) return;
+    const cobrado = t.estado==='Cobrado' ? monto : Math.min(c[k], monto);
+    const saldo = monto - cobrado;
+    const pct = Math.round(cobrado/monto*100);
+    bloques.push(`<div class="cobro-wrap">
+      <div class="cobro-txt">
+        <span>Cobrado <span class="pagado">${fmtPlata(cobrado,mon)}</span> de ${fmtPlata(monto,mon)}</span>
+        ${saldo>0 ? `<span class="saldo">Falta ${fmtPlata(saldo,mon)}</span>` : '<span class="pagado">✓ Completo</span>'}
+      </div>
+      <div class="cobro-bar"><div class="cobro-fill" style="width:${pct}%"></div></div>
+    </div>`);
+  });
+  return bloques.join('');
+}
+function etapasHtml(t, editable){
+  const et = etapasDe(t);
+  if(!et.length) return '';
+  const hechas = et.filter(e=>e.d).length;
+  const nextIdx = et.findIndex(e=>!e.d);
+  return `<div class="etapas-row">
+    ${et.map((e,i)=>`<span class="etapa-chip${e.d?' done':''}${i===nextIdx?' next':''}"
+      ${editable?`onclick="toggleEtapaCard('${t.id}',${i})"`:''} title="Tocar para marcar hecha/pendiente">${escHtml(e.n)}</span>`).join('')}
+    <span class="etapas-prog">${hechas}/${et.length}</span>
+  </div>`;
+}
+async function toggleEtapaCard(id, idx){
+  const t = DB.trabajos.find(x=>x.id===id);
+  if(!t) return;
+  const et = etapasDe(t);
+  if(!et[idx]) return;
+  et[idx].d = et[idx].d ? 0 : 1;
+  await saveData('trabajos', id, { etapas: JSON.stringify(et) });
+}
+function proxVencimientoDe(t){
+  const hoy = new Date().toISOString().split('T')[0];
+  return DB.compromisos
+    .filter(c => c.trabajo_id === t.id && c.estado !== 'Hecho' && (c.fecha||'').split('T')[0] >= hoy)
+    .sort((a,b) => new Date(a.fecha) - new Date(b.fecha))[0];
+}
 function renderTrabajos() {
   const filtro = document.getElementById('filtro-estado').value;
+  const q = (document.getElementById('trab-buscar').value||'').toLowerCase().trim();
   let list = DB.trabajos.filter(t => !filtro || t.estado === filtro);
-  list.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
-  const estadoBadge = e => {
-    const map = {'A presupuestar':'badge-amber','En curso':'badge-green','Pausado':'badge-amber','Esperando cliente':'badge-blue',
-      'Finalizado':'badge-gray','Cobrado':'badge-green'};
-    return `<span class="badge ${map[e]||'badge-gray'}">${e||'Sin estado'}</span>`;
-  };
+  if(q) list = list.filter(t =>
+    ((t.cliente||'')+' '+(t.descripcion||'')+' '+(t.comentario||'')+' '+(t.tipo_trabajo||'')+' '+(t.proxima_accion||'')).toLowerCase().includes(q));
   const fmtMonto = t => {
     const parts = [];
     if(parseFloat(t.monto_ars)>0) parts.push('$ '+parseFloat(t.monto_ars).toLocaleString('es-AR',{maximumFractionDigits:0}));
     if(parseFloat(t.monto_usd)>0) parts.push('U$D '+parseFloat(t.monto_usd).toLocaleString('es-AR',{maximumFractionDigits:0}));
     return parts.join(' + ') || '';
   };
-  const cardHtml = t => `
+  const cardHtml = t => {
+    const hist = historialDe(t);
+    const venc = proxVencimientoDe(t);
+    const limite = t.fecha_limite ? diasDesde(t.fecha_limite) : null; // negativo = faltan días
+    return `
     <div class="trab-card">
       <div class="trab-card-hdr">
         <div>
-          <div class="trab-cliente">${t.cliente || '(sin nombre)'}</div>
-          <div class="trab-tipo">${t.tipo_trabajo}</div>
+          <div class="trab-cliente">${escHtml(t.cliente) || '(sin nombre)'}</div>
+          <div class="trab-tipo">${escHtml(t.tipo_trabajo||'')}</div>
         </div>
         <div class="trab-badges">
+          ${t.prioridad==='Alta' ? '<span class="badge badge-prio-alta">● PRIORIDAD ALTA</span>' : ''}
+          ${t.prioridad==='Baja' ? '<span class="badge badge-gray">baja</span>' : ''}
+          ${t.fecha_limite ? `<span class="badge ${limite>=-7?'badge-red':'badge-gray'}">⏱ límite ${fmtFecha(t.fecha_limite)}</span>` : ''}
           ${estadoBadge(t.estado)}
-          ${t.forma_cobro ? '<span class="badge badge-green">Cobrado</span>' : ''}
         </div>
       </div>
-      ${t.descripcion ? `<div class="trab-desc">${t.descripcion}</div>` : ''}
-      ${t.comentario ? `<div class="trab-comentario">💬 ${t.comentario}${t.fecha_estado ? `<span style="color:var(--ink3);display:block;margin-top:4px;font-size:10px">Actualizado: ${fmtFecha(t.fecha_estado)}</span>` : ''}</div>` : ''}
+      ${t.descripcion ? `<div class="trab-desc">${escHtml(t.descripcion)}</div>` : ''}
+      ${t.proxima_accion ? `<div class="trab-proxima">▸<div>${escHtml(t.proxima_accion)}</div></div>` : ''}
+      ${venc ? `<div class="trab-proxima" style="background:var(--red2);border-color:var(--red);color:var(--red)">⏰<div>${fmtFecha(venc.fecha)} — ${escHtml(venc.titulo||'')}</div></div>` : ''}
+      ${t.comentario ? `<div class="trab-comentario">💬 ${escHtml(t.comentario)}${t.fecha_estado ? `<span style="color:var(--ink3);display:block;margin-top:4px;font-size:10px">Actualizado: ${fmtFecha(t.fecha_estado)}</span>` : ''}</div>` : ''}
+      ${hist.length > 1 ? `<details class="hist-details"><summary>🕘 Ver historial (${hist.length})</summary><div class="hist-list">${histListHtml(hist)}</div></details>` : ''}
+      ${etapasHtml(t, true)}
+      ${cobroHtml(t)}
       <div class="trab-footer">
         <div class="trab-fecha">${t.fecha_inicio ? 'Inicio: ' + fmtFecha(t.fecha_inicio) : ''}</div>
         <div class="trab-monto">${fmtMonto(t)}</div>
         <div class="trab-actions">
-          <button class="btn sm" onclick="openEstado('${t.id}','${escHtml(t.estado)}','${escHtml(t.comentario)}')">↺ Estado</button>
+          <button class="btn sm" onclick="openEstado('${t.id}')">＋ Actualización</button>
           <button class="btn sm" onclick="editTrabajo('${t.id}')">✎ Editar</button>
           <button class="btn sm danger" onclick="deleteTrabajo('${t.id}')">✕</button>
         </div>
       </div>
     </div>`;
+  };
   const wrap = document.getElementById('trab-list');
   if(!list.length){
-    wrap.innerHTML = '<div style="text-align:center;color:var(--ink3);padding:40px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)">No hay trabajos registrados</div>';
+    wrap.innerHTML = '<div style="text-align:center;color:var(--ink3);padding:40px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)">' +
+      (q ? 'No hay trabajos que coincidan con la búsqueda' : 'No hay trabajos registrados') + '</div>';
     return;
   }
-  // Cada trabajo se clasifica en la carpeta de su estado
-  const ORDEN = ['A presupuestar','En curso','Esperando cliente','Pausado','Finalizado','Cobrado'];
+  // Cada trabajo se clasifica en la carpeta de su estado. En curso primero:
+  // es lo que se trabaja todos los días. Finalizado/Cobrado cerradas abajo.
+  const ORDEN = ['En curso','A presupuestar','Esperando cliente','Pausado','Finalizado','Cobrado'];
   const otros = [...new Set(list.map(t => t.estado || 'Sin estado'))].filter(e => !ORDEN.includes(e));
   const carpetas = filtro ? [filtro] : [...ORDEN, ...otros];
   let html = '';
   carpetas.forEach(est => {
     const grupo = list.filter(t => (t.estado || 'Sin estado') === est)
-                      .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+      .sort((a,b) => (PRIO_ORDEN[a.prioridad||'']??1) - (PRIO_ORDEN[b.prioridad||'']??1)
+        || new Date(b.fecha_estado || b.created_at) - new Date(a.fecha_estado || a.created_at));
     if(!grupo.length) return;
-    html += `<div class="carpeta"><div class="carpeta-hdr">${estadoBadge(est)}<span class="carpeta-cnt">${grupo.length} ${grupo.length===1?'trabajo':'trabajos'}</span></div>${grupo.map(cardHtml).join('')}</div>`;
+    const cerrada = !filtro && !q && carpetasCerradas[est];
+    html += `<div class="carpeta${cerrada?' cerrada':''}">
+      <div class="carpeta-hdr" onclick="toggleCarpeta('${est.replace(/'/g,"\\'")}')">${estadoBadge(est)}
+        <span class="carpeta-cnt">${grupo.length} ${grupo.length===1?'trabajo':'trabajos'}</span>
+        <span class="carpeta-flecha">▼</span></div>
+      <div class="carpeta-body">${grupo.map(cardHtml).join('')}</div></div>`;
   });
   wrap.innerHTML = html;
 }
-function openEstado(id, estado, comentario) {
+function openEstado(id) {
+  const t = DB.trabajos.find(x=>x.id===id);
+  if(!t) return;
   document.getElementById('est-id').value = id;
-  document.getElementById('est-estado').value = estado;
-  document.getElementById('est-comentario').value = decodeHtml(comentario);
+  document.getElementById('est-estado').value = t.estado || 'En curso';
+  document.getElementById('est-prioridad').value = t.prioridad || 'Media';
+  document.getElementById('est-comentario').value = '';
+  document.getElementById('est-proxima').value = t.proxima_accion || '';
+  // Historial previo (incluye el comentario actual si todavía no hay historial)
+  let hist = historialDe(t);
+  if(!hist.length && t.comentario) hist = [{f: t.fecha_estado || t.created_at, t: t.comentario, e: t.estado||''}];
+  document.getElementById('est-hist-wrap').style.display = hist.length ? 'flex' : 'none';
+  document.getElementById('est-hist-list').innerHTML = histListHtml(hist);
   openModal('modal-estado');
 }
 async function saveEstado() {
   const id = document.getElementById('est-id').value;
+  const t = DB.trabajos.find(x=>x.id===id);
+  if(!t) return;
+  const ahora = new Date().toISOString();
+  const estado = document.getElementById('est-estado').value;
+  const texto  = document.getElementById('est-comentario').value.trim();
   const data = {
-    estado: document.getElementById('est-estado').value,
-    comentario: document.getElementById('est-comentario').value,
-    fecha_estado: new Date().toISOString()
+    estado,
+    prioridad: document.getElementById('est-prioridad').value,
+    proxima_accion: document.getElementById('est-proxima').value,
   };
+  // La bitácora: cada actualización se AGREGA al historial, nunca se pisa
+  if (texto || estado !== t.estado) {
+    const hist = historialDe(t);
+    if(!hist.length && t.comentario)
+      hist.push({ f: t.fecha_estado || t.created_at || ahora, t: t.comentario, e: t.estado || '' });
+    hist.push({ f: ahora, t: texto || `Cambio de estado → ${estado}`, e: estado });
+    data.historial = JSON.stringify(hist);
+    data.fecha_estado = ahora;
+    if (texto) data.comentario = texto;
+  }
   await saveData('trabajos', id, data);
   closeModal('modal-estado');
 }
+// Etapas que se están editando en el modal de trabajo
+let modalEtapas = [];
+function renderModalEtapas() {
+  const field = document.getElementById('trab-etapas-field');
+  const chips = document.getElementById('trab-etapas-chips');
+  if(!modalEtapas.length){ field.style.display='none'; chips.innerHTML=''; return; }
+  field.style.display = 'flex';
+  chips.innerHTML = modalEtapas.map((e,i) =>
+    `<span class="etapa-chip${e.d?' done':''}" onclick="modalEtapas[${i}].d=modalEtapas[${i}].d?0:1;renderModalEtapas()">${escHtml(e.n)}</span>`).join('');
+}
+function modalTipoChanged() {
+  // Al cambiar el tipo, propone las etapas típicas de ese tipo (si no hay avance marcado)
+  const tpl = ETAPAS_TPL[document.getElementById('trab-tipo').value];
+  if(!modalEtapas.some(e=>e.d)) { modalEtapas = tpl ? tpl.map(n=>({n,d:0})) : []; renderModalEtapas(); }
+}
 async function saveTrabajo() {
   const id = document.getElementById('trab-id').value;
+  const ahora = new Date().toISOString();
   const data = {
     cliente:        document.getElementById('trab-cliente').value,
     tipo_trabajo:   document.getElementById('trab-tipo').value,
     descripcion:    document.getElementById('trab-desc').value,
     estado:         document.getElementById('trab-estado').value,
     comentario:     document.getElementById('trab-comentario').value,
-    fecha_estado:   new Date().toISOString(),
+    prioridad:      document.getElementById('trab-prioridad').value,
+    proxima_accion: document.getElementById('trab-proxima').value,
+    fecha_limite:   document.getElementById('trab-limite').value,
+    etapas:         JSON.stringify(modalEtapas),
     monto_ars:      document.getElementById('trab-monto-ars').value || '0',
     monto_usd:      document.getElementById('trab-monto-usd').value || '0',
     presupuesto_ref:document.getElementById('trab-pres-ref').value,
     fecha_inicio:   document.getElementById('trab-fecha').value,
   };
   if(!data.cliente){ toast('El cliente es obligatorio',true); return; }
+  // Si cambió el comentario, el anterior no se pierde: va al historial
+  const t = id ? DB.trabajos.find(x=>x.id===id) : null;
+  if (t && data.comentario.trim() && data.comentario.trim() !== (t.comentario||'').trim()) {
+    const hist = historialDe(t);
+    if(!hist.length && t.comentario)
+      hist.push({ f: t.fecha_estado || t.created_at || ahora, t: t.comentario, e: t.estado || '' });
+    hist.push({ f: ahora, t: data.comentario.trim(), e: data.estado });
+    data.historial = JSON.stringify(hist);
+    data.fecha_estado = ahora;
+  }
+  if (!t) data.fecha_estado = ahora;
   await saveData('trabajos', id, data);
   closeModal('modal-trabajo');
 }
@@ -1100,10 +1452,15 @@ function editTrabajo(id) {
   document.getElementById('trab-desc').value         = t.descripcion;
   document.getElementById('trab-estado').value       = t.estado;
   document.getElementById('trab-comentario').value   = t.comentario;
+  document.getElementById('trab-prioridad').value    = t.prioridad || 'Media';
+  document.getElementById('trab-proxima').value      = t.proxima_accion || '';
+  document.getElementById('trab-limite').value       = t.fecha_limite ? t.fecha_limite.split('T')[0] : '';
   document.getElementById('trab-monto-ars').value    = t.monto_ars;
   document.getElementById('trab-monto-usd').value    = t.monto_usd;
   document.getElementById('trab-pres-ref').value     = t.presupuesto_ref;
   document.getElementById('trab-fecha').value        = t.fecha_inicio ? t.fecha_inicio.split('T')[0] : '';
+  modalEtapas = etapasDe(t).map(e=>({...e}));
+  renderModalEtapas();
   document.getElementById('modal-trabajo-title').textContent = 'Editar trabajo';
   openModal('modal-trabajo');
 }
@@ -1248,6 +1605,17 @@ let calY, calM; // año y mes (0-11) visibles
 function tipoClase(t) {
   return {'Reunión':'t-reunion','Visita / Campo':'t-campo','Vencimiento':'t-venc','Entrega':'t-entrega'}[t] || 't-otro';
 }
+// La Sheet devuelve las horas como fechas de 1899 (formato interno de Google).
+// Esto las normaliza siempre a "HH:MM".
+function fmtHora(h) {
+  if(!h) return '';
+  h = String(h);
+  if(h.includes('T')) {
+    const d = new Date(h);
+    return isNaN(d) ? '' : String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  }
+  return h.slice(0,5);
+}
 function renderCalendar() {
   const grid = document.getElementById('cal-grid');
   if(!grid) return;
@@ -1267,9 +1635,10 @@ function renderCalendar() {
   for(let i = 0; i < inicio; i++) html += '<div class="cal-cell empty"></div>';
   for(let d = 1; d <= dias; d++) {
     const key = `${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const evs = (porDia[key] || []).sort((a,b) => (a.hora||'').localeCompare(b.hora||''));
+    const evs = (porDia[key] || []).sort((a,b) => fmtHora(a.hora).localeCompare(fmtHora(b.hora)));
     const chips = evs.map(c => {
-      const lbl = (c.hora ? c.hora + ' ' : '') + (c.titulo || '(sin título)');
+      const hora = fmtHora(c.hora);
+      const lbl = (hora ? hora + ' ' : '') + (c.titulo || '(sin título)');
       return `<div class="cal-ev ${tipoClase(c.tipo)}${c.estado==='Hecho'?' done':''}" title="${escHtml(lbl)}"
         onclick="event.stopPropagation();editCompromiso('${c.id}')">${escHtml(lbl)}</div>`;
     }).join('');
@@ -1297,7 +1666,7 @@ function editCompromiso(id) {
   document.getElementById('comp-id').value      = c.id;
   document.getElementById('comp-titulo').value  = c.titulo || '';
   document.getElementById('comp-fecha').value   = (c.fecha || '').split('T')[0];
-  document.getElementById('comp-hora').value    = c.hora || '';
+  document.getElementById('comp-hora').value    = fmtHora(c.hora);
   document.getElementById('comp-tipo').value    = c.tipo || 'Reunión';
   document.getElementById('comp-lugar').value   = c.lugar || '';
   document.getElementById('comp-estado').value  = c.estado || 'Pendiente';
@@ -1478,9 +1847,9 @@ async function deleteData(sheet, id) {
 // ==============================
 function showTab(name) {
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
-  event.target.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  window.scrollTo({top:0});
 }
 function openModal(id) {
   document.getElementById(id).classList.add('open');
@@ -1505,10 +1874,14 @@ window.addEventListener('message', e => {
 });
 // Abre el formulario en blanco para crear (limpia el id oculto -> es alta, no edición)
 function nuevoTrabajo() {
-  ['trab-id','trab-cliente','trab-desc','trab-comentario','trab-monto-ars','trab-monto-usd','trab-pres-ref'].forEach(i=>document.getElementById(i).value='');
+  ['trab-id','trab-cliente','trab-desc','trab-comentario','trab-monto-ars','trab-monto-usd','trab-pres-ref','trab-proxima','trab-limite'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('trab-tipo').selectedIndex = 0;
   document.getElementById('trab-estado').value = 'En curso';
+  document.getElementById('trab-prioridad').value = 'Media';
   document.getElementById('trab-fecha').value = new Date().toISOString().split('T')[0];
+  const tpl = ETAPAS_TPL[document.getElementById('trab-tipo').value];
+  modalEtapas = tpl ? tpl.map(n=>({n,d:0})) : [];
+  renderModalEtapas();
   document.getElementById('modal-trabajo-title').textContent = 'Nuevo trabajo';
   openModal('modal-trabajo');
 }
@@ -1550,7 +1923,7 @@ function fmtFecha(s) {
   if(isNaN(d)) return s;
   return d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
 }
-function escHtml(s='') { return String(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
+function escHtml(s='') { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
 function decodeHtml(s='') {
   const t = document.createElement('textarea'); t.innerHTML = s; return t.value;
 }
