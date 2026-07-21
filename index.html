@@ -646,6 +646,40 @@ tr:hover td{background:var(--bg)}
         </div>
       </div>
       <div class="field-hint" style="margin-top:-6px">El «cobrado» se calcula solo, con los ingresos vinculados a este trabajo en Ingresos / Gastos.</div>
+      <div class="sec-title" style="margin-top:14px">Registrar un cobro (opcional)</div>
+      <div id="trab-cobro-estado" class="cobro-wrap"></div>
+      <div class="g2">
+        <div class="field">
+          <label>Monto cobrado ahora</label>
+          <input type="number" id="trab-cobro-monto" placeholder="0">
+        </div>
+        <div class="field">
+          <label>Moneda</label>
+          <select id="trab-cobro-moneda">
+            <option value="$">$ (ARS)</option>
+            <option value="U$D">U$D</option>
+          </select>
+        </div>
+      </div>
+      <div class="etapas-row" style="margin-bottom:8px">
+        <button type="button" class="btn sm" onclick="cobroQuick(0.5)">½ del saldo</button>
+        <button type="button" class="btn sm" onclick="cobroQuick(1)">Saldo total</button>
+      </div>
+      <div class="g2">
+        <div class="field">
+          <label>¿Quién cobró?</label>
+          <select id="trab-cobro-quien">
+            <option value="Santiago">Santiago</option>
+            <option value="Julia">Julia</option>
+            <option value="Ambos">Ambos / Cuenta empresa</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Fecha del cobro</label>
+          <input type="date" id="trab-cobro-fecha">
+        </div>
+      </div>
+      <div class="field-hint" style="margin-top:-6px">Si cargás un monto, al guardar se registra como ingreso vinculado a este trabajo (aparece en Ingresos / Gastos, queda anotado en la bitácora y actualiza la barra). Dejalo vacío si no cobraste nada ahora.</div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('modal-trabajo')">Cancelar</button>
@@ -1398,7 +1432,6 @@ function renderTrabajos() {
         <div class="trab-fecha">${t.fecha_inicio ? 'Inicio: ' + fmtFecha(t.fecha_inicio) : ''}</div>
         <div class="trab-monto">${fmtMonto(t)}</div>
         <div class="trab-actions">
-          ${tieneSaldo ? `<button class="btn sm success" onclick="registrarCobro('${t.id}')" title="Registrar un pago de este trabajo">💰 Cobro</button>` : ''}
           <button class="btn sm" onclick="openEstado('${t.id}')">＋ Actualización</button>
           <button class="btn sm" onclick="editTrabajo('${t.id}')">✎ Editar</button>
           <button class="btn sm danger" onclick="deleteTrabajo('${t.id}')">✕</button>
@@ -1522,9 +1555,49 @@ async function saveTrabajo() {
   }
   if (!t) data.fecha_estado = ahora;
   await saveData('trabajos', id, data);
+  // Cobro cargado en la misma tarjeta → ingreso vinculado + anotado en la bitácora
+  const cobroMonto = parseFloat(document.getElementById('trab-cobro-monto').value) || 0;
+  const trabId = id || data.id;
+  if (cobroMonto > 0 && trabId) {
+    const moneda = document.getElementById('trab-cobro-moneda').value;
+    const movData = {
+      tipo:        'ingreso',
+      fecha:       document.getElementById('trab-cobro-fecha').value || ahora.split('T')[0],
+      descripcion: (`Cobro ${data.cliente} — ${data.tipo_trabajo}`).trim(),
+      monto:       String(cobroMonto),
+      moneda:      moneda,
+      forma_pago:  'Transferencia',
+      quien_pago:  document.getElementById('trab-cobro-quien').value,
+      categoria:   'Honorarios',
+      trabajo_id:  trabId,
+      repartido:   '',
+    };
+    await saveData('movimientos', '', movData);
+    const tObj = DB.trabajos.find(x => x.id === trabId);
+    if (tObj) await anotarEnBitacora(tObj, `Cobro registrado: ${fmtPlata(cobroMonto, moneda)} (${movData.forma_pago})`);
+  }
   closeModal('modal-trabajo');
   // Si lo marcó como Cobrado y falta registrar el ingreso, lo ofrece pre-cargado
   if (t && data.estado === 'Cobrado' && estadoAnterior !== 'Cobrado') ofrecerIngresoPorCobro(t);
+}
+let modalCobrado = {ars:0, usd:0};
+function setupCobroModal(t){
+  const c = t ? cobradoDe(t) : {ars:0, usd:0};
+  modalCobrado = {ars:c.ars||0, usd:c.usd||0};
+  document.getElementById('trab-cobro-monto').value = '';
+  document.getElementById('trab-cobro-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('trab-cobro-quien').value = 'Santiago';
+  const el = document.getElementById('trab-cobro-estado');
+  if(t){ el.innerHTML = cobroHtml(t) || '<div class="field-hint" style="margin:0">Todavía sin cobros registrados.</div>'; }
+  else { el.innerHTML = ''; }
+}
+function cobroQuick(frac){
+  const mon = document.getElementById('trab-cobro-moneda').value;
+  const k = mon==='U$D' ? 'usd' : 'ars';
+  const monto = parseFloat(document.getElementById('trab-monto-'+k).value)||0;
+  const saldo = Math.max(0, monto - (modalCobrado[k]||0));
+  const val = Math.round(saldo*frac);
+  document.getElementById('trab-cobro-monto').value = val>0 ? val : '';
 }
 function editTrabajo(id) {
   const t = DB.trabajos.find(x=>x.id===id);
@@ -1545,6 +1618,7 @@ function editTrabajo(id) {
   modalEtapas = etapasDe(t).map(e=>({...e}));
   renderModalEtapas();
   document.getElementById('modal-trabajo-title').textContent = 'Editar trabajo';
+  setupCobroModal(t);
   openModal('modal-trabajo');
 }
 async function deleteTrabajo(id) {
@@ -2017,6 +2091,7 @@ function nuevoTrabajo() {
   modalEtapas = tpl ? tpl.map(n=>({n,d:0})) : [];
   renderModalEtapas();
   document.getElementById('modal-trabajo-title').textContent = 'Nuevo trabajo';
+  setupCobroModal(null);
   openModal('modal-trabajo');
 }
 function nuevoMovimiento() {
