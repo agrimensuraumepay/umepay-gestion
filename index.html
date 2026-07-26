@@ -1422,6 +1422,7 @@ function renderTrabajos() {
         </div>
       </div>
       ${t.descripcion ? `<div class="trab-desc">${escHtml(t.descripcion)}</div>` : ''}
+      ${t.presupuesto_url ? `<div class="trab-desc">📄 <a href="${escHtml(t.presupuesto_url)}" target="_blank" rel="noopener">Ver presupuesto (PDF en Drive)</a></div>` : ''}
       ${t.proxima_accion ? `<div class="trab-proxima">▸<div>${escHtml(t.proxima_accion)}</div></div>` : ''}
       ${venc ? `<div class="trab-proxima" style="background:var(--red2);border-color:var(--red);color:var(--red)">⏰<div>${fmtFecha(venc.fecha)} — ${escHtml(venc.titulo||'')}</div></div>` : ''}
       ${t.comentario ? `<div class="trab-comentario">💬 ${escHtml(t.comentario)}${t.fecha_estado ? `<span style="color:var(--ink3);display:block;margin-top:4px;font-size:10px">Actualizado: ${fmtFecha(t.fecha_estado)}</span>` : ''}</div>` : ''}
@@ -2079,6 +2080,8 @@ window.addEventListener('message', e => {
     const f = document.getElementById('calc-frame');
     if(f) f.style.height = (e.data.height + 24) + 'px';
   }
+  // La calculadora vinculó un presupuesto a un trabajo: recargar para verlo al día
+  if(e.data && e.data.type === 'umepayTrabajosCambiaron') loadAll();
 });
 // Abre el formulario en blanco para crear (limpia el id oculto -> es alta, no edición)
 function nuevoTrabajo() {

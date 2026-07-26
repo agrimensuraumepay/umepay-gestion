@@ -166,6 +166,14 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
     </div>
   </div>
   <div class="section">
+    <div class="sec-title">🔗 Vincular a un trabajo</div>
+    <div class="field">
+      <label>Trabajo de Gestión (opcional)</label>
+      <select id="p-trabajo"><option value="">— Sin vincular —</option></select>
+      <div class="hint">Al «☁ Guardar en Drive», el trabajo se queda con el link al PDF y todos los datos del presupuesto. Si estaba «A presupuestar», pasa solo a «Esperando cliente».</div>
+    </div>
+  </div>
+  <div class="section">
     <div class="sec-title">Datos del cliente</div>
     <div class="g2">
       <div class="field"><label>Nombre del solicitante *</label><input id="p-cliente" placeholder="Ej: GRATTONE GUILLERMO FABIAN"></div>
@@ -644,17 +652,92 @@ async function guardarEnDrive(){
   const filename='Presupuesto - '+cliente+(fecha?' - '+fecha:'');
   const st=document.getElementById('drive-status');
   st.style.color='var(--ink2)'; st.textContent='Guardando en Drive…';
+  let d;
   try{
     const res=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
       body:JSON.stringify({action:'guardarPresupuesto',data:{html:docHTML(false),filename}})});
-    const d=await res.json();
+    d=await res.json();
     if(d.error) throw new Error(d.error);
-    st.style.color='var(--green)';
-    st.innerHTML='✓ Guardado en Drive — <a href="'+d.url+'" target="_blank" rel="noopener">abrir el PDF</a>';
   }catch(e){
     st.style.color='var(--amber)';
     st.textContent='No se pudo guardar en Drive: '+e.message;
+    return;
   }
+  // El PDF ya está en Drive; ahora, si hay un trabajo elegido, se vincula.
+  let extra='';
+  try{
+    extra=await vincularPresupuestoATrabajo(d.url, filename);
+  }catch(e){
+    st.style.color='var(--amber)';
+    st.innerHTML='✓ El PDF se guardó en Drive (<a href="'+d.url+'" target="_blank" rel="noopener">abrirlo</a>), pero no pude vincularlo al trabajo: '+esc(e.message);
+    return;
+  }
+  st.style.color='var(--green)';
+  st.innerHTML='✓ Guardado en Drive'+extra+' — <a href="'+d.url+'" target="_blank" rel="noopener">abrir el PDF</a>';
+}
+// ── Vincular el presupuesto a un trabajo de Gestión ──
+let TRABAJOS=[];
+async function cargarTrabajos(){
+  try{
+    const url=new URL(SCRIPT_URL);
+    url.searchParams.set('action','getAll'); url.searchParams.set('sheet','trabajos');
+    const res=await fetch(url.toString()); const d=await res.json();
+    if(d.error) throw new Error(d.error);
+    TRABAJOS=d.rows||[];
+    const sel=document.getElementById('p-trabajo'); if(!sel) return;
+    const elegido=sel.value;
+    const activos=TRABAJOS.filter(t=>!['Finalizado','Cobrado'].includes(t.estado));
+    const aPres=activos.filter(t=>t.estado==='A presupuestar');
+    const otros=activos.filter(t=>t.estado!=='A presupuestar');
+    const opt=t=>`<option value="${esc(t.id)}">${esc(t.cliente||'(sin nombre)')} — ${esc(t.tipo_trabajo||'')}</option>`;
+    sel.innerHTML='<option value="">— Sin vincular —</option>'
+      +(aPres.length?`<optgroup label="A presupuestar">${aPres.map(opt).join('')}</optgroup>`:'')
+      +(otros.length?`<optgroup label="Otros trabajos activos">${otros.map(opt).join('')}</optgroup>`:'');
+    if(elegido) sel.value=elegido;
+  }catch(e){ /* sin conexión: el selector queda vacío y no rompe nada */ }
+}
+// Foto de todo lo cargado para generar el presupuesto (queda guardada en el trabajo)
+function datosPresupuesto(){
+  const g=id=>{ const e=document.getElementById(id); return e?e.value:''; };
+  const cat=g('cat'), params={};
+  (PARAMS[cat]||[]).forEach(f=>{ params[f.label]=gs(f.id); });
+  return {
+    fecha:g('p-fecha'), cliente:g('p-cliente'), departamento:g('p-depto'), localidad:g('p-loc'),
+    cuenta:g('p-cuenta'), superficie:g('p-sup'), nomenclatura:g('p-nomen'), designacion:g('p-desig'),
+    tipo:NOMBRES[g('p-tipo')]||g('p-tipo'), moneda:g('p-moneda'), monto:g('p-monto'),
+    plazo:g('p-plazo'), pago:g('p-pago'),
+    calculadora: cat?{categoria:cat, params, arancel:lastResult}:null
+  };
+}
+async function vincularPresupuestoATrabajo(pdfUrl, filename){
+  const sel=document.getElementById('p-trabajo');
+  const t=(sel&&sel.value)?TRABAJOS.find(x=>x.id===sel.value):null;
+  if(!t) return '';
+  const ahora=new Date().toISOString();
+  const datos=datosPresupuesto();
+  const montoTxt=datos.monto?`${datos.moneda} ${parseFloat(datos.monto).toLocaleString('es-AR',{maximumFractionDigits:0})}`:'sin monto';
+  const pasa=t.estado==='A presupuestar';
+  const nuevoEstado=pasa?'Esperando cliente':(t.estado||'');
+  // Bitácora: misma lógica que anotarEnBitacora de index.html (no pisa lo anterior)
+  let hist=[]; try{ hist=JSON.parse(t.historial||'[]'); if(!Array.isArray(hist)) hist=[]; }catch(e){ hist=[]; }
+  if(!hist.length && t.comentario) hist.push({f:t.fecha_estado||t.created_at||ahora, t:t.comentario, e:t.estado||''});
+  hist.push({f:ahora, t:`📄 Presupuesto generado (${montoTxt}) y guardado en Drive.`, e:nuevoEstado});
+  const data={
+    presupuesto_url:pdfUrl,
+    presupuesto_nombre:filename,
+    presupuesto_datos:JSON.stringify(datos),
+    historial:JSON.stringify(hist),
+    fecha_estado:ahora,
+  };
+  if(pasa) data.estado='Esperando cliente';
+  if(datos.monto){ if(datos.moneda==='U$D') data.monto_usd=datos.monto; else data.monto_ars=datos.monto; }
+  const res=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({action:'update',sheet:'trabajos',id:t.id,data})});
+  const d=await res.json();
+  if(d.error) throw new Error(d.error);
+  Object.assign(t,data);
+  if(EMBED) parent.postMessage({type:'umepayTrabajosCambiaron'},'*');
+  return ' y vinculado al trabajo de '+esc(t.cliente||'(sin nombre)')+(pasa?' (pasó a «Esperando cliente»)':'');
 }
 // ══════════════════════════════════════════════════════════════════
 // LECTOR DE REPORTE DE CATASTRO (PDF → autocompleta el presupuesto)
@@ -752,6 +835,13 @@ function reportHeight(){ if(EMBED) parent.postMessage({type:'umepayCalcHeight',h
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('p-fecha').value=new Date().toISOString().split('T')[0];
   loadDescripcion(); selfTest();
+  cargarTrabajos();
+  // Al elegir un trabajo, si el nombre del solicitante está vacío se completa solo
+  document.getElementById('p-trabajo').addEventListener('change',()=>{
+    const t=TRABAJOS.find(x=>x.id===document.getElementById('p-trabajo').value);
+    const pc=document.getElementById('p-cliente');
+    if(t && pc && !pc.value.trim()) pc.value=t.cliente||'';
+  });
   if(EMBED){
     document.querySelector('.topbar').style.display='none';
     document.querySelector('.main').style.padding='4px 0 0';
