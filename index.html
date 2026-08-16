@@ -1314,7 +1314,11 @@ function registrarCobro(id){
   if(monto > 0) document.getElementById('mov-monto').value = monto;
   document.getElementById('mov-moneda').value = moneda;
   document.getElementById('mov-cat').value = 'Honorarios';
-  document.getElementById('mov-trabajo').value = t.id;
+  // El desplegable solo lista trabajos activos; si este está Finalizado, lo agregamos para poder vincular el cobro
+  const selTrab = document.getElementById('mov-trabajo');
+  if (![...selTrab.options].some(o => o.value === t.id))
+    selTrab.insertAdjacentHTML('beforeend', `<option value="${t.id}">${t.cliente} — ${t.tipo_trabajo}</option>`);
+  selTrab.value = t.id;
   if(s.ars > 0 && s.usd > 0) toast('Ojo: también queda saldo en U$D, cargalo aparte');
 }
 // Al marcar un trabajo como Terminado y cobrado: si falta registrar plata, ofrece cargar el ingreso
@@ -1735,6 +1739,15 @@ async function saveMovimiento() {
   const esNuevo = !id;
   await saveData('movimientos', id, data);
   closeModal('modal-movimiento');
+  // Si es un gasto nuevo vinculado a un trabajo, queda anotado en la bitácora con fecha y descripción
+  if (esNuevo && data.tipo === 'egreso' && data.trabajo_id) {
+    const t = DB.trabajos.find(x => x.id === data.trabajo_id);
+    if (t) {
+      const monto = parseFloat(data.monto) || 0;
+      const texto = `Gasto registrado (${fmtFecha(data.fecha)}): ${fmtPlata(monto, data.moneda)}${data.descripcion ? ' — ' + data.descripcion : ''}`;
+      await anotarEnBitacora(t, texto);
+    }
+  }
   // Si es un cobro nuevo vinculado a un trabajo, queda anotado solo en la bitácora
   if (esNuevo && data.tipo === 'ingreso' && data.trabajo_id) {
     const t = DB.trabajos.find(x => x.id === data.trabajo_id);
@@ -2144,7 +2157,11 @@ function fillWorkSelects() {
   const opts = ['<option value="">— Ninguno —</option>',
     ...DB.trabajos.map(t=>`<option value="${t.id}">${t.cliente} — ${t.tipo_trabajo}</option>`)
   ].join('');
-  document.getElementById('mov-trabajo').innerHTML  = opts;
+  // En Ingresos/Gastos solo se ofrecen los trabajos activos (ni Finalizados ni Cobrados)
+  const optsActivos = ['<option value="">— Ninguno —</option>',
+    ...DB.trabajos.filter(ACTIVOS).map(t=>`<option value="${t.id}">${t.cliente} — ${t.tipo_trabajo}</option>`)
+  ].join('');
+  document.getElementById('mov-trabajo').innerHTML  = optsActivos;
   document.getElementById('pres-trabajo').innerHTML = opts;
   document.getElementById('comp-trabajo').innerHTML = opts;
 }
