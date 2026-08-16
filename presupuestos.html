@@ -77,9 +77,10 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
   <div class="section" style="border-color:var(--green)">
     <div class="sec-title">📄 Cargar valuación desde reporte de Catastro</div>
     <div class="field">
-      <label>Reporte de Cuenta (PDF)</label>
-      <input type="file" id="pdf-reporte-calc" accept="application/pdf,.pdf" onchange="leerReporte(this.files[0],'calc')">
-      <div class="hint" id="pdf-status-calc">Subí el reporte y tomo la valuación de tierra y la superficie para el cálculo.</div>
+      <label>Reporte de Cuenta (PDF) — podés cargar varios si son varias parcelas</label>
+      <input type="file" id="pdf-reporte-calc" accept="application/pdf,.pdf" multiple onchange="leerReportes(this,'calc')">
+      <div class="hint" id="pdf-status-calc">Subí el reporte y tomo la valuación de tierra y la superficie para el cálculo. Si el trabajo tiene más de una parcela, cargá los reportes juntos o de a uno: se van sumando.</div>
+      <div class="hint"><a href="#" class="pdf-limpiar" style="display:none;color:var(--amber)" onclick="limpiarReportes(event)">✕ Quitar los reportes cargados</a></div>
     </div>
   </div>
   <div class="section">
@@ -160,9 +161,10 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
   <div class="section" style="border-color:var(--green)">
     <div class="sec-title">📄 Cargar desde reporte de Catastro</div>
     <div class="field">
-      <label>Reporte de Cuenta (PDF de Catastro Córdoba)</label>
-      <input type="file" id="pdf-reporte" accept="application/pdf,.pdf" onchange="leerReporte(this.files[0])">
-      <div class="hint" id="pdf-status">Subí el «Reporte de Cuenta» y completo solos la nomenclatura, cuenta, designación, departamento, superficie y titular.</div>
+      <label>Reporte de Cuenta (PDF de Catastro Córdoba) — podés cargar varios si son varias parcelas</label>
+      <input type="file" id="pdf-reporte" accept="application/pdf,.pdf" multiple onchange="leerReportes(this)">
+      <div class="hint" id="pdf-status">Subí el «Reporte de Cuenta» y completo solos la nomenclatura, cuenta, designación, departamento, superficie y titular. Si el trabajo tiene más de una parcela, cargá los reportes juntos o de a uno: se van sumando.</div>
+      <div class="hint"><a href="#" class="pdf-limpiar" style="display:none;color:var(--amber)" onclick="limpiarReportes(event)">✕ Quitar los reportes cargados</a></div>
     </div>
   </div>
   <div class="section">
@@ -182,16 +184,17 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
   </div>
   <div class="section">
     <div class="sec-title">Datos del inmueble (opcional)</div>
-    <div class="g2">
-      <div class="field"><label>Departamento</label><input id="p-depto" placeholder="Ej: Calamuchita"></div>
-      <div class="field"><label>Localidad / Pedanía</label><input id="p-loc" placeholder="Ej: Villa Yacanto"></div>
+    <div class="field"><label>Nomenclatura(s)</label><input id="p-nomen" placeholder="Ej: 1202390103098020"></div>
+    <div class="g2" style="margin-top:10px">
+      <div class="field"><label>Tipo de parcela</label><input id="p-tipoparcela" placeholder="Ej: Rural / Urbana"></div>
+      <div class="field"><label>Nro. de cuenta(s)</label><input id="p-cuenta" placeholder="Ej: 120227092748"></div>
     </div>
     <div class="g2" style="margin-top:10px">
-      <div class="field"><label>Nro. de cuenta(s)</label><input id="p-cuenta" placeholder="Ej: 120227092748"></div>
       <div class="field"><label>Superficie</label><input id="p-sup" placeholder="Ej: 300 m2"></div>
+      <div class="field"><label>Departamento (opcional)</label><input id="p-depto" placeholder="Ej: Calamuchita"></div>
     </div>
-    <div class="field" style="margin-top:10px"><label>Nomenclatura(s)</label><input id="p-nomen" placeholder="Ej: 1202390103098020"></div>
-    <div class="field" style="margin-top:10px"><label>Designación oficial</label><textarea id="p-desig" placeholder="Ej: LOTE DE TERRENO ubicado en..."></textarea></div>
+    <div class="field" style="margin-top:10px"><label>Designación oficial (según título)</label><textarea id="p-desig" placeholder="Ej: SECC B MZ 81 LT 22"></textarea></div>
+    <div class="field" style="margin-top:10px"><label>Ubicación (descripción del informe de dominio)</label><textarea id="p-loc" placeholder="Ej: LOTE DE TERRENO; baldío ubicado en VILLA YACANTO, Pedanía Santa Rosa, DPTO. CALAMUCHITA"></textarea></div>
   </div>
   <div class="section">
     <div class="sec-title">Ítem del presupuesto</div>
@@ -573,10 +576,10 @@ const LOGO_PRES='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAhwAAAIcCAYAAAC9/
 function buildDoc(){
   const g=id=>document.getElementById(id).value;
   const cliente=g('p-cliente')||'—', fecha=fmtFecha(g('p-fecha'));
-  const depto=g('p-depto'),loc=g('p-loc'),cuenta=g('p-cuenta'),nomen=g('p-nomen'),desig=g('p-desig'),sup=g('p-sup');
+  const depto=g('p-depto'),loc=g('p-loc'),cuenta=g('p-cuenta'),nomen=g('p-nomen'),desig=g('p-desig'),sup=g('p-sup'),tipoParc=g('p-tipoparcela');
   const tipo=g('p-tipo'),moneda=g('p-moneda'),monto=g('p-monto'),desc=g('p-desc');
   const plazo=g('p-plazo'),pago=g('p-pago'),validez=g('p-validez'),notas=g('p-notas');
-  const nombre=NOMBRES[tipo]||tipo, hasInm=depto||loc||cuenta||nomen||desig||sup;
+  const nombre=NOMBRES[tipo]||tipo, hasInm=depto||loc||cuenta||nomen||desig||sup||tipoParc;
 
   // Paleta del modelo (verde del logo #657264 + grises del diseño)
   const SAGE='#657264', INK='#2b2b2b', TXT='#666666', RULE='#d1d1d1', BG='#f9f9f9';
@@ -587,14 +590,17 @@ function buildDoc(){
   const lbl=`font-family:${SERIF};font-size:14px;letter-spacing:1px;color:${INK};margin-bottom:7px;text-transform:uppercase`;
   const totalStr=monto?fmtMonto(monto,moneda):'—';
 
-  // Datos del inmueble en renglones compactos (solo los que tienen valor)
+  // Datos del inmueble en renglones compactos (solo los que tienen valor), en este orden:
+  // nomenclatura → tipo de parcela → cuenta y superficie → designación oficial → ubicación
   const ubic=[loc,depto].filter(Boolean).join(', ');
   const b=t=>`<b style="color:${INK}">${t}</b>`;
   const linea2=[cuenta?`${b('N° Cuenta:')} ${esc(cuenta)}`:'',sup?`${b('Sup:')} ${esc(sup)}`:''].filter(Boolean).join(' &nbsp;|&nbsp; ');
   const inmLineas=[
-    ubic?`${b('Ubicación:')} ${esc(ubic)}`:'',
+    nomen?`${b('Nomenclatura:')} ${esc(nomen)}`:'',
+    tipoParc?`${b('Tipo de parcela:')} ${esc(tipoParc)}`:'',
     linea2,
-    nomen?`${b('Nomenclatura:')} ${esc(nomen)}${desig?' <span style="color:#999">('+esc(desig)+')</span>':''}`:(desig?`${b('Designación:')} ${esc(desig)}`:''),
+    desig?`${b('Designación oficial:')} ${esc(desig)}`:'',
+    ubic?`${b('Ubicación:')} ${esc(ubic)}`:'',
   ].filter(Boolean).join('<br>');
 
   // Viñetas de la descripción: punto verde y primera frase (hasta los dos puntos) en negrita
@@ -775,7 +781,7 @@ function datosPresupuesto(){
   (PARAMS[cat]||[]).forEach(f=>{ params[f.label]=gs(f.id); });
   return {
     fecha:g('p-fecha'), cliente:g('p-cliente'), departamento:g('p-depto'), localidad:g('p-loc'),
-    cuenta:g('p-cuenta'), superficie:g('p-sup'), nomenclatura:g('p-nomen'), designacion:g('p-desig'),
+    cuenta:g('p-cuenta'), superficie:g('p-sup'), nomenclatura:g('p-nomen'), designacion:g('p-desig'), tipo_parcela:g('p-tipoparcela'),
     tipo:NOMBRES[g('p-tipo')]||g('p-tipo'), moneda:g('p-moneda'), monto:g('p-monto'),
     plazo:g('p-plazo'), pago:g('p-pago'),
     calculadora: cat?{categoria:cat, params, arancel:lastResult}:null
@@ -814,78 +820,140 @@ async function vincularPresupuestoATrabajo(pdfUrl, filename){
 // ══════════════════════════════════════════════════════════════════
 // LECTOR DE REPORTE DE CATASTRO (PDF → autocompleta el presupuesto)
 // ══════════════════════════════════════════════════════════════════
-async function leerReporte(file, ctx){
-  if(!file) return;
+// Se pueden cargar VARIOS reportes (trabajos con más de una parcela): cada PDF
+// se suma a window.reportes y los campos se combinan (cuentas con «//», sumas).
+async function leerReportes(input, ctx){
+  const files=[...(input.files||[])];
+  if(!files.length) return;
   const st=document.getElementById(ctx==='calc'?'pdf-status-calc':'pdf-status');
   const show=(msg,color)=>{ st.textContent=msg; st.style.color=color; };
   if(!window.pdfjsLib){ show('No se pudo cargar el lector de PDF. ¿Hay internet?','var(--amber)'); return; }
-  show('Leyendo el reporte…','var(--ink2)');
+  show(files.length>1?`Leyendo ${files.length} reportes…`:'Leyendo el reporte…','var(--ink2)');
+  window.reportes=window.reportes||[];
+  let noReconocidos=0;
   try{
     pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    const buf=await file.arrayBuffer();
-    const pdf=await pdfjsLib.getDocument({data:buf}).promise;
-    let text='';
-    for(let p=1;p<=pdf.numPages;p++){
-      const page=await pdf.getPage(p);
-      const tc=await page.getTextContent();
-      text += tc.items.map(i=>i.str).join(' ')+'\n';
+    for(const file of files){
+      const buf=await file.arrayBuffer();
+      const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+      let text='';
+      for(let p=1;p<=pdf.numPages;p++){
+        const page=await pdf.getPage(p);
+        const tc=await page.getTextContent();
+        text += tc.items.map(i=>i.str).join(' ')+'\n';
+      }
+      const d=parseReporte(text, file.name);
+      if(!d.nomenclatura && !d.cuenta){ noReconocidos++; continue; }
+      // Si la misma cuenta ya estaba cargada, se reemplaza (no se duplica)
+      const i=window.reportes.findIndex(r=>r.cuenta && d.cuenta && r.cuenta===d.cuenta);
+      if(i>=0) window.reportes[i]=d; else window.reportes.push(d);
     }
-    const d=parseReporte(text, file.name);
-    aplicarReporte(d);
-    if(!d.nomenclatura && !d.cuenta){
-      show('No reconocí los datos. ¿Es un «Reporte de Cuenta» de Catastro Córdoba? Podés completar a mano.','var(--amber)');
-    } else {
-      show('✓ Datos cargados'+(d.cuenta?` (cuenta ${d.cuenta})`:'')+'. Revisá y ajustá lo que haga falta.','var(--green)');
-    }
-  }catch(e){ show('No se pudo leer el PDF: '+e.message,'var(--amber)'); }
+  }catch(e){ show('No se pudo leer el PDF: '+e.message,'var(--amber)'); input.value=''; return; }
+  input.value='';  // permite volver a elegir el mismo archivo
+  aplicarReportes();
+  const n=window.reportes.length;
+  if(!n){ show('No reconocí los datos. ¿Es un «Reporte de Cuenta» de Catastro Córdoba? Podés completar a mano.','var(--amber)'); return; }
+  const ctas=window.reportes.map(r=>r.cuenta).filter(Boolean).join(', ');
+  const aviso=noReconocidos?` (${noReconocidos} PDF no se reconocieron)`:'';
+  show(n===1
+    ? `✓ Datos cargados${ctas?` (cuenta ${ctas})`:''}${aviso}. Podés agregar otro reporte si hay más parcelas.`
+    : `✓ ${n} parcelas cargadas (cuentas ${ctas})${aviso}. Superficies y valuaciones sumadas.`,'var(--green)');
+  document.querySelectorAll('.pdf-limpiar').forEach(a=>a.style.display='inline');
+}
+function limpiarReportes(ev){
+  if(ev) ev.preventDefault();
+  window.reportes=[]; window.reporteData=null;
+  ['p-cuenta','p-sup','p-nomen','p-desig','p-loc','p-tipoparcela'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+  document.querySelectorAll('.pdf-limpiar').forEach(a=>a.style.display='none');
+  const st1=document.getElementById('pdf-status'), st2=document.getElementById('pdf-status-calc');
+  if(st1){ st1.style.color='var(--ink2)'; st1.textContent='Reportes quitados. Subí el «Reporte de Cuenta» y completo los datos de nuevo.'; }
+  if(st2){ st2.style.color='var(--ink2)'; st2.textContent='Reportes quitados. Subí el reporte y tomo la valuación y superficie de nuevo.'; }
 }
 function parseReporte(T, filename){
   const clean=s=>s?s.replace(/\s+/g,' ').trim():'';
   const grab=re=>{ const m=T.match(re); return m?clean(m[1]):''; };
   const d={};
-  d.cuenta       = (filename && (filename.match(/ReporteCuenta_(\d+)/i)||[])[1]) || grab(/Numero de cuenta\s+(\d{9,})/) || grab(/\b(\d{11,12})\b/);
+  // ── HOJA 1: en el reporte los valores vienen en este orden:
+  //    nomenclatura (16 dígitos) → tipo de parcela → metodología → DESIGNACIÓN OFICIAL → cuenta (12 dígitos)
   d.nomenclatura = grab(/\b(\d{16})\b/);
-  d.rural        = /RESUMEN TIERRA RURAL/i.test(T) || /Tipo de parcela\s+Rural/i.test(T);
-  d.depto        = grab(/(?:Departamento|DEPARTAMENTO|Depto\.?|DPTO\.?)\s+([A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú]+(?:\s+[A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú]+)?)/);
-  d.pedania      = grab(/(?:Pedan[ií]a|Ped\.?|PED\.?)\s+([A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú\.]+(?:\s+[A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú\.]+)?)/);
-  d.localidad    = grab(/municipio de\s+([A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú ]+?)\s*[,;]/i) || grab(/ubicad[ao] en\s+([A-ZÁÉÍÓÚÜÑ][A-Za-zÁ-ú]+)/);
+  let m=T.match(/\b\d{16}\b\s+(Urbana|Rural)\s+(?:Urbana|Rural)?\s*([\s\S]{0,140}?)\s*\b(\d{12})\b/i);
+  d.tipoParcela  = m ? clean(m[1]) : grab(/\b(Urbana|Rural)\b/);
+  d.cuenta       = (filename && (filename.match(/ReporteCuenta_(\d{12})/i)||[])[1]) || (m?m[3]:'') || grab(/\b(\d{12})\b/);
+  // La designación oficial es lo que queda entre la metodología ("Edificado No PH", etc.) y la cuenta
+  d.designacion  = m ? clean(m[2]).replace(/^(?:(?:No|Edificado|PH|Bald[ií]o)\s+)+/i,'').trim() : '';
+  d.rural        = /rural/i.test(d.tipoParcela) || /RESUMEN TIERRA RURAL/i.test(T);
   d.titular      = grab(/([A-ZÁÉÍÓÚÜÑ]{2,}(?:\s+[A-ZÁÉÍÓÚÜÑ]{2,}){0,4})\s+F[íi]sica\b/).replace(/^TITULARES\s+/i,'').trim();
   d.valorTierra  = grab(/Base Imponible\s*\$?\s*\(Peso\)\s*([\d.,]+)/i);
   d.valorTierraNum = d.valorTierra ? parseFloat(String(d.valorTierra).replace(/,/g,'')) : 0;
   // superficie del TERRENO (no la edificada). Prioridad:
-  // 1) rural "2 Has 6540 m²"  2) urbana: 1er número de "RESUMEN TIERRA URBANA"  3) "SUP. DE 410 MTS.2"
-  let m=T.match(/([\d.,]+)\s*Has?\.?\s*([\d.,]+)\s*(?:m²|m2|MS2|MTS)/i);
+  // 1) rural: hectáreas de "RESUMEN TIERRA RURAL" (ej: "Sin Riego 157 1,893.5970 $ (Peso)")
+  // 2) rural "2 Has 6540 m²"  3) urbana: 1er número de "RESUMEN TIERRA URBANA"  4) "SUP. DE 410 MTS.2"
+  m=T.match(/RESUMEN TIERRA RURAL[\s\S]{0,200}?([\d.,]+)\s*\$?\s*\(Peso\)/i);
+  if(m){ d.supM2 = parseFloat(m[1].replace(/,/g,''))*10000; }
+  else { m=T.match(/([\d.,]+)\s*Has?\.?\s*([\d.,]+)\s*(?:m²|m2|MS2|MTS)/i);
   if(m){ d.supM2 = parseFloat(m[1])*10000 + parseFloat(m[2]); }
   else { m=T.match(/RESUMEN TIERRA URBANA\s+([\d.,]+)/i); if(m) d.supM2 = parseFloat(m[1]);
-    else { m=T.match(/SUP\.?\s*(?:TOTAL|DE)?\.?\s*([\d.,]+)\s*(?:MTS?\.?\s*2|m2|m²|MS2)/i); if(m) d.supM2 = parseFloat(m[1]); } }
-  if(d.supM2){
-    const ha=d.supM2/10000, haR=Math.round(ha);
-    d.superficie = (haR>=1 && Math.abs(ha-haR)<0.01) ? `${haR} ha`
-      : (d.supM2>=10000 ? `${d.supM2.toLocaleString('es-AR',{maximumFractionDigits:2})} m²` : `${Math.round(d.supM2)} m²`);
-  }
-  // descripción de dominio: entre "Convertido a FRE" y "F. Real:" (si no, arranca en LOTE/FRACCION)
-  m=T.match(/Convertido\s*a FRE\s*([\s\S]*?)\s*F\.\s*Real\s*:/i)
+    else { m=T.match(/SUP\.?\s*(?:TOTAL|DE)?\.?\s*([\d.,]+)\s*(?:MTS?\.?\s*2|m2|m²|MS2)/i); if(m) d.supM2 = parseFloat(m[1]); } } }
+  if(d.supM2) d.superficie = fmtSup(d.supM2);
+  // ── UBICACIÓN: descripción de INFORMACION DE DOMINIO (entre "Convertido a FRE" y "F. Real:").
+  //    Se corta al llegar a la pedanía (lo que sigue son linderos), sumando el
+  //    departamento si viene pegado a continuación.
+  m=T.match(/Convertido\s*a\s*FRE\s*([\s\S]*?)\s*F\.\s*Real\s*:/i)
     || T.match(/INFORMACION DE DOMINIO[\s\S]*?((?:LOTE|FRACCI[OÓ]N)[\s\S]*?)\s*F\.\s*Real\s*:/i);
-  let desig = m ? clean(m[1]) : '';
-  desig = desig.split(/,?\s*(?:y\s+)?(?:que\s+)?miden?\s+y\s+lindan?/i)[0];   // saca el "mide y linda..."
-  desig = desig.replace(/\bdesdigna\b/gi,'designa').replace(/[;,.\s]+$/,'').trim();
-  d.designacion = desig;
+  let ubi = m ? clean(m[1]) : '';
+  if(ubi){
+    // primero se descartan medidas y linderos
+    ubi = ubi.split(/,?\s*(?:formad[oa]\s+por|que\s+(?:en\s+total\s+)?mide|(?:y\s+)?(?:que\s+)?miden?\s+y\s+lindan?|y\s+linda|lindando|midiendo)/i)[0];
+    // después se corta tras la pedanía (+ DPTO si viene a continuación)
+    const pm = ubi.match(/^([\s\S]*?\b(?:Pedan[ií]a|PED)\b\.?\s*[A-ZÁÉÍÓÚÜÑ][^,]*)/);
+    if(pm){
+      let corte = pm[1];
+      const resto = ubi.slice(corte.length);
+      const dm = resto.match(/^\s*,\s*((?:DPTO|DEPTO|Departamento)\.?\s*[^,]+)/i);
+      if(dm) corte += ', ' + dm[1].trim();
+      ubi = corte;
+    }
+    ubi = clean(ubi).replace(/[;,.\s]+$/,'');
+    if(ubi.length>240) ubi = ubi.slice(0,240).replace(/\s+\S*$/,'')+'…';
+  }
+  d.ubicacion = ubi;
   return d;
 }
-function aplicarReporte(d){
+function fmtSup(supM2){
+  if(!supM2) return '';
+  const ha=supM2/10000, haR=Math.round(ha);
+  if(ha>=1 && Math.abs(ha-haR)<0.01) return `${haR.toLocaleString('es-AR')} ha`;
+  if(ha>=10) return `${ha.toLocaleString('es-AR',{maximumFractionDigits:1})} ha`;
+  return supM2>=10000 ? `${supM2.toLocaleString('es-AR',{maximumFractionDigits:2})} m²` : `${Math.round(supM2)} m²`;
+}
+function aplicarReportes(){
+  const rs=window.reportes||[];
+  if(!rs.length) return;
   const set=(id,v)=>{ if(v){ const e=document.getElementById(id); if(e) e.value=v; } };
-  // Campos del presupuesto
-  set('p-cliente', d.titular);
-  set('p-depto',   d.depto);
-  set('p-loc',     d.localidad || d.pedania);
-  set('p-cuenta',  d.cuenta);
-  set('p-sup',     d.superficie);
-  set('p-nomen',   d.nomenclatura);
-  set('p-desig',   d.designacion);
-  window.reporteData = d;
-  // Campos de la calculadora (si ya están creados): valuación de tierra y superficie
-  set('p_vt', d.valorTierraNum || '');
-  if(d.supM2){ set('p_sup_m2', Math.round(d.supM2)); set('p_sup_ha', +(d.supM2/10000).toFixed(4)); }
+  const uno=rs[0];
+  // Datos generales: se toman del primer reporte que los tenga
+  set('p-cliente', uno.titular);
+  set('p-loc',     (rs.find(r=>r.ubicacion)||{}).ubicacion);
+  set('p-tipoparcela', [...new Set(rs.map(r=>r.tipoParcela).filter(Boolean))].join(' / '));
+  const totalM2=rs.reduce((a,r)=>a+(r.supM2||0),0);
+  const totalVT=rs.reduce((a,r)=>a+(r.valorTierraNum||0),0);
+  if(rs.length===1){
+    set('p-cuenta', uno.cuenta);
+    set('p-sup',    uno.superficie);
+    set('p-nomen',  uno.nomenclatura);
+    set('p-desig',  uno.designacion);
+  }else{
+    // Varias parcelas: cuentas con su superficie, nomenclaturas con «//», superficie total
+    set('p-cuenta', rs.map(r=>r.cuenta?r.cuenta+(r.superficie?` (${r.superficie})`:''):'').filter(Boolean).join(' // '));
+    set('p-sup',    totalM2?fmtSup(totalM2)+' (total)':'');
+    set('p-nomen',  rs.map(r=>r.nomenclatura).filter(Boolean).join(' // '));
+    set('p-desig',  rs.map(r=>r.designacion).filter(Boolean).join(' // '));
+  }
+  // Para la calculadora: valuación y superficie SUMADAS de todas las parcelas
+  window.reporteData = { valorTierraNum:totalVT, supM2:totalM2, superficie:fmtSup(totalM2),
+    rural:rs.some(r=>r.rural), cuenta:rs.map(r=>r.cuenta).filter(Boolean).join(' // ') };
+  set('p_vt', totalVT || '');
+  if(totalM2){ set('p_sup_m2', Math.round(totalM2)); set('p_sup_ha', +(totalM2/10000).toFixed(4)); }
   const cat=document.getElementById('cat');
   if(typeof recalc==='function' && cat && cat.value) recalc();
 }
