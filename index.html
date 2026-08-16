@@ -259,6 +259,11 @@ tr:hover td{background:var(--bg)}
 .mini-dias.mal{color:var(--red);font-weight:600}
 .board-vermas{text-align:center;font-size:11px;color:var(--ink3);padding:6px;cursor:pointer;user-select:none}
 .board-vermas:hover{color:var(--ink)}
+/* ── Dashboard: calendario y tareas lado a lado ── */
+.dash-cols{margin:0 calc(50% - 50vw);padding:0 18px;display:grid;grid-template-columns:1.25fr 1fr;gap:16px;align-items:start}
+.dash-cols .accion-panel{max-height:calc(100vh - 175px);overflow-y:auto}
+.dash-cols .accion-grid{grid-template-columns:1fr}
+@media(max-width:1000px){ .dash-cols{grid-template-columns:1fr;margin:0;padding:0} .dash-cols .accion-panel{max-height:none} }
 /* ── Ingresos y gastos en dos columnas (balance) ── */
 .mov-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
 @media(max-width:900px){ .mov-cols{grid-template-columns:1fr} }
@@ -370,10 +375,8 @@ tr:hover td{background:var(--bg)}
 <div class="main">
 <!-- ═══════════════ DASHBOARD ═══════════════ -->
 <div class="tab active" id="tab-dashboard">
-  <!-- Panel: qué requiere atención hoy -->
-  <div class="accion-panel" id="accion-panel" style="display:none">
-    <div class="accion-grid" id="accion-grid"></div>
-  </div>
+  <!-- Calendario y tareas lado a lado, a pantalla completa -->
+  <div class="dash-cols">
   <!-- Calendario de reuniones / compromisos -->
   <div class="cal-wrap">
     <div class="cal-top">
@@ -394,49 +397,11 @@ tr:hover td{background:var(--bg)}
       <span><i class="cal-dot t-otro" style="background:var(--ink3)"></i>Otro</span>
     </div>
   </div>
-  <div class="sec-hdr" style="margin-bottom:20px">
-    <div>
-      <div class="sec-title">Resumen del estudio</div>
-      <div class="sec-sub" id="dash-fecha">—</div>
-    </div>
-    <button class="btn" onclick="loadDashboard()">↻ Actualizar</button>
+  <div class="accion-panel" id="accion-panel" style="display:none">
+    <div class="accion-grid" id="accion-grid"></div>
   </div>
-  <div class="dash-grid" id="dash-cards">
-    <div class="dcard"><div class="dcard-label">Ingresos ARS</div><div class="dcard-val" id="d-ing-ars">—</div></div>
-    <div class="dcard"><div class="dcard-label">Ingresos USD</div><div class="dcard-val" id="d-ing-usd">—</div></div>
-    <div class="dcard"><div class="dcard-label">Gastos ARS</div><div class="dcard-val" id="d-gast-ars">—</div></div>
-    <div class="dcard"><div class="dcard-label">Gastos USD</div><div class="dcard-val" id="d-gast-usd">—</div></div>
-    <div class="dcard"><div class="dcard-label">Balance ARS</div><div class="dcard-val" id="d-bal-ars">—</div></div>
-    <div class="dcard"><div class="dcard-label">Balance USD</div><div class="dcard-val" id="d-bal-usd">—</div></div>
-    <div class="dcard"><div class="dcard-label">Por cobrar ARS</div><div class="dcard-val warn" id="d-cobrar-ars">—</div><div class="dcard-sub">de trabajos presupuestados</div></div>
-    <div class="dcard"><div class="dcard-label">Por cobrar USD</div><div class="dcard-val warn" id="d-cobrar-usd">—</div><div class="dcard-sub">de trabajos presupuestados</div></div>
-    <div class="dcard"><div class="dcard-label">Trabajos activos</div><div class="dcard-val" id="d-trab">—</div></div>
-    <div class="dcard"><div class="dcard-label">Presupuestos</div><div class="dcard-val" id="d-pres">—</div></div>
   </div>
-  <div class="balance-card">
-    <div class="balance-title">Balance entre socios — plata sin repartir</div>
-    <div class="balance-row">
-      <div class="balance-who">Santiago</div>
-      <div class="balance-amounts">
-        <span id="bs-stg-ars">—</span>
-        <span id="bs-stg-usd">—</span>
-      </div>
-    </div>
-    <div class="balance-row">
-      <div class="balance-who">Julia</div>
-      <div class="balance-amounts">
-        <span id="bs-jul-ars">—</span>
-        <span id="bs-jul-usd">—</span>
-      </div>
-    </div>
-    <div class="balance-verdict" id="balance-verdict">—</div>
-    <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-      <div style="font-size:11px;color:var(--ink3);max-width:420px">Cuenta solo lo que todavía no se dividió. Cuando se repartan la plata, tocá el botón — o marcá movimiento por movimiento desde Ingresos/Gastos.</div>
-      <button class="btn sm success" onclick="saldarTodo()">💸 Ya repartimos</button>
-    </div>
-  </div>
-  <div class="sec-hdr"><div class="sec-title">Trabajos por estado</div></div>
-  <div id="dash-estados" class="dash-grid"></div>
+
 </div>
 <!-- ═══════════════ TRABAJOS ═══════════════ -->
 <div class="tab" id="tab-trabajos">
@@ -489,6 +454,48 @@ tr:hover td{background:var(--bg)}
           <tbody id="mov-tbody-gas"><tr class="empty-row"><td colspan="4">Cargando...</td></tr></tbody>
         </table>
       </div>
+    </div>
+  </div>
+  <!-- Resumen del estudio (vino del Dashboard) -->
+  <div class="sec-hdr" style="margin:26px 0 20px">
+    <div>
+      <div class="sec-title">Resumen del estudio</div>
+      <div class="sec-sub" id="dash-fecha">—</div>
+    </div>
+    <button class="btn" onclick="loadDashboard()">↻ Actualizar</button>
+  </div>
+  <div class="dash-grid" id="dash-cards">
+    <div class="dcard"><div class="dcard-label">Ingresos ARS</div><div class="dcard-val" id="d-ing-ars">—</div></div>
+    <div class="dcard"><div class="dcard-label">Ingresos USD</div><div class="dcard-val" id="d-ing-usd">—</div></div>
+    <div class="dcard"><div class="dcard-label">Gastos ARS</div><div class="dcard-val" id="d-gast-ars">—</div></div>
+    <div class="dcard"><div class="dcard-label">Gastos USD</div><div class="dcard-val" id="d-gast-usd">—</div></div>
+    <div class="dcard"><div class="dcard-label">Balance ARS</div><div class="dcard-val" id="d-bal-ars">—</div></div>
+    <div class="dcard"><div class="dcard-label">Balance USD</div><div class="dcard-val" id="d-bal-usd">—</div></div>
+    <div class="dcard"><div class="dcard-label">Por cobrar ARS</div><div class="dcard-val warn" id="d-cobrar-ars">—</div><div class="dcard-sub">de trabajos presupuestados</div></div>
+    <div class="dcard"><div class="dcard-label">Por cobrar USD</div><div class="dcard-val warn" id="d-cobrar-usd">—</div><div class="dcard-sub">de trabajos presupuestados</div></div>
+    <div class="dcard"><div class="dcard-label">Trabajos activos</div><div class="dcard-val" id="d-trab">—</div></div>
+    <div class="dcard"><div class="dcard-label">Presupuestos</div><div class="dcard-val" id="d-pres">—</div></div>
+  </div>
+  <div class="balance-card">
+    <div class="balance-title">Balance entre socios — plata sin repartir</div>
+    <div class="balance-row">
+      <div class="balance-who">Santiago</div>
+      <div class="balance-amounts">
+        <span id="bs-stg-ars">—</span>
+        <span id="bs-stg-usd">—</span>
+      </div>
+    </div>
+    <div class="balance-row">
+      <div class="balance-who">Julia</div>
+      <div class="balance-amounts">
+        <span id="bs-jul-ars">—</span>
+        <span id="bs-jul-usd">—</span>
+      </div>
+    </div>
+    <div class="balance-verdict" id="balance-verdict">—</div>
+    <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <div style="font-size:11px;color:var(--ink3);max-width:420px">Cuenta solo lo que todavía no se dividió. Cuando se repartan la plata, tocá el botón — o marcá movimiento por movimiento desde Ingresos/Gastos.</div>
+      <button class="btn sm success" onclick="saldarTodo()">💸 Ya repartimos</button>
     </div>
   </div>
 </div>
@@ -1240,19 +1247,6 @@ function renderDashboardLocal() {
     verd.className = 'balance-verdict uneven';
     verd.textContent = frases.join(' · ') + ' para quedar a mano';
   }
-  const porEstado = {};
-  DB.trabajos.forEach(t => { porEstado[t.estado||'Sin estado'] = (porEstado[t.estado||'Sin estado']||0)+1; });
-  const estadoColors = {'A presupuestar':'badge-amber','En curso':'badge-green','Pausado':'badge-amber','Esperando cliente':'badge-blue',
-    'Finalizado':'badge-gray','Cobrado':'badge-green'};
-  const ORDEN_EST = ['En curso','A presupuestar','Esperando cliente','Pausado','Finalizado','Cobrado'];
-  by('dash-estados').innerHTML = Object.entries(porEstado)
-    .sort((a,b) => (ORDEN_EST.indexOf(a[0])+99) - (ORDEN_EST.indexOf(b[0])+99))
-    .map(([est,cant])=>`
-    <div class="dcard clickable" onclick="irATrabajos('${est.replace(/'/g,"\\'")}')" title="Ver estos trabajos">
-      <div class="dcard-label"><span class="badge ${estadoColors[est]||'badge-gray'}">${est}</span></div>
-      <div class="dcard-val">${cant}</div>
-      <div class="dcard-sub">${cant===1?'trabajo':'trabajos'} →</div>
-    </div>`).join('') || '<div style="color:var(--ink3);font-size:12px">Sin trabajos registrados</div>';
   by('dash-fecha').textContent = 'Actualizado: ' + new Date().toLocaleString('es-AR');
   renderAccionPanel();
 }
@@ -1317,9 +1311,7 @@ function renderAccionPanel() {
     <div><div class="accion-col-t">▸ Próximos pasos</div>${items2.join('') || vacio}</div>
     <div><div class="accion-col-t">⚠ Sin novedades</div>${items3.join('') || vacio}</div>`;
 }
-function irATrabajos(estado) {
-  showTab('trabajos');
-}
+
 // ==============================
 // TRABAJOS
 // ==============================
