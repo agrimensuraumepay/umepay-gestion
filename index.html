@@ -237,6 +237,44 @@ tr:hover td{background:var(--bg)}
 .carpeta-flecha{margin-left:auto;font-size:10px;color:var(--ink3);transition:transform .15s}
 .carpeta.cerrada .carpeta-flecha{transform:rotate(-90deg)}
 .carpeta.cerrada .carpeta-body{display:none}
+/* ── Tablero de trabajos (columnas por estado) ── */
+.board{display:flex;gap:10px;overflow-x:auto;align-items:flex-start;padding-bottom:10px;-webkit-overflow-scrolling:touch}
+.board-col{flex:1 0 225px;max-width:300px;background:var(--bg2);border-radius:var(--r);padding:8px 8px 2px}
+.board-col-hdr{display:flex;align-items:center;gap:8px;margin:2px 2px 9px;font-size:11px}
+.board-cnt{margin-left:auto;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1px 8px;font-size:10.5px;color:var(--ink2)}
+.mini-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 10px;margin-bottom:8px;cursor:pointer;box-shadow:var(--sh)}
+.mini-card:hover{border-color:var(--border2)}
+.mini-card.prio-alta{border-left:3px solid var(--red)}
+.mini-card.apagada{opacity:.62}
+.mini-cli{font-family:var(--serif);font-size:13.5px;font-weight:500}
+.mini-tipo{font-size:10.5px;color:var(--ink3);margin:1px 0 6px}
+.mini-prox{font-size:10.5px;background:var(--green3);color:var(--green);border-radius:6px;padding:3px 7px;margin-bottom:6px;line-height:1.4}
+.mini-venc{font-size:10.5px;background:var(--red2);color:var(--red);border-radius:6px;padding:3px 7px;margin-bottom:6px;line-height:1.4}
+.mini-pie{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:10px;color:var(--ink3)}
+.mini-monto{color:var(--green);font-weight:600;font-size:11px;font-variant-numeric:tabular-nums}
+.mini-dias.mal{color:var(--red);font-weight:600}
+.board-vermas{text-align:center;font-size:11px;color:var(--ink3);padding:6px;cursor:pointer;user-select:none}
+.board-vermas:hover{color:var(--ink)}
+/* ── Ficha del trabajo en pantalla completa ── */
+.ficha-bg{display:none;position:fixed;inset:0;background:var(--bg);z-index:190;overflow-y:auto}
+.ficha-bg.open{display:block}
+.ficha{max-width:840px;margin:0 auto;padding:16px 14px 70px}
+.ficha-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.ficha-cliente{font-family:var(--serif);font-size:21px;font-weight:600}
+.ficha-tipo{font-size:12px;color:var(--ink3);margin:2px 0 12px}
+.ficha-acciones{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.ficha-sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;margin-bottom:11px}
+.ficha-sec-title{font-size:10.5px;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:9px;text-transform:uppercase}
+.ficha-dato{font-size:12.5px;color:var(--ink2);line-height:1.65}
+.ficha-dato b{color:var(--ink)}
+.ficha-mov-tabla{width:100%;border-collapse:collapse;font-size:12px}
+.ficha-mov-tabla td{padding:6px 6px;border-bottom:1px solid var(--border);vertical-align:top}
+.ficha-mov-tabla tr:last-child td{border-bottom:none}
+.mov-in{color:var(--green);font-weight:600;white-space:nowrap;text-align:right}
+.mov-out{color:var(--red);font-weight:600;white-space:nowrap;text-align:right}
+.ficha-archivo{display:block;font-size:12.5px;padding:7px 0;border-bottom:1px solid var(--border)}
+.ficha-archivo:last-child{border-bottom:none}
+@media(max-width:700px){ .board-col{flex:0 0 78vw;max-width:78vw} .ficha-cliente{font-size:18px} }
 .dcard.clickable{cursor:pointer;transition:border .12s}
 .dcard.clickable:hover{border-color:var(--ink3)}
 /* ── SPINNER ── */
@@ -873,6 +911,9 @@ tr:hover td{background:var(--bg)}
   </div>
 </div>
 <!-- Modal Actualizar Estado Trabajo -->
+<!-- Ficha de trabajo en pantalla completa (se abre al tocar una tarjeta del tablero) -->
+<div class="ficha-bg" id="ficha-trabajo"><div class="ficha" id="ficha-body"></div></div>
+
 <div class="modal-bg" id="modal-estado">
   <div class="modal" style="max-width:440px">
     <div class="modal-hdr">
@@ -1358,9 +1399,10 @@ function estadoBadge(e) {
     'Finalizado':'badge-gray','Cobrado':'badge-green'};
   return `<span class="badge ${map[e]||'badge-gray'}">${e||'Sin estado'}</span>`;
 }
-// Carpetas Finalizado/Cobrado arrancan cerradas para no ocupar pantalla
-const carpetasCerradas = {'Finalizado':true,'Cobrado':true};
-function toggleCarpeta(est){ carpetasCerradas[est] = !carpetasCerradas[est]; renderTrabajos(); }
+// Estado del tablero: columna «Cerrados» plegada y ficha abierta
+let cerradosVerTodos = false;
+function toggleCerrados(){ cerradosVerTodos = !cerradosVerTodos; renderTrabajos(); }
+let fichaTrabajoId = null;
 function histListHtml(hist){
   return [...hist].reverse().map(h => `
     <div class="hist-item">
@@ -1412,82 +1454,158 @@ function proxVencimientoDe(t){
     .filter(c => c.trabajo_id === t.id && !['Hecho','No se hizo'].includes(c.estado) && (c.fecha||'').split('T')[0] >= hoy)
     .sort((a,b) => new Date(a.fecha) - new Date(b.fecha))[0];
 }
+function fmtMontoTrab(t){
+  const parts = [];
+  if(parseFloat(t.monto_ars)>0) parts.push('$ '+parseFloat(t.monto_ars).toLocaleString('es-AR',{maximumFractionDigits:0}));
+  if(parseFloat(t.monto_usd)>0) parts.push('U$D '+parseFloat(t.monto_usd).toLocaleString('es-AR',{maximumFractionDigits:0}));
+  return parts.join(' + ') || '';
+}
+// Tarjetita del tablero: lo esencial; el detalle completo se ve al tocarla
+function miniCardHtml(t, apagada){
+  const venc = proxVencimientoDe(t);
+  const dias = diasDesde(t.fecha_estado || t.created_at);
+  const activo = ACTIVOS(t) && t.estado!=='Pausado';
+  const frenado = activo && dias!==null && dias>=7;
+  const prox = (t.proxima_accion||'').trim();
+  return `<div class="mini-card${t.prioridad==='Alta'?' prio-alta':''}${apagada?' apagada':''}" onclick="abrirTrabajo('${t.id}')">
+    <div class="mini-cli">${escHtml(t.cliente)||'(sin nombre)'}</div>
+    <div class="mini-tipo">${escHtml(t.tipo_trabajo||'')}</div>
+    ${prox?`<div class="mini-prox">▸ ${escHtml(prox.length>70?prox.slice(0,70)+'…':prox)}</div>`:''}
+    ${venc?`<div class="mini-venc">⏰ ${fmtFecha(venc.fecha)} — ${escHtml(venc.titulo||'')}</div>`:''}
+    ${t.fecha_limite?`<div class="mini-venc" style="background:var(--amber2);color:var(--amber)">⏱ Límite ${fmtFecha(t.fecha_limite)}</div>`:''}
+    <div class="mini-pie">
+      <span class="mini-dias${frenado?' mal':''}">${dias===null?'':(dias===0?'hoy':`hace ${dias} día${dias===1?'':'s'}`)}${frenado?' ⚠':''}</span>
+      <span class="mini-monto">${fmtMontoTrab(t)}</span>
+    </div>
+  </div>`;
+}
 function renderTrabajos() {
   const filtro = document.getElementById('filtro-estado').value;
   const q = (document.getElementById('trab-buscar').value||'').toLowerCase().trim();
   let list = DB.trabajos.filter(t => !filtro || t.estado === filtro);
   if(q) list = list.filter(t =>
     ((t.cliente||'')+' '+(t.descripcion||'')+' '+(t.comentario||'')+' '+(t.tipo_trabajo||'')+' '+(t.proxima_accion||'')).toLowerCase().includes(q));
-  const fmtMonto = t => {
-    const parts = [];
-    if(parseFloat(t.monto_ars)>0) parts.push('$ '+parseFloat(t.monto_ars).toLocaleString('es-AR',{maximumFractionDigits:0}));
-    if(parseFloat(t.monto_usd)>0) parts.push('U$D '+parseFloat(t.monto_usd).toLocaleString('es-AR',{maximumFractionDigits:0}));
-    return parts.join(' + ') || '';
-  };
-  const cardHtml = t => {
-    const hist = historialDe(t);
-    const venc = proxVencimientoDe(t);
-    const limite = t.fecha_limite ? diasDesde(t.fecha_limite) : null; // negativo = faltan días
-    const s = saldoDe(t);
-    const tieneSaldo = t.estado !== 'Cobrado' && (s.ars > 0 || s.usd > 0);
-    return `
-    <div class="trab-card">
-      <div class="trab-card-hdr">
-        <div>
-          <div class="trab-cliente">${escHtml(t.cliente) || '(sin nombre)'}</div>
-          <div class="trab-tipo">${escHtml(t.tipo_trabajo||'')}</div>
-        </div>
-        <div class="trab-badges">
-          ${t.prioridad==='Alta' ? '<span class="badge badge-prio-alta">● PRIORIDAD ALTA</span>' : ''}
-          ${t.prioridad==='Baja' ? '<span class="badge badge-gray">baja</span>' : ''}
-          ${t.fecha_limite ? `<span class="badge ${limite>=-7?'badge-red':'badge-gray'}">⏱ límite ${fmtFecha(t.fecha_limite)}</span>` : ''}
-          ${estadoBadge(t.estado)}
-        </div>
-      </div>
-      ${t.descripcion ? `<div class="trab-desc">${escHtml(t.descripcion)}</div>` : ''}
-      ${t.presupuesto_url ? `<div class="trab-desc">📄 <a href="${escHtml(t.presupuesto_url)}" target="_blank" rel="noopener">Ver presupuesto (PDF en Drive)</a></div>` : ''}
-      ${t.proxima_accion ? `<div class="trab-proxima">▸<div>${escHtml(t.proxima_accion)}</div></div>` : ''}
-      ${venc ? `<div class="trab-proxima" style="background:var(--red2);border-color:var(--red);color:var(--red)">⏰<div>${fmtFecha(venc.fecha)} — ${escHtml(venc.titulo||'')}</div></div>` : ''}
-      ${t.comentario ? `<div class="trab-comentario">💬 ${escHtml(t.comentario)}${t.fecha_estado ? `<span style="color:var(--ink3);display:block;margin-top:4px;font-size:10px">Actualizado: ${fmtFecha(t.fecha_estado)}</span>` : ''}</div>` : ''}
-      ${hist.length > 1 ? `<details class="hist-details"><summary>🕘 Ver historial (${hist.length})</summary><div class="hist-list">${histListHtml(hist)}</div></details>` : ''}
-      ${etapasHtml(t, true)}
-      ${cobroHtml(t)}
-      <div class="trab-footer">
-        <div class="trab-fecha">${t.fecha_inicio ? 'Inicio: ' + fmtFecha(t.fecha_inicio) : ''}</div>
-        <div class="trab-monto">${fmtMonto(t)}</div>
-        <div class="trab-actions">
-          <button class="btn sm" onclick="openEstado('${t.id}')">＋ Actualización</button>
-          <button class="btn sm" onclick="editTrabajo('${t.id}')">✎ Editar</button>
-          <button class="btn sm danger" onclick="deleteTrabajo('${t.id}')">✕</button>
-        </div>
-      </div>
-    </div>`;
-  };
   const wrap = document.getElementById('trab-list');
   if(!list.length){
     wrap.innerHTML = '<div style="text-align:center;color:var(--ink3);padding:40px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)">' +
       (q ? 'No hay trabajos que coincidan con la búsqueda' : 'No hay trabajos registrados') + '</div>';
+    if(fichaTrabajoId) renderFicha();
     return;
   }
-  // Cada trabajo se clasifica en la carpeta de su estado. En curso primero:
-  // es lo que se trabaja todos los días. Finalizado/Cobrado cerradas abajo.
-  const ORDEN = ['En curso','A presupuestar','Esperando cliente','Pausado','Finalizado','Cobrado'];
-  const otros = [...new Set(list.map(t => t.estado || 'Sin estado'))].filter(e => !ORDEN.includes(e));
-  const carpetas = filtro ? [filtro] : [...ORDEN, ...otros];
-  let html = '';
-  carpetas.forEach(est => {
-    const grupo = list.filter(t => (t.estado || 'Sin estado') === est)
-      .sort((a,b) => (PRIO_ORDEN[a.prioridad||'']??1) - (PRIO_ORDEN[b.prioridad||'']??1)
-        || new Date(b.fecha_estado || b.created_at) - new Date(a.fecha_estado || a.created_at));
-    if(!grupo.length) return;
-    const cerrada = !filtro && !q && carpetasCerradas[est];
-    html += `<div class="carpeta${cerrada?' cerrada':''}">
-      <div class="carpeta-hdr" onclick="toggleCarpeta('${est.replace(/'/g,"\\'")}')">${estadoBadge(est)}
-        <span class="carpeta-cnt">${grupo.length} ${grupo.length===1?'trabajo':'trabajos'}</span>
-        <span class="carpeta-flecha">▼</span></div>
-      <div class="carpeta-body">${grupo.map(cardHtml).join('')}</div></div>`;
-  });
-  wrap.innerHTML = html;
+  const ordenar = arr => arr.sort((a,b) => (PRIO_ORDEN[a.prioridad||'']??1) - (PRIO_ORDEN[b.prioridad||'']??1)
+    || new Date(b.fecha_estado || b.created_at) - new Date(a.fecha_estado || a.created_at));
+  // Tablero: una columna por estado activo + una columna «Cerrados» (Finalizado y Cobrado)
+  const ORDEN = ['En curso','A presupuestar','Esperando cliente','Pausado'];
+  const CERRADOS = ['Finalizado','Cobrado'];
+  const otros = [...new Set(list.map(t => t.estado || 'Sin estado'))].filter(e => !ORDEN.includes(e) && !CERRADOS.includes(e));
+  const colHtml = (titulo, grupo, extra) => {
+    if(!grupo.length && !extra) return '';
+    return `<div class="board-col">
+      <div class="board-col-hdr">${titulo}<span class="board-cnt">${grupo.length}</span></div>
+      ${grupo.map(t=>miniCardHtml(t, CERRADOS.includes(t.estado))).join('')}${extra||''}
+    </div>`;
+  };
+  let html = '<div class="board">';
+  if(filtro){
+    html += colHtml(estadoBadge(filtro), ordenar(list));
+  } else {
+    [...ORDEN, ...otros].forEach(est => {
+      html += colHtml(estadoBadge(est), ordenar(list.filter(t => (t.estado||'Sin estado')===est)));
+    });
+    const cerrados = ordenar(list.filter(t => CERRADOS.includes(t.estado)));
+    if(cerrados.length){
+      const visibles = (cerradosVerTodos || q) ? cerrados : cerrados.slice(0,3);
+      const resto = cerrados.length - visibles.length;
+      const extra = resto>0 ? `<div class="board-vermas" onclick="toggleCerrados()">ver los ${cerrados.length} ▾</div>`
+        : (cerradosVerTodos && cerrados.length>3 ? `<div class="board-vermas" onclick="toggleCerrados()">mostrar menos ▴</div>` : '');
+      html += colHtml('<span class="badge badge-gray">Cerrados</span>', visibles, extra);
+    }
+  }
+  wrap.innerHTML = html + '</div>';
+  // Si la ficha está abierta, se refresca con los datos nuevos
+  if(fichaTrabajoId) renderFicha();
+}
+// ══════════════════════════════════════════════
+// FICHA DEL TRABAJO EN PANTALLA COMPLETA
+// ══════════════════════════════════════════════
+function abrirTrabajo(id){
+  fichaTrabajoId = id;
+  renderFicha();
+  const f = document.getElementById('ficha-trabajo');
+  f.classList.add('open'); f.scrollTop = 0;
+}
+function cerrarFicha(){
+  fichaTrabajoId = null;
+  document.getElementById('ficha-trabajo').classList.remove('open');
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape' && fichaTrabajoId) cerrarFicha(); });
+function renderFicha(){
+  const t = DB.trabajos.find(x=>x.id===fichaTrabajoId);
+  if(!t){ cerrarFicha(); return; }
+  const wrap = document.getElementById('ficha-body');
+  const movs = DB.movimientos.filter(m => m.trabajo_id === t.id)
+    .sort((a,b) => new Date(b.fecha||0) - new Date(a.fecha||0));
+  const comps = DB.compromisos.filter(c => c.trabajo_id === t.id)
+    .sort((a,b) => new Date(a.fecha||0) - new Date(b.fecha||0));
+  const pendientes = comps.filter(c => !['Hecho','No se hizo'].includes(c.estado));
+  const hist = historialDe(t);
+  const s = saldoDe(t);
+  const limite = t.fecha_limite ? diasDesde(t.fecha_limite) : null;
+  const tieneSaldo = t.estado!=='Cobrado' && (s.ars>0 || s.usd>0);
+  // Archivos: el presupuesto PDF + todos los comprobantes de los movimientos vinculados
+  const archivos = [];
+  if(t.presupuesto_url) archivos.push({url:t.presupuesto_url, nombre:'📄 Presupuesto (PDF en Drive)'});
+  movs.filter(m=>m.comprobante_url).forEach(m =>
+    archivos.push({url:m.comprobante_url, nombre:`📎 ${m.comprobante_nombre||'Comprobante'} — ${m.descripcion||fmtFecha(m.fecha)}`}));
+  const movRow = m => {
+    const esIn = m.tipo==='ingreso';
+    return `<tr>
+      <td style="white-space:nowrap;color:var(--ink3)">${fmtFecha(m.fecha)}</td>
+      <td>${escHtml(m.descripcion||m.categoria||'')}${m.comprobante_url?` <a href="${escHtml(m.comprobante_url)}" target="_blank" rel="noopener" title="Ver comprobante" style="text-decoration:none">📎</a>`:''}</td>
+      <td class="${esIn?'mov-in':'mov-out'}">${esIn?'+':'−'} ${fmtPlata(parseFloat(m.monto)||0, m.moneda)}</td>
+    </tr>`;
+  };
+  const etapas = etapasHtml(t, true);
+  const cobro = cobroHtml(t);
+  const datos = [
+    t.descripcion?`<b>Descripción:</b> ${escHtml(t.descripcion)}`:'',
+    t.fecha_inicio?`<b>Inicio:</b> ${fmtFecha(t.fecha_inicio)}`:'',
+    t.fecha_limite?`<b>Fecha límite:</b> ${fmtFecha(t.fecha_limite)}${limite!==null&&limite>=-7?' <span class="badge badge-red">cerca</span>':''}`:'',
+    fmtMontoTrab(t)?`<b>Presupuestado:</b> ${fmtMontoTrab(t)}`:'',
+    t.proxima_accion?`<b>Próxima acción:</b> ${escHtml(t.proxima_accion)}`:'',
+    t.comentario?`<b>Última nota:</b> ${escHtml(t.comentario)}${t.fecha_estado?` <span style="color:var(--ink3)">(${fmtFecha(t.fecha_estado)})</span>`:''}`:'',
+  ].filter(Boolean).join('<br>');
+  wrap.innerHTML = `
+    <div class="ficha-top">
+      <button class="btn sm" onclick="cerrarFicha()">← Volver al tablero</button>
+      <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        ${t.prioridad==='Alta'?'<span class="badge badge-prio-alta">● PRIORIDAD ALTA</span>':''}
+        ${estadoBadge(t.estado)}
+      </div>
+    </div>
+    <div class="ficha-cliente">${escHtml(t.cliente)||'(sin nombre)'}</div>
+    <div class="ficha-tipo">${escHtml(t.tipo_trabajo||'')}</div>
+    <div class="ficha-acciones">
+      <button class="btn sm" onclick="openEstado('${t.id}')">＋ Actualización</button>
+      <button class="btn sm" onclick="editTrabajo('${t.id}')">✎ Editar</button>
+      ${tieneSaldo?`<button class="btn sm success" onclick="registrarCobro('${t.id}')">💰 Registrar cobro</button>`:''}
+      <button class="btn sm danger" onclick="deleteTrabajo('${t.id}')">✕ Eliminar</button>
+    </div>
+    ${datos?`<div class="ficha-sec"><div class="ficha-sec-title">Datos del trabajo</div><div class="ficha-dato">${datos}</div></div>`:''}
+    ${etapas?`<div class="ficha-sec"><div class="ficha-sec-title">Etapas</div>${etapas}</div>`:''}
+    ${cobro?`<div class="ficha-sec"><div class="ficha-sec-title">Cobro</div>${cobro}</div>`:''}
+    <div class="ficha-sec"><div class="ficha-sec-title">Movimientos vinculados (${movs.length})</div>
+      ${movs.length?`<table class="ficha-mov-tabla">${movs.map(movRow).join('')}</table>`
+        :'<div class="ficha-dato">No hay ingresos ni gastos vinculados. Se cargan desde «Ingresos y Gastos» eligiendo este trabajo.</div>'}
+    </div>
+    <div class="ficha-sec"><div class="ficha-sec-title">Archivos</div>
+      ${archivos.length?archivos.map(a=>`<a class="ficha-archivo" href="${escHtml(a.url)}" target="_blank" rel="noopener">${escHtml(a.nombre)}</a>`).join('')
+        :'<div class="ficha-dato">No hay archivos todavía: acá aparecen el presupuesto PDF y los comprobantes de los movimientos.</div>'}
+    </div>
+    ${pendientes.length?`<div class="ficha-sec"><div class="ficha-sec-title">Vencimientos pendientes</div>
+      ${pendientes.map(c=>`<div class="ficha-dato">⏰ <b>${fmtFecha(c.fecha)}</b> — ${escHtml(c.titulo||'')}</div>`).join('')}</div>`:''}
+    ${hist.length?`<div class="ficha-sec"><div class="ficha-sec-title">Historial (${hist.length})</div><div class="hist-list">${histListHtml(hist)}</div></div>`:''}
+  `;
 }
 function openEstado(id) {
   const t = DB.trabajos.find(x=>x.id===id);
