@@ -259,6 +259,15 @@ tr:hover td{background:var(--bg)}
 .mini-dias.mal{color:var(--red);font-weight:600}
 .board-vermas{text-align:center;font-size:11px;color:var(--ink3);padding:6px;cursor:pointer;user-select:none}
 .board-vermas:hover{color:var(--ink)}
+/* ── Ingresos y gastos en dos columnas (balance) ── */
+.mov-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+@media(max-width:900px){ .mov-cols{grid-template-columns:1fr} }
+.mov-col-hdr{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;padding:8px 12px;border-radius:var(--r) var(--r) 0 0;border:1px solid var(--border);border-bottom:none}
+.mov-col-hdr.ing{background:var(--green3);color:var(--green)}
+.mov-col-hdr.gas{background:var(--amber2);color:var(--amber)}
+.mov-cols .table-wrap{border-radius:0 0 var(--r) var(--r)}
+.mov-cnt{margin-left:auto;font-size:11px;font-weight:500;opacity:.75}
+.mov-sub{font-size:10px;color:var(--ink3);margin-top:2px}
 /* ── Ficha del trabajo en pantalla completa ── */
 .ficha-bg{display:none;position:fixed;inset:0;background:var(--bg);z-index:190;overflow-y:auto}
 .ficha-bg.open{display:block}
@@ -451,27 +460,36 @@ tr:hover td{background:var(--bg)}
       <div class="sec-title">Ingresos y Gastos</div>
       <div class="sec-sub">Todos los movimientos de dinero del estudio</div>
     </div>
-    <div style="display:flex;gap:8px">
-      <select id="filtro-tipo" class="url-input" style="width:auto;margin:0" onchange="renderMovimientos()">
-        <option value="">Todos</option>
-        <option value="ingreso">Solo ingresos</option>
-        <option value="egreso">Solo gastos</option>
-      </select>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input id="mov-buscar" class="url-input" style="width:190px;margin:0"
+        placeholder="🔍 Buscar palabra (ej: caja)" oninput="renderMovimientos()">
+      <select id="mov-mes" class="url-input" style="width:auto;margin:0" onchange="renderMovimientos()"></select>
       <button class="btn success" onclick="nuevoMovimiento()">+ Registrar movimiento</button>
     </div>
   </div>
-  <!-- Subtotales rápidos -->
+  <!-- Subtotales rápidos del período elegido -->
+  <div style="font-size:12px;color:var(--ink3);margin-bottom:8px">Mostrando: <b id="mov-periodo">—</b></div>
   <div class="dash-grid" style="margin-bottom:16px" id="mov-totals"></div>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Monto</th>
-          <th>Forma pago</th><th>Quién</th><th>Categoría</th><th></th>
-        </tr>
-      </thead>
-      <tbody id="mov-tbody"><tr class="empty-row"><td colspan="8">Cargando...</td></tr></tbody>
-    </table>
+  <!-- Balance en dos columnas: ingresos | gastos -->
+  <div class="mov-cols">
+    <div>
+      <div class="mov-col-hdr ing">↑ Ingresos <span class="mov-cnt" id="mov-cnt-ing"></span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Descripción</th><th style="text-align:right">Monto</th><th></th></tr></thead>
+          <tbody id="mov-tbody-ing"><tr class="empty-row"><td colspan="4">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="mov-col-hdr gas">↓ Gastos <span class="mov-cnt" id="mov-cnt-gas"></span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Descripción</th><th style="text-align:right">Monto</th><th></th></tr></thead>
+          <tbody id="mov-tbody-gas"><tr class="empty-row"><td colspan="4">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 <!-- ═══════════════ PRESUPUESTOS ═══════════════ -->
@@ -1801,42 +1819,79 @@ async function saldarTodo(){
   } catch(e){ toast('Error al saldar: ' + e.message, true); }
   renderAll();
 }
+// Meses con movimientos (claves AAAA-MM, de más nuevo a más viejo)
+function mesesConMovimientos(){
+  const claves = new Set(DB.movimientos.map(m => (m.fecha||'').slice(0,7)).filter(s => /^\d{4}-\d{2}$/.test(s)));
+  claves.add(new Date().toISOString().slice(0,7)); // el mes actual siempre está, aunque venga vacío
+  return [...claves].sort().reverse();
+}
+function nombreMes(clave){
+  const [y,m] = clave.split('-');
+  const ms = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return ms[parseInt(m)-1] + ' ' + y;
+}
 function renderMovimientos() {
-  const filtro = document.getElementById('filtro-tipo').value;
-  let list = DB.movimientos.filter(m => !filtro || m.tipo === filtro);
+  const q = (document.getElementById('mov-buscar').value||'').toLowerCase().trim();
+  const selMes = document.getElementById('mov-mes');
+  // Armar el selector de meses conservando la elección (arranca en el mes actual)
+  const mesActual = new Date().toISOString().slice(0,7);
+  const elegido = selMes.dataset.listo ? selMes.value : mesActual;
+  selMes.innerHTML = mesesConMovimientos().map(c =>
+    `<option value="${c}">${nombreMes(c)}${c===mesActual?' (mes actual)':''}</option>`).join('')
+    + '<option value="">— Todos los meses —</option>';
+  selMes.value = elegido;
+  if(selMes.selectedIndex < 0) selMes.value = mesActual;
+  selMes.dataset.listo = '1';
+  // Al buscar una palabra se revisa TODO el historial (el mes no filtra)
+  selMes.disabled = !!q;
+  selMes.title = q ? 'La búsqueda revisa todos los meses' : '';
+  const mes = selMes.value;
+
+  let list = DB.movimientos.slice();
+  if(q){
+    list = list.filter(m =>
+      ((m.descripcion||'')+' '+(m.categoria||'')+' '+(m.forma_pago||'')+' '+(m.quien_pago||'')).toLowerCase().includes(q));
+  } else if(mes){
+    list = list.filter(m => (m.fecha||'').slice(0,7) === mes);
+  }
   list.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+
   const n = v => parseFloat(v)||0;
-  const cobros  = list.filter(m=>m.tipo==='ingreso');
-  const gastos  = list.filter(m=>m.tipo==='egreso');
+  const cobros = list.filter(m=>m.tipo==='ingreso');
+  const gastos = list.filter(m=>m.tipo==='egreso');
   const iARS = cobros.filter(m=>m.moneda==='$').reduce((a,b)=>a+n(b.monto),0);
   const iUSD = cobros.filter(m=>m.moneda==='U$D').reduce((a,b)=>a+n(b.monto),0);
   const gARS = gastos.filter(m=>m.moneda==='$').reduce((a,b)=>a+n(b.monto),0);
   const gUSD = gastos.filter(m=>m.moneda==='U$D').reduce((a,b)=>a+n(b.monto),0);
+  const titulo = q ? `resultado de «${q}»` : (mes ? nombreMes(mes) : 'todos los meses');
+  document.getElementById('mov-periodo').textContent = titulo;
   document.getElementById('mov-totals').innerHTML = `
     <div class="dcard"><div class="dcard-label">Cobros ARS</div><div class="dcard-val pos">$ ${iARS.toLocaleString('es-AR',{maximumFractionDigits:0})}</div></div>
     <div class="dcard"><div class="dcard-label">Cobros USD</div><div class="dcard-val pos">U$D ${iUSD.toLocaleString('es-AR',{maximumFractionDigits:0})}</div></div>
     <div class="dcard"><div class="dcard-label">Gastos ARS</div><div class="dcard-val warn">$ ${gARS.toLocaleString('es-AR',{maximumFractionDigits:0})}</div></div>
     <div class="dcard"><div class="dcard-label">Gastos USD</div><div class="dcard-val warn">U$D ${gUSD.toLocaleString('es-AR',{maximumFractionDigits:0})}</div></div>`;
-  const tbody = document.getElementById('mov-tbody');
-  if(!list.length){ tbody.innerHTML='<tr class="empty-row"><td colspan="8">No hay movimientos</td></tr>'; return; }
-  tbody.innerHTML = list.map(m => {
+
+  // Cada movimiento como renglón compacto de su columna
+  const fila = m => {
     const isIng = m.tipo === 'ingreso';
-    const montoStr = (isIng?'+':'-') + ' ' + m.moneda + ' ' + Math.abs(parseFloat(m.monto)||0).toLocaleString('es-AR',{maximumFractionDigits:0});
-    // "Ambos" ya nació dividido; para el resto, badge tocable pendiente/repartido
     const rep = esRepartido(m);
     const repBadge = m.quien_pago === 'Ambos' ? '' :
       ` <span class="badge ${rep?'badge-green':'badge-amber'}" style="cursor:pointer" title="Tocar para marcar ${rep?'pendiente':'repartido'}" onclick="toggleRepartido('${m.id}')">${rep?'✓ Repartido':'½ Pendiente'}</span>`;
+    const detalle = [m.categoria, m.forma_pago, m.quien_pago].filter(Boolean).join(' · ');
+    const montoStr = (m.moneda||'$') + ' ' + Math.abs(parseFloat(m.monto)||0).toLocaleString('es-AR',{maximumFractionDigits:0});
     return `<tr>
-      <td>${fmtFecha(m.fecha)}</td>
-      <td><span class="badge ${isIng?'badge-green':'badge-amber'}">${isIng?'Ingreso':'Gasto'}</span></td>
-      <td>${m.descripcion||''}${m.comprobante_url?` <a href="${m.comprobante_url}" target="_blank" rel="noopener" title="Ver comprobante" style="text-decoration:none">📎</a>`:''}</td>
-      <td style="font-weight:500;color:${isIng?'var(--green)':'var(--amber)'}">${montoStr}</td>
-      <td>${m.forma_pago}</td>
-      <td>${m.quien_pago}${repBadge}</td>
-      <td><span class="badge badge-gray">${m.categoria}</span></td>
+      <td style="white-space:nowrap;color:var(--ink3)">${fmtFecha(m.fecha)}</td>
+      <td>${m.descripcion||''}${m.comprobante_url?` <a href="${m.comprobante_url}" target="_blank" rel="noopener" title="Ver comprobante" style="text-decoration:none">📎</a>`:''}
+        <div class="mov-sub">${detalle}${repBadge}</div></td>
+      <td style="text-align:right;font-weight:500;white-space:nowrap;color:${isIng?'var(--green)':'var(--amber)'}">${montoStr}</td>
       <td><button class="btn sm danger" onclick="deleteMovimiento('${m.id}')">✕</button></td>
     </tr>`;
-  }).join('');
+  };
+  const vacio = msg => `<tr class="empty-row"><td colspan="4">${msg}</td></tr>`;
+  document.getElementById('mov-cnt-ing').textContent = cobros.length || '';
+  document.getElementById('mov-cnt-gas').textContent = gastos.length || '';
+  document.getElementById('mov-tbody-ing').innerHTML = cobros.length ? cobros.map(fila).join('') : vacio(q?'Sin ingresos que coincidan':'Sin ingresos en este período');
+  document.getElementById('mov-tbody-gas').innerHTML = gastos.length ? gastos.map(fila).join('') : vacio(q?'Sin gastos que coincidan':'Sin gastos en este período');
 }
 function updateMovLabel() {
   const tipo = document.getElementById('mov-tipo').value;
