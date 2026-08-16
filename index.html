@@ -467,6 +467,25 @@ tr:hover td{background:var(--bg)}
         <tbody id="pres-tbody"><tr class="empty-row"><td colspan="8">Cargando...</td></tr></tbody>
       </table>
     </div>
+    <!-- Cuadro con los datos usados para calcular cada presupuesto generado con la calculadora -->
+    <div class="sec-hdr" style="margin-top:28px">
+      <div>
+        <div class="sec-title">Datos de cálculo</div>
+        <div class="sec-sub">Los datos que se usaron para calcular cada presupuesto generado con la calculadora</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Cliente</th><th>Tipo</th><th>Superficie</th><th>Perímetro</th>
+            <th>Base imponible</th><th>Hon. Colegio</th><th>Aportes 18%</th><th>Tasa 8</th>
+            <th>Tasa Control</th><th>Presupuestado</th>
+          </tr>
+        </thead>
+        <tbody id="calc-tbody"><tr class="empty-row"><td colspan="11">Cargando...</td></tr></tbody>
+      </table>
+    </div>
   </div>
   <!-- Vista: Calculadora de honorarios (página presupuestos.html embebida) -->
   <div id="pres-view-calc" style="display:none">
@@ -1782,7 +1801,7 @@ function renderPresupuestos() {
     const map = {'Enviado':'badge-blue','Aprobado':'badge-green','Rechazado':'badge-red','Vencido':'badge-amber'};
     return `<span class="badge ${map[e]||'badge-gray'}">${e}</span>`;
   };
-  if(!list.length){ tbody.innerHTML='<tr class="empty-row"><td colspan="8">No hay presupuestos registrados</td></tr>'; return; }
+  if(!list.length){ tbody.innerHTML='<tr class="empty-row"><td colspan="8">No hay presupuestos registrados</td></tr>'; renderDatosCalculo(); return; }
   tbody.innerHTML = list.map(p => `<tr>
     <td>${fmtFecha(p.fecha)}</td>
     <td>${p.cliente}</td>
@@ -1793,6 +1812,58 @@ function renderPresupuestos() {
     <td style="font-size:11px;color:var(--ink3)">${p.notas||'—'}</td>
     <td><button class="btn sm danger" onclick="deletePresupuesto('${p.id}')">✕</button></td>
   </tr>`).join('');
+  renderDatosCalculo();
+}
+// ── Cuadro «Datos de cálculo»: qué se usó para armar cada presupuesto de la calculadora ──
+function jsonObj(s){ try{ const v=JSON.parse(s); return v && typeof v==='object' && !Array.isArray(v) ? v : null; }catch(e){ return null; } }
+function renderDatosCalculo(){
+  const tbody = document.getElementById('calc-tbody');
+  if(!tbody) return;
+  const filas = [];
+  const conRegistro = new Set();
+  DB.presupuestos.forEach(p => {
+    const d = jsonObj(p.datos_calculo);
+    if(d){ filas.push(d); if(p.trabajo_id) conRegistro.add(p.trabajo_id); }
+  });
+  // Presupuestos anteriores a este cuadro: la foto del cálculo quedó guardada en el trabajo
+  DB.trabajos.forEach(t => {
+    if(conRegistro.has(t.id)) return;
+    const d = jsonObj(t.presupuesto_datos);
+    if(d) filas.push(d);
+  });
+  if(!filas.length){
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="11">Todavía no hay presupuestos generados con la calculadora</td></tr>';
+    return;
+  }
+  filas.sort((a,b) => new Date(b.fecha||0) - new Date(a.fecha||0));
+  // Busca un parámetro de la calculadora por palabra clave y le agrega la unidad del rótulo
+  const busca = (params, claves) => {
+    const k = Object.keys(params).find(x => claves.some(c => x.toLowerCase().includes(c)));
+    if(!k || params[k]==='' ) return '';
+    const u = k.includes('(km)') ? ' km' : k.includes('(m2)') ? ' m²' : k.includes('(ha)') ? ' ha' : k.includes('(m)') ? ' m' : '';
+    return params[k] + u;
+  };
+  const plata = v => (parseFloat(v)>0) ? '$ '+Math.round(parseFloat(v)).toLocaleString('es-AR') : '—';
+  tbody.innerHTML = filas.map(d => {
+    const c = d.calculadora||{}, params = c.params||{}, a = c.arancel||{};
+    const per = busca(params, ['perímetro','perimetro']);
+    const vt  = busca(params, ['valor de tierra','valuación','valuacion','base imponible']);
+    const sup = busca(params, ['superficie']) || d.superficie || '';
+    const monto = parseFloat(d.monto)||0;
+    return `<tr>
+      <td>${fmtFecha(d.fecha)}</td>
+      <td>${escHtml(d.cliente||'—')}</td>
+      <td>${escHtml(d.tipo||'—')}</td>
+      <td>${escHtml(String(sup||'—'))}</td>
+      <td>${escHtml(String(per||'—'))}</td>
+      <td>${plata(vt)}</td>
+      <td>${plata(a.hon)}</td>
+      <td>${plata(a.ap)}</td>
+      <td>${plata(a.t8)}</td>
+      <td>${plata(a.tcp)}</td>
+      <td>${monto ? (d.moneda==='U$D'?'U$D ':'$ ')+monto.toLocaleString('es-AR',{maximumFractionDigits:0}) : '—'}</td>
+    </tr>`;
+  }).join('');
 }
 async function savePresupuesto() {
   const id = document.getElementById('pres-id').value;

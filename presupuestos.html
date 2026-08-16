@@ -674,6 +674,24 @@ async function guardarEnDrive(){
   }
   st.style.color='var(--green)';
   st.innerHTML='✓ Guardado en Drive'+extra+' — <a href="'+d.url+'" target="_blank" rel="noopener">abrir el PDF</a>';
+  // Además queda una fila en el registro de Presupuestos, con todos los datos usados para el cálculo
+  try{
+    const datos=datosPresupuesto();
+    const selT=document.getElementById('p-trabajo');
+    await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action:'insert',sheet:'presupuestos',data:{
+        cliente:datos.cliente||cliente,
+        fecha:datos.fecha||new Date().toISOString().split('T')[0],
+        tipo_trabajo:datos.tipo||'',
+        monto_ars:datos.moneda==='U$D'?'':(datos.monto||''),
+        monto_usd:datos.moneda==='U$D'?(datos.monto||''):'',
+        estado:'Enviado',
+        trabajo_id:(selT&&selT.value)||'',
+        notas:'Generado con la calculadora',
+        datos_calculo:JSON.stringify(datos),
+      }})});
+    if(EMBED) parent.postMessage({type:'umepayTrabajosCambiaron'},'*');
+  }catch(e){ /* si falla el registro, el PDF igual quedó guardado en Drive */ }
 }
 // ── Vincular el presupuesto a un trabajo de Gestión ──
 let TRABAJOS=[];
