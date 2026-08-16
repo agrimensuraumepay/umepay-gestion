@@ -456,26 +456,7 @@ tr:hover td{background:var(--bg)}
       </div>
     </div>
   </div>
-  <!-- Resumen del estudio (vino del Dashboard) -->
-  <div class="sec-hdr" style="margin:26px 0 20px">
-    <div>
-      <div class="sec-title">Resumen del estudio</div>
-      <div class="sec-sub" id="dash-fecha">—</div>
-    </div>
-    <button class="btn" onclick="loadDashboard()">↻ Actualizar</button>
-  </div>
-  <div class="dash-grid" id="dash-cards">
-    <div class="dcard"><div class="dcard-label">Ingresos ARS</div><div class="dcard-val" id="d-ing-ars">—</div></div>
-    <div class="dcard"><div class="dcard-label">Ingresos USD</div><div class="dcard-val" id="d-ing-usd">—</div></div>
-    <div class="dcard"><div class="dcard-label">Gastos ARS</div><div class="dcard-val" id="d-gast-ars">—</div></div>
-    <div class="dcard"><div class="dcard-label">Gastos USD</div><div class="dcard-val" id="d-gast-usd">—</div></div>
-    <div class="dcard"><div class="dcard-label">Balance ARS</div><div class="dcard-val" id="d-bal-ars">—</div></div>
-    <div class="dcard"><div class="dcard-label">Balance USD</div><div class="dcard-val" id="d-bal-usd">—</div></div>
-    <div class="dcard"><div class="dcard-label">Por cobrar ARS</div><div class="dcard-val warn" id="d-cobrar-ars">—</div><div class="dcard-sub">de trabajos presupuestados</div></div>
-    <div class="dcard"><div class="dcard-label">Por cobrar USD</div><div class="dcard-val warn" id="d-cobrar-usd">—</div><div class="dcard-sub">de trabajos presupuestados</div></div>
-    <div class="dcard"><div class="dcard-label">Trabajos activos</div><div class="dcard-val" id="d-trab">—</div></div>
-    <div class="dcard"><div class="dcard-label">Presupuestos</div><div class="dcard-val" id="d-pres">—</div></div>
-  </div>
+  <!-- Balance entre socios (lo que queda por repartir) -->
   <div class="balance-card">
     <div class="balance-title">Balance entre socios — plata sin repartir</div>
     <div class="balance-row">
@@ -1162,13 +1143,6 @@ async function loadAll() {
     toast('Error al cargar datos: ' + e.message, true);
   }
 }
-async function loadDashboard() {
-  if (!SCRIPT_URL) return;
-  try {
-    const d = await apiGet('getDashboard');
-    renderDashboard(d);
-  } catch(e) { /* fallback to local */ renderDashboardLocal(); }
-}
 function renderAll() {
   renderTrabajos();
   renderMovimientos();
@@ -1184,14 +1158,6 @@ function renderAll() {
 function renderDashboardLocal() {
   const movs = DB.movimientos;
   const n = v => parseFloat(v) || 0;
-  const cobros  = movs.filter(m => m.tipo === 'ingreso');
-  const gastos  = movs.filter(m => m.tipo === 'egreso');
-  const ingARS  = cobros.filter(m=>m.moneda==='$').reduce((a,b)=>a+n(b.monto),0);
-  const ingUSD  = cobros.filter(m=>m.moneda==='U$D').reduce((a,b)=>a+n(b.monto),0);
-  const gastARS = gastos.filter(m=>m.moneda==='$').reduce((a,b)=>a+n(b.monto),0);
-  const gastUSD = gastos.filter(m=>m.moneda==='U$D').reduce((a,b)=>a+n(b.monto),0);
-  const balARS  = ingARS - gastARS;
-  const balUSD  = ingUSD - gastUSD;
   // Balance entre socios: solo cuenta movimientos SIN repartir ("Ambos" ya nació dividido)
   const pendRep = movs.filter(m => !esRepartido(m) && m.quien_pago !== 'Ambos');
   const sumP = (tipo, quien, mon) => pendRep.filter(m=>m.tipo===tipo&&m.quien_pago===quien&&m.moneda===mon).reduce((a,b)=>a+n(b.monto),0);
@@ -1200,24 +1166,6 @@ function renderDashboardLocal() {
                      - sumP('egreso','Santiago',mon) - sumP('ingreso','Julia',mon)) / 2;
   const by = id => document.getElementById(id);
   const fmt = (v,mon) => mon + ' ' + Math.abs(v).toLocaleString('es-AR',{maximumFractionDigits:0});
-  by('d-ing-ars').textContent = fmt(ingARS,'$');
-  by('d-ing-usd').textContent = fmt(ingUSD,'U$D');
-  by('d-gast-ars').textContent = fmt(gastARS,'$');    by('d-gast-ars').className = 'dcard-val warn';
-  by('d-gast-usd').textContent = fmt(gastUSD,'U$D');  by('d-gast-usd').className = 'dcard-val warn';
-  by('d-bal-ars').textContent = fmt(balARS,'$');      by('d-bal-ars').className = 'dcard-val ' + (balARS>=0?'pos':'neg');
-  by('d-bal-usd').textContent = fmt(balUSD,'U$D');    by('d-bal-usd').className = 'dcard-val ' + (balUSD>=0?'pos':'neg');
-  by('d-trab').textContent = DB.trabajos.filter(t=>!['Cobrado','Finalizado'].includes(t.estado)).length;
-  by('d-pres').textContent = DB.presupuestos.length;
-  // Por cobrar: saldo pendiente de todos los trabajos presupuestados aún no cobrados
-  let pcARS = 0, pcUSD = 0;
-  DB.trabajos.filter(t => t.estado !== 'Cobrado').forEach(t => {
-    const c = cobradoDe(t);
-    const mARS = n(t.monto_ars), mUSD = n(t.monto_usd);
-    if(mARS > 0) pcARS += Math.max(mARS - c.ars, 0);
-    if(mUSD > 0) pcUSD += Math.max(mUSD - c.usd, 0);
-  });
-  by('d-cobrar-ars').textContent = fmt(pcARS,'$');
-  by('d-cobrar-usd').textContent = fmt(pcUSD,'U$D');
   // Qué cobró y qué puso cada uno (solo lo pendiente de repartir)
   const resumenP = (quien, mon) => {
     const c = sumP('ingreso', quien, mon), g = sumP('egreso', quien, mon);
@@ -1247,7 +1195,6 @@ function renderDashboardLocal() {
     verd.className = 'balance-verdict uneven';
     verd.textContent = frases.join(' · ') + ' para quedar a mano';
   }
-  by('dash-fecha').textContent = 'Actualizado: ' + new Date().toLocaleString('es-AR');
   renderAccionPanel();
 }
 // ==============================
