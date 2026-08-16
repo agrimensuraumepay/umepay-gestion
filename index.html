@@ -238,20 +238,24 @@ tr:hover td{background:var(--bg)}
 .carpeta.cerrada .carpeta-flecha{transform:rotate(-90deg)}
 .carpeta.cerrada .carpeta-body{display:none}
 /* ── Tablero de trabajos (columnas por estado) ── */
-.board{display:flex;gap:10px;overflow-x:auto;align-items:flex-start;padding-bottom:10px;-webkit-overflow-scrolling:touch}
-.board-col{flex:1 0 225px;max-width:300px;background:var(--bg2);border-radius:var(--r);padding:8px 8px 2px}
+.board-wrap{margin:0 calc(50% - 50vw);padding:0 18px}
+.board-topscroll{overflow-x:auto;overflow-y:hidden;height:14px;margin-bottom:4px}
+.board-topscroll>div{height:1px}
+.board{display:flex;gap:12px;overflow-x:auto;align-items:flex-start;padding-bottom:10px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.board::-webkit-scrollbar{display:none}
+.board-col{flex:1 0 285px;max-width:370px;background:var(--bg2);border-radius:var(--r);padding:10px 10px 4px}
 .board-col-hdr{display:flex;align-items:center;gap:8px;margin:2px 2px 9px;font-size:11px}
 .board-cnt{margin-left:auto;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1px 8px;font-size:10.5px;color:var(--ink2)}
-.mini-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 10px;margin-bottom:8px;cursor:pointer;box-shadow:var(--sh)}
+.mini-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 13px;margin-bottom:9px;cursor:pointer;box-shadow:var(--sh)}
 .mini-card:hover{border-color:var(--border2)}
 .mini-card.prio-alta{border-left:3px solid var(--red)}
 .mini-card.apagada{opacity:.62}
-.mini-cli{font-family:var(--serif);font-size:13.5px;font-weight:500}
-.mini-tipo{font-size:10.5px;color:var(--ink3);margin:1px 0 6px}
-.mini-prox{font-size:10.5px;background:var(--green3);color:var(--green);border-radius:6px;padding:3px 7px;margin-bottom:6px;line-height:1.4}
-.mini-venc{font-size:10.5px;background:var(--red2);color:var(--red);border-radius:6px;padding:3px 7px;margin-bottom:6px;line-height:1.4}
-.mini-pie{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:10px;color:var(--ink3)}
-.mini-monto{color:var(--green);font-weight:600;font-size:11px;font-variant-numeric:tabular-nums}
+.mini-cli{font-family:var(--serif);font-size:15.5px;font-weight:500}
+.mini-tipo{font-size:11.5px;color:var(--ink3);margin:2px 0 7px}
+.mini-prox{font-size:11.5px;background:var(--green3);color:var(--green);border-radius:6px;padding:3px 7px;margin-bottom:6px;line-height:1.4}
+.mini-venc{font-size:11.5px;background:var(--red2);color:var(--red);border-radius:6px;padding:3px 7px;margin-bottom:6px;line-height:1.4}
+.mini-pie{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:11px;color:var(--ink3)}
+.mini-monto{color:var(--green);font-weight:600;font-size:12.5px;font-variant-numeric:tabular-nums}
 .mini-dias.mal{color:var(--red);font-weight:600}
 .board-vermas{text-align:center;font-size:11px;color:var(--ink3);padding:6px;cursor:pointer;user-select:none}
 .board-vermas:hover{color:var(--ink)}
@@ -274,7 +278,7 @@ tr:hover td{background:var(--bg)}
 .mov-out{color:var(--red);font-weight:600;white-space:nowrap;text-align:right}
 .ficha-archivo{display:block;font-size:12.5px;padding:7px 0;border-bottom:1px solid var(--border)}
 .ficha-archivo:last-child{border-bottom:none}
-@media(max-width:700px){ .board-col{flex:0 0 78vw;max-width:78vw} .ficha-cliente{font-size:18px} }
+@media(max-width:700px){ .board-col{flex:0 0 84vw;max-width:84vw} .board-wrap{padding:0 12px} .ficha-cliente{font-size:18px} }
 .dcard.clickable{cursor:pointer;transition:border .12s}
 .dcard.clickable:hover{border-color:var(--ink3)}
 /* ── SPINNER ── */
@@ -435,15 +439,6 @@ tr:hover td{background:var(--bg)}
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <input id="trab-buscar" class="url-input" style="width:170px;margin:0"
         placeholder="🔍 Cliente, lugar…" oninput="renderTrabajos()">
-      <select id="filtro-estado" class="url-input" style="width:auto;margin:0" onchange="renderTrabajos()">
-        <option value="">Todos los estados</option>
-        <option value="A presupuestar">A presupuestar</option>
-        <option value="En curso">En curso</option>
-        <option value="Pausado">Pausado</option>
-        <option value="Esperando cliente">Esperando cliente</option>
-        <option value="Finalizado">Finalizado</option>
-        <option value="Cobrado">Terminado y cobrado</option>
-      </select>
       <button class="btn success" onclick="nuevoTrabajo()">+ Nuevo trabajo</button>
     </div>
   </div>
@@ -677,6 +672,10 @@ tr:hover td{background:var(--bg)}
           <label>Fecha límite (opcional)</label>
           <input type="date" id="trab-limite">
         </div>
+      </div>
+      <div class="field">
+        <label>📁 Carpeta del trabajo en Drive (link, opcional)</label>
+        <input id="trab-carpeta" placeholder="Pegá acá el link de la carpeta en Google Drive">
       </div>
       <div class="field">
         <label>▸ Próxima acción (el siguiente paso concreto)</label>
@@ -1301,9 +1300,7 @@ function renderAccionPanel() {
     <div><div class="accion-col-t">⚠ Sin novedades</div>${items3.join('') || vacio}</div>`;
 }
 function irATrabajos(estado) {
-  document.getElementById('filtro-estado').value = estado || '';
   showTab('trabajos');
-  renderTrabajos();
 }
 // ==============================
 // TRABAJOS
@@ -1480,7 +1477,7 @@ function miniCardHtml(t, apagada){
   </div>`;
 }
 function renderTrabajos() {
-  const filtro = document.getElementById('filtro-estado').value;
+  const filtro = '';
   const q = (document.getElementById('trab-buscar').value||'').toLowerCase().trim();
   let list = DB.trabajos.filter(t => !filtro || t.estado === filtro);
   if(q) list = list.filter(t =>
@@ -1505,7 +1502,7 @@ function renderTrabajos() {
       ${grupo.map(t=>miniCardHtml(t, CERRADOS.includes(t.estado))).join('')}${extra||''}
     </div>`;
   };
-  let html = '<div class="board">';
+  let html = '<div class="board-wrap"><div class="board-topscroll" id="board-topscroll"><div></div></div><div class="board" id="board-el">';
   if(filtro){
     html += colHtml(estadoBadge(filtro), ordenar(list));
   } else {
@@ -1521,13 +1518,22 @@ function renderTrabajos() {
       html += colHtml('<span class="badge badge-gray">Cerrados</span>', visibles, extra);
     }
   }
-  wrap.innerHTML = html + '</div>';
+  wrap.innerHTML = html + '</div></div>';
+  syncBoardScroll();
   // Si la ficha está abierta, se refresca con los datos nuevos
   if(fichaTrabajoId) renderFicha();
 }
 // ══════════════════════════════════════════════
 // FICHA DEL TRABAJO EN PANTALLA COMPLETA
 // ══════════════════════════════════════════════
+// El deslizador de arriba refleja el scroll del tablero (y viceversa)
+function syncBoardScroll(){
+  const top=document.getElementById('board-topscroll'), board=document.getElementById('board-el');
+  if(!top||!board) return;
+  top.firstElementChild.style.width=board.scrollWidth+'px';
+  top.onscroll=()=>{ board.scrollLeft=top.scrollLeft; };
+  board.onscroll=()=>{ top.scrollLeft=board.scrollLeft; };
+}
 function abrirTrabajo(id){
   fichaTrabajoId = id;
   renderFicha();
@@ -1554,6 +1560,7 @@ function renderFicha(){
   const tieneSaldo = t.estado!=='Cobrado' && (s.ars>0 || s.usd>0);
   // Archivos: el presupuesto PDF + todos los comprobantes de los movimientos vinculados
   const archivos = [];
+  if(t.carpeta_url) archivos.push({url:t.carpeta_url, nombre:'📁 Carpeta del trabajo en Drive'});
   if(t.presupuesto_url) archivos.push({url:t.presupuesto_url, nombre:'📄 Presupuesto (PDF en Drive)'});
   movs.filter(m=>m.comprobante_url).forEach(m =>
     archivos.push({url:m.comprobante_url, nombre:`📎 ${m.comprobante_nombre||'Comprobante'} — ${m.descripcion||fmtFecha(m.fecha)}`}));
@@ -1682,6 +1689,7 @@ async function saveTrabajo() {
     monto_usd:      document.getElementById('trab-monto-usd').value || '0',
     presupuesto_ref:document.getElementById('trab-pres-ref').value,
     fecha_inicio:   document.getElementById('trab-fecha').value,
+    carpeta_url:    document.getElementById('trab-carpeta').value.trim(),
   };
   if(!data.cliente){ toast('El cliente es obligatorio',true); return; }
   // Si cambió el comentario, el anterior no se pierde: va al historial
@@ -1750,6 +1758,7 @@ function editTrabajo(id) {
   document.getElementById('trab-desc').value         = t.descripcion;
   document.getElementById('trab-estado').value       = t.estado;
   document.getElementById('trab-comentario').value   = t.comentario;
+  document.getElementById('trab-carpeta').value      = t.carpeta_url || '';
   document.getElementById('trab-prioridad').value    = t.prioridad || 'Media';
   document.getElementById('trab-proxima').value      = t.proxima_accion || '';
   document.getElementById('trab-limite').value       = t.fecha_limite ? t.fecha_limite.split('T')[0] : '';
@@ -2287,7 +2296,7 @@ window.addEventListener('message', e => {
 });
 // Abre el formulario en blanco para crear (limpia el id oculto -> es alta, no edición)
 function nuevoTrabajo() {
-  ['trab-id','trab-cliente','trab-desc','trab-comentario','trab-monto-ars','trab-monto-usd','trab-pres-ref','trab-proxima','trab-limite'].forEach(i=>document.getElementById(i).value='');
+  ['trab-id','trab-cliente','trab-desc','trab-comentario','trab-monto-ars','trab-monto-usd','trab-pres-ref','trab-proxima','trab-limite','trab-carpeta'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('trab-tipo').selectedIndex = 0;
   document.getElementById('trab-estado').value = 'En curso';
   document.getElementById('trab-prioridad').value = 'Media';
