@@ -129,7 +129,7 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
     <div class="result-grid">
       <div class="rcard"><div class="rcard-lbl">Honorario Colegio (arancel)</div><div class="rcard-val green" id="r-hon">—</div></div>
       <div class="rcard"><div class="rcard-lbl">Aportes previsionales 18%</div><div class="rcard-val amber" id="r-ap">—</div></div>
-      <div class="rcard"><div class="rcard-lbl">Tasa 8</div><div class="rcard-val" id="r-t8">—</div></div>
+      <div class="rcard"><div class="rcard-lbl" id="r-t8-lbl">Tasa 8</div><div class="rcard-val" id="r-t8">—</div></div>
       <div class="rcard"><div class="rcard-lbl">Tasa Control Previo</div><div class="rcard-val" id="r-tcp">—</div></div>
     </div>
     <div class="section">
@@ -285,6 +285,8 @@ const C = {
   dia_campo: 143559.744, dia_gab: 133121.6,
   // Tasa 8 (ESQUEMA) — valores vigentes desde 01/08/2026 (VS14)
   t8_N: 151.536, t8_N19: 872.48, t8_N21: 40409.6, t8_N22: 49928.16,
+  // Tasa del Certificado de Amojonamiento (ESQUEMA N27-N31, hoja CA de la VS14)
+  tca_1: 40409.6, tca_2: 49068.8, tca_3: 72160, tca_4: 108240, tca_lote: 2164.8,
   // Tasa Control Previo
   tcp_rur_lo: 38400, tcp_rur_hi: 51200, tcp_rur_lote: 9600,
   tcp_urb_base: 19200, tcp_urb_lote: 4800,
@@ -341,6 +343,21 @@ function t8Urb(lotes, sup_m2){
   return b + N*13*lotes + C.t8_N19;
 }
 function tcpRural(lotes, sup_ha){ lotes=lotes||1; return (sup_ha<=100?C.tcp_rur_lo:C.tcp_rur_hi) + Math.max(0,lotes-1)*C.tcp_rur_lote; }
+// Tasa del Certificado de Amojonamiento (hoja CA): urbano por lotes, rural por ha + lotes de la tarea
+function tasaCAUrb(lotes){
+  lotes=lotes||1;
+  if(lotes<4) return C.tca_1;
+  if(lotes<7) return C.tca_2;
+  if(lotes<11) return C.tca_3;
+  return C.tca_3 + (lotes-10)*C.tca_lote;
+}
+function tasaCARur(ha, lotes){
+  lotes=lotes||1; ha=ha||0;
+  if(ha<50) return C.tca_1;
+  if(ha<200) return C.tca_2 + lotes*C.tca_lote;
+  if(ha<500) return C.tca_3 + lotes*C.tca_lote;
+  return C.tca_4 + lotes*C.tca_lote;
+}
 function tcpUrb(lotes){ lotes=lotes||1; return lotes<=4 ? C.tcp_urb_base : lotes*C.tcp_urb_lote; }
 // Amojonamiento / VEP urbano (escala por lotes)
 function certUrb(lotes){
@@ -412,7 +429,7 @@ const PARAMS = {
   ],
   ca_rural: [
     {id:'has',label:'Superficie (ha)',ph:'Ej: 50'},
-    {id:'lotes',label:'Lotes (Tasa Control)',ph:'1'},
+    {id:'lotes',label:'Lotes de la tarea (para la tasa del certificado)',ph:'1'},
   ],
   altimetria: [
     {id:'puntos',label:'Nro. de puntos de mira',ph:'50'},
@@ -461,7 +478,7 @@ function onCat(){
 function recalc(){
   const cat=document.getElementById('cat').value; if(!cat) return;
   const terr=TERR[document.getElementById('zona').value]||0;
-  let hon=0, det=[], t8=0, tcp=0;
+  let hon=0, det=[], t8=0, tcp=0, t8Label='Tasa 8';
 
   if(RURALES.includes(cat) && cat!=='ca_rural'){
     const P=gv('perim'),S=gv('sup_ha'),VT=gv('vt'),adic=gv('adic_km');
@@ -505,12 +522,15 @@ function recalc(){
     det=[{k:`VEP (${n} parcela${n>1?'s':''})`,v:hon}];
   }
   else if(cat==='ca_urbano'){
-    const n=gv('lotes')||1; hon=certUrb(n); t8=0; tcp=0;
+    const n=gv('lotes')||1; hon=certUrb(n); tcp=0;
+    // Tasa del certificado (hoja CA de la planilla; no lleva Tasa Control Previo)
+    t8 = tasaCAUrb(n); t8Label='Tasa Certificado';
     det=[{k:`Amojonamiento urbano (${n} lote${n>1?'s':''})`,v:hon}];
   }
   else if(cat==='ca_rural'){
     const ha=gv('has'); hon = ha<51?C.ca_rur_lo : ha<501?C.ca_rur_mid : C.ca_rur_hi;
-    tcp = tcpRural(gv('lotes')||1, ha); t8=0;
+    // Tasa del certificado según ha + lotes (hoja CA; sin Tasa Control Previo)
+    t8 = tasaCARur(ha, gv('lotes')||1); t8Label='Tasa Certificado'; tcp=0;
     det=[{k:'Amojonamiento rural',v:hon}];
   }
   else if(cat==='altimetria'){
@@ -534,13 +554,14 @@ function recalc(){
   document.getElementById('r-hon').textContent=fmt(hon);
   document.getElementById('r-ap').textContent=fmt(ap);
   document.getElementById('r-t8').textContent=t8>0?fmt(t8):'—';
+  document.getElementById('r-t8-lbl').textContent=t8>0?t8Label:'Tasa 8';
   document.getElementById('r-tcp').textContent=tcp>0?fmt(tcp):'—';
   document.getElementById('hon-final').placeholder='Arancel Colegio: '+fmt(hon);
   document.getElementById('desglose').innerHTML =
     det.map(d=>`<div><span>${d.k}</span><span>${fmt(d.v)}</span></div>`).join('') +
     `<div class="tot"><span>Total honorarios (Colegio)</span><span>${fmt(hon)}</span></div>`+
     `<div><span>+ Aportes 18%</span><span>${fmt(ap)}</span></div>`+
-    (t8>0?`<div><span>+ Tasa 8</span><span>${fmt(t8)}</span></div>`:'')+
+    (t8>0?`<div><span>+ ${t8Label}</span><span>${fmt(t8)}</span></div>`:'')+
     (tcp>0?`<div><span>+ Tasa Control Previo</span><span>${fmt(tcp)}</span></div>`:'');
 }
 
