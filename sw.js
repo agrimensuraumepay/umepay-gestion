@@ -1,7 +1,7 @@
 // Service worker mínimo: permite instalar la app y que funcione básico sin internet.
 // Estrategia: para archivos propios (HTML/CSS/íconos) intenta la red y si no hay,
 // usa la copia guardada. NO toca las llamadas a Google (Apps Script) ni los POST.
-const CACHE = 'umepay-v2';
+const CACHE = 'umepay-v3';
 const ASSETS = ['./', './index.html', './presupuestos.html',
   './logo-umepay.svg', './icon-192.png', './icon-512.png', './manifest.webmanifest'];
 
@@ -21,7 +21,9 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;                       // los guardados (POST) van directo a Google
   if (new URL(req.url).origin !== location.origin) return; // no interferir con Apps Script ni fuentes
   e.respondWith(
-    fetch(req)
+    // cache:'no-cache' obliga a revalidar contra el servidor (si no, el caché HTTP
+    // de 10 min de GitHub Pages hace que los deploys tarden en verse)
+    fetch(req, { cache: 'no-cache' })
       .then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return res; })
       .catch(() => caches.match(req).then(r => r || caches.match('./index.html')))
   );
