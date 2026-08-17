@@ -126,6 +126,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 .btn.sm{padding:4px 10px;font-size:11px}
 /* ── TABLE ── */
 .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
+/* Tablas anchas: scroll horizontal (la barra visible es la de arriba, espejada) */
+.table-wrap.scroll-x{overflow-x:auto;scrollbar-width:none}
+.table-wrap.scroll-x::-webkit-scrollbar{display:none}
 table{width:100%;border-collapse:collapse}
 th{background:var(--bg2);padding:9px 12px;text-align:left;font-size:10px;
   letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);border-bottom:1px solid var(--border);white-space:nowrap}
@@ -513,8 +516,9 @@ tr:hover td{background:var(--bg)}
         <div class="sec-sub">Los datos que se usaron para calcular cada presupuesto generado con la calculadora</div>
       </div>
     </div>
-    <div class="table-wrap">
-      <table>
+    <div class="board-topscroll" id="calc-topscroll"><div></div></div>
+    <div class="table-wrap scroll-x" id="calc-wrap">
+      <table style="min-width:1150px">
         <thead>
           <tr>
             <th>Fecha</th><th>Cliente</th><th>Tipo</th><th>Superficie</th><th>Perímetro</th>
@@ -1935,6 +1939,14 @@ function renderPresupuestos() {
   </tr>`).join('');
   renderDatosCalculo();
 }
+// El deslizador de arriba del cuadro refleja su scroll horizontal (como el tablero)
+function syncCalcScroll(){
+  const top=document.getElementById('calc-topscroll'), wrapEl=document.getElementById('calc-wrap');
+  if(!top||!wrapEl) return;
+  top.firstElementChild.style.width=wrapEl.scrollWidth+'px';
+  top.onscroll=()=>{ wrapEl.scrollLeft=top.scrollLeft; };
+  wrapEl.onscroll=()=>{ top.scrollLeft=wrapEl.scrollLeft; };
+}
 // ── Cuadro «Datos de cálculo»: qué se usó para armar cada presupuesto de la calculadora ──
 function jsonObj(s){ try{ const v=JSON.parse(s); return v && typeof v==='object' && !Array.isArray(v) ? v : null; }catch(e){ return null; } }
 function renderDatosCalculo(){
@@ -1985,6 +1997,7 @@ function renderDatosCalculo(){
       <td>${monto ? (d.moneda==='U$D'?'U$D ':'$ ')+monto.toLocaleString('es-AR',{maximumFractionDigits:0}) : '—'}</td>
     </tr>`;
   }).join('');
+  syncCalcScroll();
 }
 async function savePresupuesto() {
   const id = document.getElementById('pres-id').value;
@@ -2264,6 +2277,8 @@ function showTab(name) {
   document.getElementById('tab-'+name).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
   window.scrollTo({top:0});
+  // El ancho del deslizador del cuadro se mide recién cuando la pestaña se ve
+  if(name==='presupuestos' && typeof syncCalcScroll==='function') syncCalcScroll();
 }
 function openModal(id) {
   document.getElementById(id).classList.add('open');
