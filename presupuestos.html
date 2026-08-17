@@ -253,8 +253,9 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
 
 <script>
 // ══════════════════════════════════════════════════════════════════
-// MOTOR DE CÁLCULO — Arancel VS13 2026 (constantes vigentes verificadas
-// contra la planilla "Honorarios Agrimensura 2026 VS13.xlsx")
+// MOTOR DE CÁLCULO — Arancel VS14 2026 (constantes vigentes verificadas
+// contra "Honorarios Agrimensura 2026 VS14 - NUEVAS TASAS DESDE 01-08-2026.xlsx";
+// los honorarios no cambiaron respecto de VS13, solo la Tasa 8)
 // ══════════════════════════════════════════════════════════════════
 const C = {
   // Rural Art.49
@@ -282,8 +283,8 @@ const C = {
   taq_base: 372740.48,
   taq_K: {'1:500':65873.15,'1:1000':32932.17,'1:2000':15370.70,'1:5000':10997.96,'1:10000':6559.10},
   dia_campo: 143559.744, dia_gab: 133121.6,
-  // Tasa 8 (ESQUEMA)
-  t8_N: 112.266, t8_N19: 646.38, t8_N21: 29937.6, t8_N22: 36989.46,
+  // Tasa 8 (ESQUEMA) — valores vigentes desde 01/08/2026 (VS14)
+  t8_N: 151.536, t8_N19: 872.48, t8_N21: 40409.6, t8_N22: 49928.16,
   // Tasa Control Previo
   tcp_rur_lo: 38400, tcp_rur_hi: 51200, tcp_rur_lote: 9600,
   tcp_urb_base: 19200, tcp_urb_lote: 4800,
@@ -965,7 +966,7 @@ function showTab(name,btn){
 }
 // Auto-test de control (consola)
 function selfTest(){
-  const r=t8Rural(1,1893); console.log('Tasa8 rural 1893ha/1lote =', Math.round(r), '(esperado ~261.671)');
+  const r=t8Rural(1,1893); console.log('Tasa8 rural 1893ha/1lote =', Math.round(r), '(esperado ~353.202 con tasas VS14)');
 }
 // Modo embebido: cuando la calculadora se muestra DENTRO de la pestaña Presupuestos
 // (index.html la carga con ?embed=1), ocultamos su barra superior propia y le
