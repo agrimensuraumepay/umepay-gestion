@@ -55,13 +55,21 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
 .pdf-preview{background:#e8e8e0;border-radius:var(--r);padding:20px;margin-top:16px}
 .prev-doc{background:white;max-width:620px;margin:0 auto;padding:36px 40px;box-shadow:0 2px 14px rgba(28,25,23,.1);font-family:Georgia,serif;font-size:12px;color:#111;line-height:1.55}
 .note{background:var(--amber2);color:var(--amber);border-radius:6px;padding:8px 12px;font-size:11px;margin-bottom:14px}
+/* Ayuda: signo de pregunta al lado de cada campo + globito explicativo */
+.qmark{display:inline-block;width:15px;height:15px;line-height:15px;text-align:center;border-radius:50%;background:var(--green);color:#fff;font-size:10px;font-weight:700;cursor:pointer;margin-left:5px;vertical-align:middle;user-select:none}
+.qmark:hover{background:var(--green2)}
+.sub-h{grid-column:1/-1;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--green);font-weight:700;border-top:1px dashed var(--border2);padding-top:10px;margin-top:4px}
+.sub-h:first-child{border-top:none;padding-top:0;margin-top:0}
+#tip{position:absolute;z-index:400;max-width:300px;background:var(--ink);color:#fff;font-size:11px;line-height:1.55;padding:10px 12px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.28);display:none}
+#tip b{color:#86efac}
+#tip::after{content:'';position:absolute;top:-6px;left:14px;border:6px solid transparent;border-top:none;border-bottom-color:var(--ink)}
 </style>
 </head>
 <body>
 <div class="topbar">
   <div class="topbar-l">
     <div class="topbar-logo">AGRIMENSURA<br>UMEPAY</div>
-    <div class="topbar-title">Calculadora de Honorarios — Arancel VS13 2026</div>
+    <div class="topbar-title">Calculadora de Honorarios — Arancel VS14 2026</div>
   </div>
   <a href="index.html">← Volver a Gestión</a>
 </div>
@@ -250,6 +258,7 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
   </div>
 </div>
 </div>
+<div id="tip"></div>
 
 <script>
 // ══════════════════════════════════════════════════════════════════
@@ -265,8 +274,8 @@ const C = {
   // Subdivisión urbana Art.52 (regular / irregular: base hasta 10 lotes + excedente)
   sub_reg_base: 73181.616, sub_reg_exc: 12624.512,
   sub_irr_base: 129119.136, sub_irr_exc: 19937.384,
-  // Amojonamiento urbano por lote (Art.53, dentro de mensura+subdivisión)
-  amoj_urb_lote: 12624.512,
+  // Amojonamiento urbano por lote (Art.53 d y e — CODAR H111/H112)
+  amoj_urb_lote: 12624.512, amoj_irr_lote: 39936.48,
   // Unión (valor fijo por unión = medio día de gabinete)
   union_fijo: 66560.8,
   // Amojonamiento / VEP (escala por lotes)
@@ -374,78 +383,116 @@ function vepEscala(lotes){
   return C.vep_7_10 + (lotes-10)*C.cert_exc10;
 }
 
+// Cada campo puede llevar `help`: el texto que sale en el globito del signo "?".
+// Los ítems con `sub` son subtítulos (no son campos, solo separan bloques).
 const PARAMS = {
   men_urbana: [
-    {id:'perim_m',label:'Perímetro terreno (m)',ph:'Ej: 80'},
-    {id:'edif_m',label:'Perímetro edificado (m) — 0 si no tiene',ph:'0'},
-    {id:'vt',label:'Valor de tierra ($) — opcional',ph:'0 (dejar vacío si no aplica)'},
+    {id:'perim_m',label:'Perímetro terreno (m)',ph:'Ej: 80',help:'La <b>suma de los cuatro lados</b> de la parcela, en metros. Si el lote mide 10 × 30, el perímetro es 80.'},
+    {id:'edif_m',label:'Perímetro edificado (m) — 0 si no tiene',ph:'0',help:'Perímetro de <b>la construcción</b> (no del terreno), en metros. Si el terreno es baldío, dejalo en 0.'},
+    {id:'vt',label:'Valor de tierra ($) — opcional',ph:'0 (dejar vacío si no aplica)',help:'La <b>base imponible de la tierra</b> que figura en el reporte de cuenta de Catastro. Suma un adicional al honorario (el "diagrama"). Si cargás el PDF del reporte se completa solo.'},
   ],
   men_urbana_sub: [
-    {id:'perim_m',label:'Perímetro terreno (m)',ph:'Ej: 160'},
-    {id:'edif_m',label:'Perímetro edificado (m)',ph:'0'},
-    {id:'vt',label:'Valuación de tierra ($) — del reporte de Catastro',ph:'Ej: 32015278'},
-    {id:'lot_reg',label:'Lotes regulares',ph:'2'},
-    {id:'lot_irr',label:'Lotes irregulares',ph:'0'},
-    {id:'sup_m2',label:'Superficie total (m2) — Tasa 8',ph:'Ej: 600'},
+    {sub:'Mensura — Art. 53'},
+    {id:'perim_m',label:'Perímetro terreno (m)',ph:'Ej: 160',help:'Suma de los lados de <b>la parcela original</b> (la que se mensura), en metros.'},
+    {id:'edif_m',label:'Perímetro edificado (m)',ph:'0',help:'Perímetro de <b>la construcción</b> existente, en metros. 0 si es baldío.'},
+    {id:'vt',label:'Valuación de tierra ($) — del reporte de Catastro',ph:'Ej: 32015278',help:'La <b>base imponible de la tierra</b> del reporte de cuenta. Se completa sola si cargás el PDF del reporte.'},
+    {sub:'Subdivisión — Art. 52 (se cobra por manzana, no por lote)'},
+    {id:'mz_reg',label:'Manzanas regulares',ph:'1',help:'Cantidad de <b>manzanas de forma regular</b> (rectangulares) que se subdividen. Cada una cubre <b>hasta 10 lotes</b>. Si dividís una sola parcela rectangular en 2, 3 o hasta 10 lotes, va <b>1</b>.'},
+    {id:'mz_reg_exc',label:'Lotes en exceso (regulares)',ph:'0',help:'Solo si alguna manzana <b>regular</b> tiene más de 10 lotes: se anotan acá <b>los que pasan de 10</b>. Ej: manzana de 13 lotes → manzanas regulares 1 y excedentes 3. Si ninguna pasa de 10 lotes, dejá 0.'},
+    {id:'mz_irr',label:'Manzanas irregulares',ph:'0',help:'Cantidad de <b>manzanas de forma irregular</b> (no rectangulares) que se subdividen. Cada una cubre hasta 10 lotes y se cobra más caro que la regular.'},
+    {id:'mz_irr_exc',label:'Lotes en exceso (irregulares)',ph:'0',help:'Los lotes que pasan de 10 dentro de una manzana <b>irregular</b>. Si no pasa de 10, dejá 0.'},
+    {sub:'Amojonamiento — Art. 53 (se cobra por lote)'},
+    {id:'amoj_reg',label:'Lotes regulares a amojonar',ph:'2',help:'Cantidad de <b>lotes resultantes de forma regular</b> (rectangular) que se van a amojonar, o sea a los que se les clavan los mojones. Acá sí va la <b>cantidad de lotes</b>, uno por uno.'},
+    {id:'amoj_irr',label:'Lotes irregulares a amojonar',ph:'0',help:'Cantidad de <b>lotes resultantes de forma irregular</b> a amojonar. Se cobran más caro que los regulares.'},
+    {sub:'Tasas de Catastro'},
+    {id:'sup_m2',label:'Superficie total (m2) — Tasa 8',ph:'Ej: 600',help:'Superficie <b>total involucrada en la tarea</b>, en metros cuadrados. Es la base de la Tasa 8.'},
+    {id:'lotes',label:'Cantidad de lotes resultantes (Tasa 8)',ph:'2',help:'Cuántos <b>lotes quedan al final</b> de la subdivisión. Suma a la Tasa 8 y a la Tasa de Control Previo. Si lo dejás vacío uso la suma de los lotes a amojonar.'},
   ],
   men_union_sub: [
-    {id:'perim_m',label:'Perímetro terreno unido (m)',ph:'Ej: 110'},
-    {id:'edif_m',label:'Perímetro edificado suma (m)',ph:'Ej: 80'},
-    {id:'vt',label:'Valuación de tierra ($) — del reporte de Catastro',ph:'Ej: 32015278'},
-    {id:'unions',label:'Cantidad de uniones',ph:'1'},
-    {id:'lot_reg',label:'Lotes regulares resultantes',ph:'2'},
-    {id:'lot_irr',label:'Lotes irregulares',ph:'0'},
-    {id:'sup_m2',label:'Superficie total (m2) — Tasa 8',ph:'Ej: 600'},
+    {sub:'Mensura — Art. 53'},
+    {id:'perim_m',label:'Perímetro terreno unido (m)',ph:'Ej: 110',help:'Perímetro de la <b>figura ya unida</b> (el contorno de todas las parcelas juntas), en metros.'},
+    {id:'edif_m',label:'Perímetro edificado suma (m)',ph:'Ej: 80',help:'Suma de los perímetros de <b>todas las construcciones</b> involucradas, en metros. 0 si no hay.'},
+    {id:'vt',label:'Valuación de tierra ($) — del reporte de Catastro',ph:'Ej: 32015278',help:'Suma de las <b>bases imponibles de tierra</b> de todas las parcelas. Se completa sola si cargás los reportes.'},
+    {id:'unions',label:'Cantidad de uniones',ph:'1',help:'Cuántas <b>uniones o futuras uniones</b> tiene el trabajo. Si juntás 2 parcelas en 1, va 1.'},
+    {sub:'Subdivisión — Art. 52 (se cobra por manzana, no por lote)'},
+    {id:'mz_reg',label:'Manzanas regulares',ph:'1',help:'Cantidad de <b>manzanas regulares</b> (rectangulares) que se subdividen. Cada una cubre <b>hasta 10 lotes</b>. Una parcela rectangular dividida en 2 a 10 lotes = <b>1</b>.'},
+    {id:'mz_reg_exc',label:'Lotes en exceso (regulares)',ph:'0',help:'Los lotes que <b>pasan de 10</b> en una manzana regular. Si ninguna pasa de 10, dejá 0.'},
+    {id:'mz_irr',label:'Manzanas irregulares',ph:'0',help:'Cantidad de <b>manzanas irregulares</b> (no rectangulares) que se subdividen. Cada una cubre hasta 10 lotes.'},
+    {id:'mz_irr_exc',label:'Lotes en exceso (irregulares)',ph:'0',help:'Los lotes que pasan de 10 en una manzana <b>irregular</b>.'},
+    {sub:'Amojonamiento — Art. 53 (se cobra por lote)'},
+    {id:'amoj_reg',label:'Lotes regulares a amojonar',ph:'2',help:'<b>Cantidad de lotes</b> regulares resultantes que se amojonan (uno por uno, no por manzana).'},
+    {id:'amoj_irr',label:'Lotes irregulares a amojonar',ph:'0',help:'<b>Cantidad de lotes</b> irregulares resultantes que se amojonan.'},
+    {sub:'Tasas de Catastro'},
+    {id:'sup_m2',label:'Superficie total (m2) — Tasa 8',ph:'Ej: 600',help:'Superficie total involucrada en la tarea, en metros cuadrados. Es la base de la Tasa 8.'},
+    {id:'lotes',label:'Cantidad de lotes resultantes (Tasa 8)',ph:'2',help:'Cuántos <b>lotes quedan al final</b>. Suma a la Tasa 8 y al Control Previo. Vacío = uso la suma de los lotes a amojonar.'},
   ],
   vep: [
-    {id:'lotes',label:'Cantidad de parcelas / certificados',ph:'1'},
+    {id:'lotes',label:'Cantidad de parcelas / certificados',ph:'1',help:'Cuántas <b>parcelas</b> se verifican, o sea cuántos certificados de estado parcelario se emiten.'},
   ],
   ca_urbano: [
-    {id:'lotes',label:'Cantidad de lotes a amojonar',ph:'1'},
+    {id:'lotes',label:'Cantidad de lotes a amojonar',ph:'1',help:'Cuántos <b>lotes</b> se amojonan en el trabajo. El honorario y la tasa del certificado suben por escalones: hasta 3, de 4 a 6, de 7 a 10, y después por cada lote.'},
   ],
   men_rural: [
-    {id:'perim',label:'Perímetro total (km)',ph:'Ej: 12.5'},
-    {id:'sup_ha',label:'Superficie (ha)',ph:'Ej: 500'},
-    {id:'vt',label:'Valor de tierra — Base Imponible ($)',ph:'Del reporte Catastro'},
-    {id:'adic_km',label:'Adicional km (si SUP < perímetro)',ph:'0'},
-    {id:'lotes',label:'Lotes (Tasa 8)',ph:'1'},
+    {id:'perim',label:'Perímetro total (km)',ph:'Ej: 12.5',help:'Perímetro del campo <b>en kilómetros</b> (¡no en metros!). Es la suma de todos los lados del polígono.'},
+    {id:'sup_ha',label:'Superficie (ha)',ph:'Ej: 500',help:'Superficie del campo <b>en hectáreas</b>. Se completa sola si cargás el reporte de Catastro.'},
+    {id:'vt',label:'Valor de tierra — Base Imponible ($)',ph:'Del reporte Catastro',help:'La <b>base imponible de la tierra</b> del reporte de cuenta. Suma el adicional por valor de tierra ("diagrama").'},
+    {id:'adic_km',label:'Adicional km (si SUP < perímetro)',ph:'0',help:'Kilómetros de <b>adicional</b> cuando el campo es muy alargado y el perímetro resulta desproporcionado respecto de la superficie. Si es un campo normal, dejá 0.'},
+    {id:'lotes',label:'Lotes (Tasa 8)',ph:'1',help:'Cantidad de <b>parcelas involucradas</b> en la tarea. Es lo que Catastro usa para la Tasa 8 y el Control Previo.'},
   ],
   men_rural_sub: [
-    {id:'perim',label:'Perímetro total (km)',ph:'Ej: 8'},
-    {id:'sup_ha',label:'Superficie (ha)',ph:'Ej: 200'},
-    {id:'frac',label:'Fracciones resultantes',ph:'2'},
-    {id:'vt',label:'Valor de tierra ($)',ph:'Del reporte Catastro'},
-    {id:'adic_km',label:'Adicional km',ph:'0'},
-    {id:'lotes',label:'Lotes (Tasa 8)',ph:'2'},
+    {id:'perim',label:'Perímetro total (km)',ph:'Ej: 8',help:'Perímetro del campo <b>en kilómetros</b> (no en metros).'},
+    {id:'sup_ha',label:'Superficie (ha)',ph:'Ej: 200',help:'Superficie total <b>en hectáreas</b>. Se completa sola si cargás el reporte de Catastro.'},
+    {id:'frac',label:'Fracciones resultantes',ph:'2',help:'En qué cantidad de <b>fracciones</b> queda dividido el campo. En rural se habla de fracciones, no de manzanas ni lotes: si partís un campo en 2, va 2.'},
+    {id:'vt',label:'Valor de tierra ($)',ph:'Del reporte Catastro',help:'La <b>base imponible de la tierra</b> del reporte de cuenta.'},
+    {id:'adic_km',label:'Adicional km',ph:'0',help:'Kilómetros de adicional cuando el perímetro es desproporcionado para la superficie. Normalmente 0.'},
+    {id:'lotes',label:'Lotes (Tasa 8)',ph:'2',help:'Cantidad de parcelas resultantes, para la Tasa 8 y el Control Previo.'},
   ],
   men_rural_union: [
-    {id:'perim',label:'Perímetro total unido (km)',ph:'Ej: 10'},
-    {id:'sup_ha',label:'Superficie total (ha)',ph:'Ej: 400'},
-    {id:'unions',label:'Cantidad de uniones',ph:'1'},
-    {id:'frac',label:'Fracciones subdivisión',ph:'2'},
-    {id:'vt',label:'Valor de tierra ($)',ph:'Del reporte Catastro'},
-    {id:'adic_km',label:'Adicional km',ph:'0'},
-    {id:'lotes',label:'Lotes (Tasa 8)',ph:'2'},
+    {id:'perim',label:'Perímetro total unido (km)',ph:'Ej: 10',help:'Perímetro de la <b>figura ya unida</b>, en kilómetros.'},
+    {id:'sup_ha',label:'Superficie total (ha)',ph:'Ej: 400',help:'Superficie total unida, en hectáreas.'},
+    {id:'unions',label:'Cantidad de uniones',ph:'1',help:'Cuántas <b>uniones o futuras uniones</b> hay en el trabajo.'},
+    {id:'frac',label:'Fracciones subdivisión',ph:'2',help:'En cuántas <b>fracciones</b> queda dividido el campo después de unir. Si solo unís y no subdividís, dejá 0.'},
+    {id:'vt',label:'Valor de tierra ($)',ph:'Del reporte Catastro',help:'Suma de las <b>bases imponibles de tierra</b> de todas las parcelas.'},
+    {id:'adic_km',label:'Adicional km',ph:'0',help:'Kilómetros de adicional por perímetro desproporcionado. Normalmente 0.'},
+    {id:'lotes',label:'Lotes (Tasa 8)',ph:'2',help:'Cantidad de parcelas resultantes, para la Tasa 8 y el Control Previo.'},
   ],
   ca_rural: [
-    {id:'has',label:'Superficie (ha)',ph:'Ej: 50'},
-    {id:'lotes',label:'Lotes de la tarea (para la tasa del certificado)',ph:'1'},
+    {id:'has',label:'Superficie (ha)',ph:'Ej: 50',help:'Superficie del campo <b>en hectáreas</b>. El honorario cambia por escalones: menos de 51, de 51 a 500, y más de 500.'},
+    {id:'lotes',label:'Lotes de la tarea (para la tasa del certificado)',ph:'1',help:'Cantidad de <b>parcelas o fracciones</b> que se amojonan. Suma a la tasa del certificado.'},
   ],
   altimetria: [
-    {id:'puntos',label:'Nro. de puntos de mira',ph:'50'},
-    {id:'transv',label:'¿Con transversales?',type:'select',opts:['No','Sí']},
-    {id:'long_km',label:'Longitud planimetría km (0 = solo nivelación)',ph:'0'},
+    {id:'puntos',label:'Nro. de puntos de mira',ph:'50',help:'Cantidad de <b>puntos relevados</b> con nivel o estación total.'},
+    {id:'transv',label:'¿Con transversales?',type:'select',opts:['No','Sí'],help:'Poné <b>Sí</b> si además de la nivelación del eje se levantaron <b>perfiles transversales</b>.'},
+    {id:'long_km',label:'Longitud planimetría km (0 = solo nivelación)',ph:'0',help:'Kilómetros de <b>planimetría</b> asociados. Si el trabajo es solo nivelación, dejá 0.'},
   ],
   taquimetria: [
-    {id:'sup_ha',label:'Superficie (ha)',ph:'5'},
-    {id:'escala',label:'Escala del plano',type:'select',opts:['1:500','1:1000','1:2000','1:5000','1:10000']},
+    {id:'sup_ha',label:'Superficie (ha)',ph:'5',help:'Superficie relevada <b>en hectáreas</b>.'},
+    {id:'escala',label:'Escala del plano',type:'select',opts:['1:500','1:1000','1:2000','1:5000','1:10000'],help:'Escala a la que se dibuja el plano. <b>Cuanto más detalle</b> (1:500), más alto el honorario.'},
   ],
   dias: [
-    {id:'d_campo',label:'Días de campo',ph:'2'},
-    {id:'d_gab',label:'Días de gabinete',ph:'1'},
+    {id:'d_campo',label:'Días de campo',ph:'2',help:'Cantidad de <b>jornadas de campo</b> (medición) del equipo.'},
+    {id:'d_gab',label:'Días de gabinete',ph:'1',help:'Cantidad de <b>jornadas de oficina</b>: cálculo, dibujo y trámites.'},
   ],
 };
 const RURALES = ['men_rural','men_rural_sub','men_rural_union','ca_rural'];
+
+// ── Globito de ayuda (el signo "?" al lado de cada campo) ──
+function ayuda(ev, cat, i){
+  ev.preventDefault(); ev.stopPropagation();
+  const f=(PARAMS[cat]||[])[i]; if(!f||!f.help) return;
+  const tip=document.getElementById('tip'), q=ev.currentTarget;
+  tip.innerHTML=`<div style="font-weight:700;margin-bottom:5px">${f.label}</div>${f.help}`;
+  tip.style.display='block';
+  const r=q.getBoundingClientRect(), sy=window.scrollY||0, sx=window.scrollX||0;
+  let left=r.left+sx-10;
+  left=Math.max(8, Math.min(left, sx+document.documentElement.clientWidth-tip.offsetWidth-8));
+  tip.style.left=left+'px';
+  tip.style.top=(r.bottom+sy+8)+'px';
+  if(typeof reportHeight==='function') reportHeight();
+}
+function cerrarAyuda(){ const t=document.getElementById('tip'); if(t) t.style.display='none'; }
+document.addEventListener('click', cerrarAyuda);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') cerrarAyuda(); });
 let lastResult = {};
 function gv(id){ const e=document.getElementById('p_'+id); if(!e) return 0; return e.tagName==='SELECT'?e.value:(parseFloat(e.value)||0); }
 function gs(id){ const e=document.getElementById('p_'+id); return e?e.value:''; }
@@ -456,9 +503,11 @@ function onCat(){
   document.getElementById('zona-field').style.display = RURALES.includes(cat) && cat!=='ca_rural' ? 'flex':'none';
   if(!cat){ ps.style.display='none'; rs.style.display='none'; return; }
   const fields=PARAMS[cat]||[];
-  pf.innerHTML=`<div class="g2" style="gap:12px">${fields.map(f=>{
-    if(f.type==='select') return `<div class="field"><label>${f.label}</label><select id="p_${f.id}" onchange="recalc()">${f.opts.map(o=>`<option>${o}</option>`).join('')}</select></div>`;
-    return `<div class="field"><label>${f.label}</label><input type="number" id="p_${f.id}" placeholder="${f.ph}" oninput="recalc()"></div>`;
+  pf.innerHTML=`<div class="g2" style="gap:12px">${fields.map((f,i)=>{
+    if(f.sub) return `<div class="sub-h">${f.sub}</div>`;
+    const q=f.help?`<span class="qmark" onclick="ayuda(event,'${cat}',${i})">?</span>`:'';
+    if(f.type==='select') return `<div class="field"><label>${f.label}${q}</label><select id="p_${f.id}" onchange="recalc()">${f.opts.map(o=>`<option>${o}</option>`).join('')}</select></div>`;
+    return `<div class="field"><label>${f.label}${q}</label><input type="number" id="p_${f.id}" placeholder="${f.ph}" oninput="recalc()"></div>`;
   }).join('')}</div>`;
   ps.style.display='block'; rs.style.display='block';
   // Si ya se cargó un reporte de Catastro, precargar valuación y superficie
@@ -500,21 +549,23 @@ function recalc(){
   else if(['men_urbana','men_urbana_sub','men_union_sub'].includes(cat)){
     const L=gv('perim_m'),Ed=gv('edif_m'),VT=gv('vt');
     const mensura = Math.max(C.u_por_m*(L+Ed) + diagUrb(VT), C.u_min);
-    let sub=0, amoj=0, uni=0;
+    let sub=0, amoj=0, uni=0, amojLotes=0;
     if(cat!=='men_urbana'){
-      const lr=gv('lot_reg'), li=gv('lot_irr');
-      // Art.52: subdivisión = cantidad de lotes × base (regular / irregular)
-      sub  = lr*C.sub_reg_base + li*C.sub_irr_base;
-      // Art.53: amojonamiento por cada lote
-      amoj = (lr+li)*C.amoj_urb_lote;
+      // Art.52 (planilla, hoja MenUrbana I6/I8): la subdivisión se cobra POR MANZANA
+      // —cada manzana cubre hasta 10 lotes— más un adicional por cada lote en exceso.
+      sub  = gv('mz_reg')*C.sub_reg_base + gv('mz_reg_exc')*C.sub_reg_exc
+           + gv('mz_irr')*C.sub_irr_base + gv('mz_irr_exc')*C.sub_irr_exc;
+      // Art.53 (I12): el amojonamiento se cobra POR LOTE, regular o irregular.
+      const ar=gv('amoj_reg'), ai=gv('amoj_irr'); amojLotes=ar+ai;
+      amoj = ar*C.amoj_urb_lote + ai*C.amoj_irr_lote;
     }
     if(cat==='men_union_sub'){ uni=gv('unions')*C.union_fijo; }
     hon = mensura + sub + amoj + uni;
-    const lotes=(gv('lot_reg')||0)+(gv('lot_irr')||0)||1, S2=gv('sup_m2');
+    const lotes=gv('lotes')||amojLotes||1, S2=gv('sup_m2');
     t8 = t8Urb(lotes, S2); tcp = tcpUrb(lotes);
     det=[{k:'Mensura Art.53',v:mensura}];
-    if(sub>0)  det.push({k:'Subdivisión Art.52',v:sub});
-    if(amoj>0) det.push({k:'Amojonamiento Art.53',v:amoj});
+    if(sub>0)  det.push({k:'Subdivisión Art.52 (por manzana)',v:sub});
+    if(amoj>0) det.push({k:`Amojonamiento Art.53 (${amojLotes} lote${amojLotes>1?'s':''})`,v:amoj});
     if(uni>0)  det.push({k:'Unión (fijo)',v:uni});
   }
   else if(cat==='vep'){
@@ -800,7 +851,7 @@ async function cargarTrabajos(){
 function datosPresupuesto(){
   const g=id=>{ const e=document.getElementById(id); return e?e.value:''; };
   const cat=g('cat'), params={};
-  (PARAMS[cat]||[]).forEach(f=>{ params[f.label]=gs(f.id); });
+  (PARAMS[cat]||[]).forEach(f=>{ if(f.id) params[f.label]=gs(f.id); });
   return {
     fecha:g('p-fecha'), cliente:g('p-cliente'), departamento:g('p-depto'), localidad:g('p-loc'),
     cuenta:g('p-cuenta'), superficie:g('p-sup'), nomenclatura:g('p-nomen'), designacion:g('p-desig'), tipo_parcela:g('p-tipoparcela'),
