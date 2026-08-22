@@ -71,6 +71,46 @@ Abrí esa URL. Andá a la pestaña **⚙ Configuración**. Pegá en el casillero
 
 ---
 
+## Parte C — Conectar el calendario con Google Calendar (~5 min)
+
+Los eventos que cargás en la pestaña **Calendario** de la app se copian solos a un calendario de Google llamado **"Umepay - Estudio"**, así los ves en el celular. Es de ida nomás: de la app al calendario, no al revés.
+
+### 1. Actualizar el código del script
+
+1. Abrí la Google Sheet → **Extensiones → Apps Script**.
+2. Clic en el código, **Ctrl+A** (selecciona todo) y **Ctrl+V** con el contenido nuevo de `umepay_apps_script.gs`.
+3. **Ctrl+S** para guardar.
+
+### 2. Darle permiso para usar el calendario
+
+1. Arriba, en el desplegable de funciones (dice `doGet` o similar), elegí **`sincronizarTodo`**.
+2. Clic en **▷ Ejecutar**.
+3. Google pide permisos: **Revisar permisos** → elegí la cuenta del estudio → **Configuración avanzada** → **Ir a Umepay - Gestión (no seguro)** → **Permitir**.
+   > La pantalla de "no seguro" aparece porque el script es tuyo y Google no lo verificó. Es normal.
+4. Abajo, en el registro, va a decir cuántos eventos pasaron al calendario. Esta función copia también todos los eventos viejos.
+
+### 3. Volver a publicar el script
+
+1. **Implementar → Gestionar implementaciones**.
+2. Clic en el **lápiz** (Editar) de la implementación que ya existe.
+3. En **Versión** elegí **Nueva versión** → **Implementar**.
+4. La URL `/exec` **no cambia**: no hay que tocar nada en la app.
+
+### 4. Verlo en el celular
+
+Abrí Google Calendar en el teléfono → menú (☰) → fijate que **"Umepay - Estudio"** esté tildado. Si no aparece todavía, bajá hasta la cuenta del estudio y activalo.
+
+**Cómo se comporta:**
+- Evento con hora → dura 1 hora.
+- Evento sin hora → queda como "todo el día".
+- El aviso lo elegís evento por evento, en **"Aviso en el celular"**: sin aviso, 5/10/30 minutos, 1/2/3 horas, el día anterior, 2 días o 1 semana antes. Dejándolo en **Automático** avisa el día antes y 1 hora antes (si es de todo el día, a las 9 de la mañana del día anterior).
+- En los eventos de todo el día, los avisos de un día o más suenan a las 9 de la mañana, no a la medianoche.
+- El campo **Lugar** va como ubicación del evento (el celular te ofrece el mapa).
+- Si editás el evento en la app, se actualiza el mismo evento (no se duplica). Si lo borrás, se borra del calendario.
+- Marcado como *Hecho* aparece con ✔ adelante; *No se hizo*, con ✘.
+
+---
+
 ## Cómo se usa día a día
 
 - **Trabajos:** ves cada trabajo como tarjeta con su estado y comentario. "↺ Estado" actualiza rápido el estado y deja una nota fechada. "✎ Editar" cambia todos los datos.

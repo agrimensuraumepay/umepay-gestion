@@ -388,6 +388,7 @@ tr:hover td{background:var(--bg)}
         <button class="btn sm" onclick="calHoy()">Hoy</button>
         <button class="btn sm" onclick="calPrev()">‹</button>
         <button class="btn sm" onclick="calNext()">›</button>
+        <button class="btn sm" onclick="abrirGoogleCalendar()" title="Abrir Google Calendar (en el celular abre la app)">📅 Google</button>
         <button class="btn success sm" onclick="nuevoCompromiso()">+ Evento</button>
       </div>
     </div>
@@ -1067,6 +1068,22 @@ tr:hover td{background:var(--bg)}
             <option>No se hizo</option>
           </select>
         </div>
+      </div>
+      <div class="field">
+        <label>Aviso en el celular</label>
+        <select id="comp-aviso">
+          <option value="">Automático (el día antes y 1 hora antes)</option>
+          <option value="-1">Sin aviso</option>
+          <option value="5">5 minutos antes</option>
+          <option value="10">10 minutos antes</option>
+          <option value="30">30 minutos antes</option>
+          <option value="60">1 hora antes</option>
+          <option value="120">2 horas antes</option>
+          <option value="180">3 horas antes</option>
+          <option value="1440">El día anterior</option>
+          <option value="2880">2 días antes</option>
+          <option value="10080">1 semana antes</option>
+        </select>
       </div>
       <div class="field">
         <label>Trabajo vinculado (opcional)</label>
@@ -2073,11 +2090,17 @@ function renderCalendar() {
 function calPrev() { calM--; if(calM < 0){ calM = 11; calY--; } renderCalendar(); }
 function calNext() { calM++; if(calM > 11){ calM = 0; calY++; } renderCalendar(); }
 function calHoy()  { const t = new Date(); calY = t.getFullYear(); calM = t.getMonth(); renderCalendar(); }
+// Abre Google Calendar en el mismo mes que se está viendo.
+// En el celular, el link lo agarra la app de Calendario.
+function abrirGoogleCalendar() {
+  window.open(`https://calendar.google.com/calendar/u/0/r/month/${calY}/${calM+1}/1`, '_blank', 'noopener');
+}
 function nuevoCompromiso(fecha) {
   ['comp-id','comp-titulo','comp-hora','comp-lugar','comp-nota'].forEach(i => document.getElementById(i).value = '');
   document.getElementById('comp-fecha').value = fecha || new Date().toISOString().split('T')[0];
   document.getElementById('comp-tipo').selectedIndex = 0;
   document.getElementById('comp-estado').selectedIndex = 0;
+  document.getElementById('comp-aviso').value = '';
   document.getElementById('comp-trabajo').value = '';
   document.getElementById('modal-comp-title').textContent = 'Nuevo evento';
   document.getElementById('comp-del-btn').style.display = 'none';
@@ -2093,6 +2116,7 @@ function editCompromiso(id) {
   document.getElementById('comp-tipo').value    = c.tipo || 'Reunión';
   document.getElementById('comp-lugar').value   = c.lugar || '';
   document.getElementById('comp-estado').value  = c.estado || 'Pendiente';
+  document.getElementById('comp-aviso').value   = c.aviso_min !== undefined ? String(c.aviso_min) : '';
   document.getElementById('comp-trabajo').value = c.trabajo_id || '';
   document.getElementById('comp-nota').value    = c.nota || '';
   document.getElementById('modal-comp-title').textContent = 'Editar evento';
@@ -2109,6 +2133,7 @@ async function saveCompromiso() {
     tipo:       document.getElementById('comp-tipo').value,
     trabajo_id: document.getElementById('comp-trabajo').value,
     estado:     document.getElementById('comp-estado').value,
+    aviso_min:  document.getElementById('comp-aviso').value, // minutos antes; '' = automático, '-1' = sin aviso
     nota:       document.getElementById('comp-nota').value,
   };
   if(!data.titulo || !data.fecha){ toast('Completá título y fecha',true); return; }
@@ -2257,7 +2282,13 @@ async function saveData(sheet, id, data) {
       data.id = res.id;
       DB[sheet].push(data);
     }
-    toast('Guardado ✓');
+    // Los eventos se copian al Google Calendar del estudio. Si eso falla,
+    // la fila igual se guardó: solo avisamos.
+    if (res && res.calendario && res.calendario.error) {
+      toast('Guardado, pero no se pudo pasar al calendario: ' + res.calendario.error, true);
+    } else {
+      toast('Guardado ✓');
+    }
     renderAll();
   } catch(e) { toast('Error al guardar: '+e.message, true); }
 }
