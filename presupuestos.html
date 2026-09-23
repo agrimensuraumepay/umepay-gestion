@@ -69,12 +69,12 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
 <div class="topbar">
   <div class="topbar-l">
     <div class="topbar-logo">AGRIMENSURA<br>UMEPAY</div>
-    <div class="topbar-title">Calculadora de Honorarios — Arancel VS14 2026</div>
+    <div class="topbar-title">Calculadora de Honorarios — Arancel VS16 2026</div>
   </div>
   <a href="index.html">← Volver a Gestión</a>
 </div>
 <div class="main">
-<div class="note">Arancel VS14 — tasas nuevas vigentes desde el 01/08/2026 (los honorarios no cambiaron). Ante cualquier diferencia con tu planilla, avisá.</div>
+<div class="note">Arancel VS16 — honorarios vigentes desde el <b>01/10/2026</b> (coeficiente 5,786: subieron 31,26% respecto de la VS14) y tasas de Control Previo de la Res. 909-1-26 (octubre 2026 a enero 2027). La Tasa 8 y la del Certificado de Amojonamiento no cambiaron. Ante cualquier diferencia con tu planilla, avisá.</div>
 <div class="tabs">
   <button class="tab-btn active" onclick="showTab('calc',this)">◈ Calculadora</button>
   <button class="tab-btn" onclick="showTab('presupuesto',this)">◻ Presupuesto PDF</button>
@@ -262,43 +262,47 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
 
 <script>
 // ══════════════════════════════════════════════════════════════════
-// MOTOR DE CÁLCULO — Arancel VS14 2026 (constantes vigentes verificadas
-// contra "Honorarios Agrimensura 2026 VS14 - NUEVAS TASAS DESDE 01-08-2026.xlsx";
-// los honorarios no cambiaron respecto de VS13, solo la Tasa 8)
+// MOTOR DE CÁLCULO — Arancel VS16 2026 (constantes verificadas una por una
+// contra "Honorarios Agrimensura 2026 VS16.xlsx", hojas CODAR y ESQUEMA).
+// Respecto de la VS14: los honorarios suben por el coeficiente CODAR
+// (4,408 → 5,786, +31,26%) y las tasas de Control Previo por la
+// Res. 909-1-26. La Tasa 8 y la del Certificado de Amojonamiento no cambian.
 // ══════════════════════════════════════════════════════════════════
+// Valores del arancel VS16 (CODAR, coeficiente 5,786 — vigente desde el 01/10/2026).
+// Los honorarios subieron un 31,26% respecto de la VS14 (coeficiente 4,408).
 const C = {
   // Rural Art.49
-  r_base: 199682.40, r_km: 99810.34, r_add_km: 73194.84,
+  r_base: 262105.8, r_km: 131012.398, r_add_km: 96076.53,
   // Urbano Art.53
-  u_por_m: 1749.976, u_min: 553362.688,
+  u_por_m: 2297.042, u_min: 726350,
   // Subdivisión urbana Art.52 (regular / irregular: base hasta 10 lotes + excedente)
-  sub_reg_base: 73181.616, sub_reg_exc: 12624.512,
-  sub_irr_base: 129119.136, sub_irr_exc: 19937.384,
+  sub_reg_base: 96059.172, sub_reg_exc: 16571.104,
+  sub_irr_base: 169483.512, sub_irr_exc: 26170.078,
   // Amojonamiento urbano por lote (Art.53 d y e — CODAR H111/H112)
-  amoj_urb_lote: 12624.512, amoj_irr_lote: 39936.48,
+  amoj_urb_lote: 16571.104, amoj_irr_lote: 52421.16,
   // Unión (valor fijo por unión = medio día de gabinete)
-  union_fijo: 66560.8,
+  union_fijo: 87368.6,
   // Amojonamiento / VEP (escala por lotes)
-  cert_base: 166534.24,      // < 4 lotes  (G215)
-  cert_4_10: 210120.544,     // 4-10 lotes (G219/G229)
-  cert_exc10: 71779.872,     // excedente por bloque de 10 / por lote (G220/G231)
-  vep_7_10: 281900.416,      // VEP 7-10 lotes (G230)
+  cert_base: 218595.08,      // < 4 lotes  (G215)
+  cert_4_10: 275807.048,     // 4-10 lotes (G219/G229)
+  cert_exc10: 94219.224,     // excedente por bloque de 10 / por lote (G220/G231)
+  vep_7_10: 370026.272,      // VEP 7-10 lotes (G230)
   // Amojonamiento rural (por ha)
-  ca_rur_lo: 166534.24,      // < 51 ha
-  ca_rur_mid: 281900.416,    // 51-500 ha (G224)
-  ca_rur_hi: 353680.288,     // > 500 ha (G225)
+  ca_rur_lo: 218595.08,      // < 51 ha
+  ca_rur_mid: 370026.272,    // 51-500 ha (G224)
+  ca_rur_hi: 464245.496,     // > 500 ha (G225)
   // Topografía
-  alt_base: 246230.88, alt_pt_a: 1309.18, alt_pt_b: 3751.21, alt_L: 7436.30,
-  taq_base: 372740.48,
-  taq_K: {'1:500':65873.15,'1:1000':32932.17,'1:2000':15370.70,'1:5000':10997.96,'1:10000':6559.10},
-  dia_campo: 143559.744, dia_gab: 133121.6,
-  // Tasa 8 (ESQUEMA) — valores vigentes desde 01/08/2026 (VS14)
+  alt_base: 323205.96, alt_pt_a: 1718.442, alt_pt_b: 4923.886, alt_L: 9760.982,
+  taq_base: 489264.16,
+  taq_K: {'1:500':86465.984,'1:1000':43227.206,'1:2000':20175.782,'1:5000':14436.07,'1:10000':8609.568},
+  dia_campo: 188438.448, dia_gab: 174737.2,
+  // Tasa 8 (ESQUEMA) — sin cambios en la VS16 (siguen las tasas del 01/08/2026)
   t8_N: 151.536, t8_N19: 872.48, t8_N21: 40409.6, t8_N22: 49928.16,
-  // Tasa del Certificado de Amojonamiento (ESQUEMA N27-N31, hoja CA de la VS14)
+  // Tasa del Certificado de Amojonamiento (ESQUEMA N27-N31, hoja CA) — sin cambios
   tca_1: 40409.6, tca_2: 49068.8, tca_3: 72160, tca_4: 108240, tca_lote: 2164.8,
-  // Tasa Control Previo
-  tcp_rur_lo: 38400, tcp_rur_hi: 51200, tcp_rur_lote: 9600,
-  tcp_urb_base: 19200, tcp_urb_lote: 4800,
+  // Tasa Control Previo — Res. 909-1-26, vigente octubre 2026 a enero 2027
+  tcp_rur_lo: 51840, tcp_rur_hi: 69120, tcp_rur_lote: 12960,
+  tcp_urb_base: 25920, tcp_urb_lote: 6480,
 };
 const TERR = {normal:0,arbustos:.5,monte:.75,cenagoso:1.5};
 
@@ -313,7 +317,8 @@ function diagRural(v){
 }
 // Diagrama URBANO (tramos con topes altos; suele ser 0 si no se carga valor)
 function diagUrb(v){
-  v=v||0; const B1=43126831.71,B2=431268502.26,B3=862537066.22; let d=0;
+  // Topes CODAR E133 / G134 / G135 (también se actualizan con el coeficiente).
+  v=v||0; const B1=56608858.504,B2=566088828.052,B3=1132177737.108; let d=0;
   d += v>B1 ? B1*0.015 : v*0.015;
   if(v>B1) d += v>B2 ? (B2-B1)*0.01 : (v-B1)*0.01;
   if(v>B2) d += v>B3 ? (B3-B2)*0.008 : (v-B2)*0.008;
@@ -1038,7 +1043,7 @@ function showTab(name,btn){
 }
 // Auto-test de control (consola)
 function selfTest(){
-  const r=t8Rural(1,1893); console.log('Tasa8 rural 1893ha/1lote =', Math.round(r), '(esperado ~353.202 con tasas VS14)');
+  const r=t8Rural(1,1893); console.log('Tasa8 rural 1893ha/1lote =', Math.round(r), '(esperado ~353.202; la Tasa 8 no cambio en la VS16)');
 }
 // Modo embebido: cuando la calculadora se muestra DENTRO de la pestaña Presupuestos
 // (index.html la carga con ?embed=1), ocultamos su barra superior propia y le
