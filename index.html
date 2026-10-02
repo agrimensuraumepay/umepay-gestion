@@ -285,7 +285,14 @@ tr:hover td{background:var(--bg)}
 .ficha-tipo{font-size:12px;color:var(--ink3);margin:2px 0 12px}
 .ficha-acciones{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
 .ficha-sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;margin-bottom:11px}
-.ficha-sec-title{font-size:10.5px;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:9px;text-transform:uppercase}
+.ficha-sec-title{font-size:10.5px;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:9px;text-transform:uppercase;
+  display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ficha-tot{font-size:12px;color:var(--ink2);display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px;
+  padding-bottom:8px;border-bottom:1px dashed var(--border2)}
+.ficha-tot b{font-family:var(--mono);font-weight:600}
+.ficha-tot .cobrado b{color:var(--green)}
+.ficha-tot .gastado b{color:var(--amber)}
+.ficha-tot .neto b{color:var(--ink)}
 .ficha-dato{font-size:12.5px;color:var(--ink2);line-height:1.65}
 .ficha-dato b{color:var(--ink)}
 .ficha-mov-tabla{width:100%;border-collapse:collapse;font-size:12px}
@@ -295,6 +302,41 @@ tr:hover td{background:var(--bg)}
 .mov-out{color:var(--red);font-weight:600;white-space:nowrap;text-align:right}
 .ficha-archivo{display:block;font-size:12.5px;padding:7px 0;border-bottom:1px solid var(--border)}
 .ficha-archivo:last-child{border-bottom:none}
+/* ── TRÁMITES Y VISADOS ── */
+.tram{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);font-size:12.5px}
+.tram:last-child{border-bottom:none}
+.tram-main{flex:1;min-width:0}
+.tram-org{font-weight:600;color:var(--ink)}
+.tram-sub{font-size:11px;color:var(--ink3);margin-top:2px;line-height:1.5}
+.tram-dias{font-family:var(--mono);font-size:11px;white-space:nowrap;padding-top:2px}
+.tram-dias.espera{color:var(--amber)}
+.tram-dias.listo{color:var(--green)}
+.tram-acc{display:flex;gap:4px;align-items:center}
+.tiempos{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:18px;box-shadow:var(--sh)}
+.tiempos>summary{cursor:pointer;padding:12px 16px;font-size:12px;font-weight:600;color:var(--ink2);
+  letter-spacing:.04em;text-transform:uppercase;user-select:none;list-style:none}
+.tiempos>summary::-webkit-details-marker{display:none}
+.tiempos>summary::before{content:'▸ ';color:var(--green)}
+.tiempos[open]>summary::before{content:'▾ '}
+.tiempos-body{padding:0 16px 14px}
+.tiempos-tabla{width:100%;border-collapse:collapse;font-size:12px}
+.tiempos-tabla th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--ink3);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--border)}
+.tiempos-tabla td{padding:7px 8px;border-bottom:1px solid var(--border)}
+.tiempos-tabla tr:last-child td{border-bottom:none}
+.tiempos-tabla .num{font-family:var(--mono);text-align:right;white-space:nowrap}
+.tiempos-prom{color:var(--green);font-weight:600}
+/* ── CAJA: fijos, variables, aportes y acumulado ── */
+.caja-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px 16px;margin-bottom:16px;box-shadow:var(--sh)}
+.caja-tabla{width:100%;border-collapse:collapse;font-size:12.5px}
+.caja-tabla th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--ink3);font-weight:600;padding:5px 8px;border-bottom:1px solid var(--border)}
+.caja-tabla td{padding:7px 8px;border-bottom:1px solid var(--border);color:var(--ink2)}
+.caja-tabla .num{text-align:right;font-family:var(--mono);white-space:nowrap}
+.caja-tabla tr.caja-res td{border-bottom:none;border-top:2px solid var(--border2);
+  font-weight:600;color:var(--ink);padding-top:9px}
+.caja-nota{font-size:11px;color:var(--ink3);margin-top:9px;line-height:1.5}
 @media(max-width:700px){ .board-col{flex:0 0 84vw;max-width:84vw} .board-wrap{padding:0 12px} .ficha-cliente{font-size:18px} }
 .dcard.clickable{cursor:pointer;transition:border .12s}
 .dcard.clickable:hover{border-color:var(--ink3)}
@@ -420,6 +462,11 @@ tr:hover td{background:var(--bg)}
       <button class="btn success" onclick="nuevoTrabajo()">+ Nuevo trabajo</button>
     </div>
   </div>
+  <!-- Cuánto tarda cada organismo en contestar (se arma solo con los trámites cargados) -->
+  <details class="tiempos" id="tiempos-panel">
+    <summary>⏱ Cuánto tarda cada visado</summary>
+    <div class="tiempos-body" id="tiempos-body"></div>
+  </details>
   <div class="trab-cards" id="trab-list"><div style="text-align:center;color:var(--ink3);padding:40px">Cargando...</div></div>
 </div>
 <!-- ═══════════════ MOVIMIENTOS ═══════════════ -->
@@ -438,7 +485,7 @@ tr:hover td{background:var(--bg)}
   </div>
   <!-- Subtotales rápidos del período elegido -->
   <div style="font-size:12px;color:var(--ink3);margin-bottom:8px">Mostrando: <b id="mov-periodo">—</b></div>
-  <div class="dash-grid" style="margin-bottom:16px" id="mov-totals"></div>
+  <div class="caja-card" id="mov-totals"></div>
   <!-- Balance en dos columnas: ingresos | gastos -->
   <div class="mov-cols">
     <div>
@@ -513,21 +560,21 @@ tr:hover td{background:var(--bg)}
     <!-- Cuadro con los datos usados para calcular cada presupuesto generado con la calculadora -->
     <div class="sec-hdr" style="margin-top:28px">
       <div>
-        <div class="sec-title">Datos de cálculo</div>
-        <div class="sec-sub">Los datos que se usaron para calcular cada presupuesto generado con la calculadora</div>
+        <div class="sec-title">Datos de cálculo — presupuestos sin trabajo</div>
+        <div class="sec-sub">Los que ya tienen un trabajo abierto muestran estos datos adentro de la ficha del trabajo. Desde acá podés abrirles uno.</div>
       </div>
     </div>
     <div class="board-topscroll" id="calc-topscroll"><div></div></div>
     <div class="table-wrap scroll-x" id="calc-wrap">
-      <table style="min-width:1150px">
+      <table style="min-width:1320px">
         <thead>
           <tr>
             <th>Fecha</th><th>Cliente</th><th>Tipo</th><th>Superficie</th><th>Perímetro</th>
             <th>Base imponible</th><th>Hon. Colegio</th><th>Aportes 18%</th><th>Tasa 8</th>
-            <th>Tasa Control</th><th>Presupuestado</th>
+            <th>Tasa Control</th><th>Presupuestado</th><th>Planilla</th><th></th>
           </tr>
         </thead>
-        <tbody id="calc-tbody"><tr class="empty-row"><td colspan="11">Cargando...</td></tr></tbody>
+        <tbody id="calc-tbody"><tr class="empty-row"><td colspan="13">Cargando...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -814,6 +861,7 @@ tr:hover td{background:var(--bg)}
           <label>Categoría</label>
           <select id="mov-cat">
             <option>Honorarios</option>
+            <option>Aporte de caja</option>
             <option>Tasa / Arancel</option>
             <option>Combustible / Traslado</option>
             <option>Insumos</option>
@@ -837,6 +885,13 @@ tr:hover td{background:var(--bg)}
           💸 Esta plata ya está repartida entre los socios
         </label>
         <div class="field-hint">Si la marcás, no suma al balance de «quién le debe a quién» del Dashboard.</div>
+      </div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;text-transform:none;letter-spacing:0">
+          <input type="checkbox" id="mov-fijo" style="width:auto;margin:0">
+          🔁 Es un gasto fijo mensual
+        </label>
+        <div class="field-hint">Monotributo, caja previsional, matrícula, software, alquiler… Se cuentan aparte en el resumen de caja.</div>
       </div>
       <div class="field">
         <label>📎 Comprobante (foto o PDF) — opcional</label>
@@ -1101,6 +1156,66 @@ tr:hover td{background:var(--bg)}
     </div>
   </div>
 </div>
+<!-- Modal Trámite / Visado -->
+<div class="modal-bg" id="modal-tramite">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="modal-tram-title">Nuevo trámite</div>
+      <button class="modal-close" onclick="closeModal('modal-tramite')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="tram-id">
+      <input type="hidden" id="tram-trabajo">
+      <div class="g2">
+        <div class="field">
+          <label>Organismo *</label>
+          <select id="tram-org" onchange="onOrgTramite()"></select>
+        </div>
+        <div class="field">
+          <label>N° de expediente</label>
+          <input id="tram-exp" placeholder="Ej: 0033-123456/2026">
+        </div>
+      </div>
+      <div class="field" id="tram-org-otro-wrap" style="display:none">
+        <label>¿Qué organismo?</label>
+        <input id="tram-org-otro" placeholder="Nombre del organismo">
+      </div>
+      <div class="g3">
+        <div class="field">
+          <label>Lo mandé el *</label>
+          <input type="date" id="tram-envio">
+        </div>
+        <div class="field">
+          <label>Me respondieron el</label>
+          <input type="date" id="tram-resp">
+        </div>
+        <div class="field">
+          <label>Estado</label>
+          <select id="tram-estado">
+            <option>Enviado</option>
+            <option>Observado</option>
+            <option>Aprobado</option>
+            <option>Rechazado</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Link para consultar el estado</label>
+        <input id="tram-link" placeholder="https://...">
+        <div class="field-hint">Se guarda por organismo: la próxima vez que cargues un trámite de este mismo lugar, el link aparece solo.</div>
+      </div>
+      <div class="field">
+        <label>Nota</label>
+        <textarea id="tram-nota" placeholder="Qué mandaste, qué te observaron, con quién hablaste..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn danger" id="tram-del-btn" onclick="deleteTramite()" style="margin-right:auto;display:none">Eliminar</button>
+      <button class="btn" onclick="closeModal('modal-tramite')">Cancelar</button>
+      <button class="btn success" onclick="saveTramite()">Guardar</button>
+    </div>
+  </div>
+</div>
 <!-- TOASTS -->
 <div class="toast-wrap" id="toasts"></div>
 <script>
@@ -1111,7 +1226,7 @@ tr:hover td{background:var(--bg)}
 // navegador sin tener que configurarla. Se puede sobrescribir desde Configuración.
 const SCRIPT_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbwzHetjPSymULtE8kjPQ0xkuUP3Qh8hgbyeczL43sAWhZBwfUKVVYIMOCYtV5swsdLk/exec';
 let SCRIPT_URL = localStorage.getItem('umepay_script_url') || SCRIPT_URL_DEFAULT;
-let DB = { trabajos: [], movimientos: [], presupuestos: [], compromisos: [], apuntes: [] };
+let DB = { trabajos: [], movimientos: [], presupuestos: [], compromisos: [], apuntes: [], tramites: [] };
 let connected = false;
 // ==============================
 // API
@@ -1144,19 +1259,21 @@ async function apiGet(action, params = {}) {
 async function loadAll() {
   if (!SCRIPT_URL) { setStatus(false, 'Sin URL configurada'); return; }
   try {
-    const [trab, movs, pres, comp, ap] = await Promise.all([
+    const [trab, movs, pres, comp, ap, tram] = await Promise.all([
       apiGet('getAll', { sheet: 'trabajos' }),
       apiGet('getAll', { sheet: 'movimientos' }),
       apiGet('getAll', { sheet: 'presupuestos' }),
       apiGet('getAll', { sheet: 'compromisos' }),
-      // apuntes: hoja nueva; si el backend todavía no la tiene, no rompe el resto
-      apiGet('getAll', { sheet: 'apuntes' }).catch(() => ({ rows: [] }))
+      // apuntes y tramites: hojas nuevas; si el backend todavía no las tiene, no rompe el resto
+      apiGet('getAll', { sheet: 'apuntes' }).catch(() => ({ rows: [] })),
+      apiGet('getAll', { sheet: 'tramites' }).catch(() => ({ rows: [] }))
     ]);
     DB.trabajos     = trab.rows || [];
     DB.movimientos  = movs.rows || [];
     DB.presupuestos = pres.rows || [];
     DB.compromisos  = comp.rows || [];
     DB.apuntes      = ap.rows || [];
+    DB.tramites     = tram.rows || [];
     setStatus(true, `Conectado — ${new Date().toLocaleTimeString('es-AR')}`);
     renderAll();
   } catch(e) {
@@ -1171,6 +1288,7 @@ function renderAll() {
   renderDashboardLocal();
   renderCalendar();
   renderApuntes();
+  renderTiempos();
   fillWorkSelects();
 }
 // ==============================
@@ -1318,6 +1436,21 @@ function cobradoDe(t){
   };
 }
 function fmtPlata(v, mon){ return (mon==='U$D'?'U$D ':'$ ') + Math.round(v).toLocaleString('es-AR'); }
+// Cuánto se cobró y cuánto se gastó en un trabajo, por moneda
+function totalesTrabajoHtml(movs){
+  if(!movs.length) return '';
+  const n = v => parseFloat(v)||0;
+  return ['$','U$D'].map(mon => {
+    const ing = movs.filter(m => m.tipo==='ingreso' && (m.moneda||'$')===mon).reduce((a,b)=>a+n(b.monto),0);
+    const gas = movs.filter(m => m.tipo!=='ingreso' && (m.moneda||'$')===mon).reduce((a,b)=>a+n(b.monto),0);
+    if(!ing && !gas) return '';
+    return `<div class="ficha-tot">
+      <span class="cobrado">Cobrado: <b>${fmtPlata(ing, mon)}</b></span>
+      <span class="gastado">Gastos del trabajo: <b>${fmtPlata(gas, mon)}</b></span>
+      <span class="neto">Queda: <b>${fmtPlata(ing-gas, mon)}</b></span>
+    </div>`;
+  }).filter(Boolean).join('');
+}
 // Agrega una línea a la bitácora del trabajo sin pisar lo anterior
 async function anotarEnBitacora(t, texto){
   const ahora = new Date().toISOString();
@@ -1518,11 +1651,196 @@ function abrirTrabajo(id){
   const f = document.getElementById('ficha-trabajo');
   f.classList.add('open'); f.scrollTop = 0;
 }
+// Igual que abrirTrabajo pero desde otra pestaña (deja Trabajos abajo, no Presupuestos)
+function irAlTrabajo(id){
+  showTab('trabajos');
+  abrirTrabajo(id);
+}
 function cerrarFicha(){
   fichaTrabajoId = null;
   document.getElementById('ficha-trabajo').classList.remove('open');
 }
 document.addEventListener('keydown', e => { if(e.key==='Escape' && fichaTrabajoId) cerrarFicha(); });
+// ══════════════════════════════════════════════════════════════
+// TRÁMITES Y VISADOS (hoja «tramites»)
+// Cada envío a visar se anota con la fecha en que salió y la fecha en que
+// contestaron: con eso se mide cuánto tarda cada organismo.
+// ══════════════════════════════════════════════════════════════
+const ORGANISMOS = ['Colegio de Agrimensores','Catastro Provincial','DPV (Vialidad)',
+  'Bioagroindustria','Municipalidad','DGR (Rentas)','Registro de la Propiedad',
+  'Secretaría de Ambiente','Otro'];
+const TRAM_BADGE = {'Enviado':'badge-blue','Observado':'badge-amber','Aprobado':'badge-green','Rechazado':'badge-red'};
+function tramitesDe(t){
+  return DB.tramites.filter(x => x.trabajo_id === t.id)
+    .sort((a,b) => new Date(b.fecha_envio||0) - new Date(a.fecha_envio||0));
+}
+// Días que tardó en contestar (si ya contestó) o que lleva esperando
+function diasTramite(tr){
+  const ini = tr.fecha_envio ? new Date(tr.fecha_envio) : null;
+  if(!ini || isNaN(ini)) return null;
+  const fin = tr.fecha_respuesta ? new Date(tr.fecha_respuesta) : null;
+  if(fin && !isNaN(fin)) return { dias: Math.max(0, Math.round((fin-ini)/86400000)), cerrado:true };
+  if(['Aprobado','Rechazado'].includes(tr.estado)) return null; // resuelto pero sin fecha: no cuenta
+  return { dias: Math.max(0, Math.floor((Date.now()-ini.getTime())/86400000)), cerrado:false };
+}
+// Último link usado para ese organismo, para no tener que escribirlo cada vez
+function linkDeOrganismo(org){
+  const ult = DB.tramites.filter(x => x.organismo===org && x.link)
+    .sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0))[0];
+  return ult ? ult.link : '';
+}
+function tramitesHtml(t){
+  const list = tramitesDe(t);
+  if(!list.length) return '<div class="ficha-dato">Todavía no hay trámites cargados. Con «＋ Trámite» anotás cada envío a visar y después la fecha en que te contestaron.</div>';
+  return list.map(tr => {
+    const d = diasTramite(tr);
+    const dias = d ? `<div class="tram-dias ${d.cerrado?'listo':'espera'}">${d.cerrado?`tardó ${d.dias} d`:`esperando ${d.dias} d`}</div>` : '';
+    const sub = [
+      tr.expediente ? `Exp. ${escHtml(tr.expediente)}` : '',
+      tr.fecha_envio ? `enviado ${fmtFecha(tr.fecha_envio)}` : '',
+      tr.fecha_respuesta ? `respondió ${fmtFecha(tr.fecha_respuesta)}` : '',
+      tr.nota ? escHtml(tr.nota) : '',
+    ].filter(Boolean).join(' · ');
+    return `<div class="tram">
+      <div class="tram-main">
+        <div class="tram-org">${escHtml(tr.organismo||'—')} <span class="badge ${TRAM_BADGE[tr.estado]||'badge-gray'}">${escHtml(tr.estado||'Enviado')}</span></div>
+        <div class="tram-sub">${sub||'—'}</div>
+      </div>
+      ${dias}
+      <div class="tram-acc">
+        ${tr.link?`<a class="btn sm" href="${escHtml(tr.link)}" target="_blank" rel="noopener" title="Consultar el estado">🔗</a>`:''}
+        <button class="btn sm" onclick="editTramite('${tr.id}')" title="Editar">✎</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function llenarOrgSelect(valor){
+  const sel = document.getElementById('tram-org');
+  const extra = (valor && !ORGANISMOS.includes(valor)) ? [valor] : [];
+  sel.innerHTML = extra.concat(ORGANISMOS).map(o=>`<option>${escHtml(o)}</option>`).join('');
+  sel.value = valor || ORGANISMOS[0];
+}
+function onOrgTramite(){
+  const org = document.getElementById('tram-org').value;
+  document.getElementById('tram-org-otro-wrap').style.display = org==='Otro' ? '' : 'none';
+  const link = document.getElementById('tram-link');
+  if(!link.value) link.value = linkDeOrganismo(org);
+}
+function nuevoTramite(trabajoId){
+  ['tram-id','tram-exp','tram-resp','tram-link','tram-nota','tram-org-otro'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('tram-trabajo').value = trabajoId || fichaTrabajoId || '';
+  document.getElementById('tram-envio').value = new Date().toISOString().split('T')[0];
+  document.getElementById('tram-estado').value = 'Enviado';
+  llenarOrgSelect('');
+  onOrgTramite();
+  document.getElementById('modal-tram-title').textContent = 'Nuevo trámite';
+  document.getElementById('tram-del-btn').style.display = 'none';
+  openModal('modal-tramite');
+}
+function editTramite(id){
+  const tr = DB.tramites.find(x=>x.id===id);
+  if(!tr) return;
+  document.getElementById('tram-id').value      = tr.id;
+  document.getElementById('tram-trabajo').value = tr.trabajo_id || '';
+  llenarOrgSelect(tr.organismo||'');
+  document.getElementById('tram-org-otro').value = '';
+  document.getElementById('tram-org-otro-wrap').style.display = 'none';
+  document.getElementById('tram-exp').value    = tr.expediente || '';
+  document.getElementById('tram-envio').value  = (tr.fecha_envio||'').split('T')[0];
+  document.getElementById('tram-resp').value   = (tr.fecha_respuesta||'').split('T')[0];
+  document.getElementById('tram-estado').value = tr.estado || 'Enviado';
+  document.getElementById('tram-link').value   = tr.link || '';
+  document.getElementById('tram-nota').value   = tr.nota || '';
+  document.getElementById('modal-tram-title').textContent = 'Editar trámite';
+  document.getElementById('tram-del-btn').style.display = 'inline-flex';
+  openModal('modal-tramite');
+}
+async function saveTramite(){
+  const id = document.getElementById('tram-id').value;
+  let org = document.getElementById('tram-org').value;
+  if(org === 'Otro'){
+    org = document.getElementById('tram-org-otro').value.trim();
+    if(!org){ toast('Escribí de qué organismo se trata', true); return; }
+  }
+  const data = {
+    trabajo_id:      document.getElementById('tram-trabajo').value,
+    organismo:       org,
+    expediente:      document.getElementById('tram-exp').value,
+    fecha_envio:     document.getElementById('tram-envio').value,
+    fecha_respuesta: document.getElementById('tram-resp').value,
+    estado:          document.getElementById('tram-estado').value,
+    link:            document.getElementById('tram-link').value,
+    nota:            document.getElementById('tram-nota').value,
+  };
+  if(!data.fecha_envio){ toast('Poné la fecha en que lo mandaste', true); return; }
+  await saveData('tramites', id, data);
+  closeModal('modal-tramite');
+}
+async function deleteTramite(){
+  const id = document.getElementById('tram-id').value;
+  if(!id) return;
+  if(!confirm('¿Eliminar este trámite?')) return;
+  await deleteData('tramites', id);
+  closeModal('modal-tramite');
+}
+// Panel «Cuánto tarda cada visado»: promedio por organismo de todos los trabajos
+function renderTiempos(){
+  const body = document.getElementById('tiempos-body');
+  if(!body) return;
+  const porOrg = {};
+  DB.tramites.forEach(tr => {
+    const d = diasTramite(tr);
+    if(!d) return;
+    const org = tr.organismo || '—';
+    if(!porOrg[org]) porOrg[org] = { cerrados:[], esperando:[] };
+    porOrg[org][d.cerrado ? 'cerrados' : 'esperando'].push(d.dias);
+  });
+  const orgs = Object.keys(porOrg).sort();
+  if(!orgs.length){
+    body.innerHTML = '<div class="ficha-dato">Acá va a aparecer cuánto tarda en contestar cada organismo, a medida que cargues los trámites dentro de cada trabajo.</div>';
+    return;
+  }
+  const filas = orgs.map(o => {
+    const c = porOrg[o].cerrados, e = porOrg[o].esperando;
+    const prom = c.length ? Math.round(c.reduce((a,b)=>a+b,0)/c.length) : null;
+    return `<tr>
+      <td>${escHtml(o)}</td>
+      <td class="num tiempos-prom">${prom!==null ? prom+' días' : '—'}</td>
+      <td class="num">${c.length ? Math.min.apply(null,c)+' / '+Math.max.apply(null,c) : '—'}</td>
+      <td class="num">${c.length || '—'}</td>
+      <td class="num">${e.length ? `${e.length} (hace ${Math.max.apply(null,e)} d)` : '—'}</td>
+    </tr>`;
+  }).join('');
+  body.innerHTML = `<table class="tiempos-tabla">
+      <thead><tr><th>Organismo</th><th class="num">Promedio</th><th class="num">Más rápido / más lento</th><th class="num">Resueltos</th><th class="num">Esperando</th></tr></thead>
+      <tbody>${filas}</tbody></table>
+    <div style="font-size:11px;color:var(--ink3);margin-top:8px">Se calcula con los días entre «lo mandé» y «me respondieron», sumando los trámites de todos los trabajos.</div>`;
+}
+
+// ── Foto del cálculo con el que se armó el presupuesto de este trabajo ──
+// Primero busca el presupuesto vinculado; si no hay, usa la copia que quedó
+// guardada en el propio trabajo (presupuestos anteriores a esta pantalla).
+function presupuestoHtml(t){
+  const pres = DB.presupuestos.find(p => p.trabajo_id === t.id && jsonObj(p.datos_calculo));
+  const d = pres ? jsonObj(pres.datos_calculo) : jsonObj(t.presupuesto_datos);
+  if(!d) return '';
+  const c = d.calculadora || {}, params = c.params || {}, a = c.arancel || {};
+  const plata = v => (parseFloat(v)>0) ? '$ '+Math.round(parseFloat(v)).toLocaleString('es-AR') : '';
+  const cab = [
+    d.fecha ? `<b>Fecha del presupuesto:</b> ${fmtFecha(d.fecha)}` : '',
+    d.generado_el ? `<b>Calculado el:</b> ${fmtFecha(d.generado_el)}` : '',
+    `<b>Planilla del Colegio:</b> ${d.arancel_version ? escHtml(d.arancel_version)
+      : '<span style="color:var(--ink3)">no quedó registrada (presupuesto viejo)</span>'}`,
+    (parseFloat(d.monto)>0) ? `<b>Presupuestado:</b> ${(d.moneda==='U$D'?'U$D ':'$ ')+parseFloat(d.monto).toLocaleString('es-AR',{maximumFractionDigits:0})}` : '',
+  ].filter(Boolean).join('<br>');
+  const fila = (k,v) => (v===''||v===undefined||v===null) ? '' : `<tr><td>${escHtml(String(k))}</td><td class="num">${escHtml(String(v))}</td></tr>`;
+  const pf = Object.keys(params).map(k => fila(k, params[k])).join('');
+  const ar = [fila('Honorarios del Colegio', plata(a.hon)), fila('Aportes 18%', plata(a.ap)),
+              fila('Tasa 8', plata(a.t8)), fila('Tasa Control Previo', plata(a.tcp))].join('');
+  return `<div class="ficha-dato" style="margin-bottom:10px">${cab}</div>
+    ${(pf||ar) ? `<table class="tiempos-tabla">${pf}${ar}</table>` : ''}`;
+}
+
 function renderFicha(){
   const t = DB.trabajos.find(x=>x.id===fichaTrabajoId);
   if(!t){ cerrarFicha(); return; }
@@ -1552,6 +1870,7 @@ function renderFicha(){
   };
   const etapas = etapasHtml(t, true);
   const cobro = cobroHtml(t);
+  const presu = presupuestoHtml(t);
   const datos = [
     t.descripcion?`<b>Descripción:</b> ${escHtml(t.descripcion)}`:'',
     t.fecha_inicio?`<b>Inicio:</b> ${fmtFecha(t.fecha_inicio)}`:'',
@@ -1578,8 +1897,15 @@ function renderFicha(){
     </div>
     ${datos?`<div class="ficha-sec"><div class="ficha-sec-title">Datos del trabajo</div><div class="ficha-dato">${datos}</div></div>`:''}
     ${etapas?`<div class="ficha-sec"><div class="ficha-sec-title">Etapas</div>${etapas}</div>`:''}
+    <div class="ficha-sec">
+      <div class="ficha-sec-title">Trámites y visados (${tramitesDe(t).length})
+        <button class="btn sm success" onclick="nuevoTramite('${t.id}')">＋ Trámite</button></div>
+      ${tramitesHtml(t)}
+    </div>
+    ${presu?`<div class="ficha-sec"><div class="ficha-sec-title">Presupuesto y datos de cálculo</div>${presu}</div>`:''}
     ${cobro?`<div class="ficha-sec"><div class="ficha-sec-title">Cobro</div>${cobro}</div>`:''}
-    <div class="ficha-sec"><div class="ficha-sec-title">Movimientos vinculados (${movs.length})</div>
+    <div class="ficha-sec"><div class="ficha-sec-title">Plata de este trabajo (${movs.length} movimiento${movs.length===1?'':'s'})</div>
+      ${totalesTrabajoHtml(movs)}
       ${movs.length?`<table class="ficha-mov-tabla">${movs.map(movRow).join('')}</table>`
         :'<div class="ficha-dato">No hay ingresos ni gastos vinculados. Se cargan desde «Ingresos y Gastos» eligiendo este trabajo.</div>'}
     </div>
@@ -1704,6 +2030,16 @@ async function saveTrabajo() {
     const tObj = DB.trabajos.find(x => x.id === trabId);
     if (tObj) await anotarEnBitacora(tObj, `Cobro registrado: ${fmtPlata(cobroMonto, moneda)} (${movData.forma_pago})`);
   }
+  // Venía de un presupuesto sin trabajo: los deja vinculados y le pasa al
+  // trabajo la foto de los datos de cálculo.
+  if (presPendiente && trabId) {
+    const pres = DB.presupuestos.find(x => x.id === presPendiente);
+    if (pres) {
+      await saveData('presupuestos', presPendiente, { trabajo_id: trabId });
+      if (pres.datos_calculo) await saveData('trabajos', trabId, { presupuesto_datos: pres.datos_calculo });
+    }
+    presPendiente = null;
+  }
   closeModal('modal-trabajo');
   // Si lo marcó como Cobrado y falta registrar el ingreso, lo ofrece pre-cargado
   if (t && data.estado === 'Cobrado' && estadoAnterior !== 'Cobrado') ofrecerIngresoPorCobro(t);
@@ -1730,6 +2066,7 @@ function cobroQuick(frac){
 function editTrabajo(id) {
   const t = DB.trabajos.find(x=>x.id===id);
   if(!t) return;
+  presPendiente = null;
   document.getElementById('trab-id').value          = t.id;
   document.getElementById('trab-cliente').value      = t.cliente;
   document.getElementById('trab-tipo').value         = t.tipo_trabajo;
@@ -1790,6 +2127,52 @@ function nombreMes(clave){
   const ms = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   return ms[parseInt(m)-1] + ' ' + y;
 }
+// ── CAJA: cobros, gastos fijos, gastos variables, aportes y acumulado del año ──
+// Siempre se calcula sobre la planilla entera (no sobre el buscador), para que
+// el resumen no cambie mientras buscás una palabra.
+function renderCaja(mes){
+  const cont = document.getElementById('mov-totals');
+  if(!cont) return;
+  const n = v => parseFloat(v)||0;
+  const anio = (mes||'').slice(0,4) || String(new Date().getFullYear());
+  const esAporte = m => (m.categoria||'') === 'Aporte de caja';
+  const esFijo   = m => String(m.fijo||'') === '1';
+  const bolsa = movs => {
+    const r = {};
+    ['$','U$D'].forEach(mon => {
+      const suma = cond => movs.filter(m => (m.moneda||'$')===mon && cond(m)).reduce((a,b)=>a+n(b.monto),0);
+      r[mon] = {
+        cobros:    suma(m => m.tipo==='ingreso' && !esAporte(m)),
+        aportes:   suma(m => m.tipo==='ingreso' &&  esAporte(m)),
+        fijos:     suma(m => m.tipo!=='ingreso' &&  esFijo(m)),
+        variables: suma(m => m.tipo!=='ingreso' && !esFijo(m)),
+      };
+      r[mon].resultado = r[mon].cobros - r[mon].fijos - r[mon].variables;
+    });
+    return r;
+  };
+  const delMes  = bolsa(mes ? DB.movimientos.filter(m => (m.fecha||'').slice(0,7)===mes) : DB.movimientos);
+  const delAnio = bolsa(DB.movimientos.filter(m => (m.fecha||'').slice(0,4)===anio));
+  const celda = (b,k) => {
+    const p = [];
+    if(b['$'][k])   p.push(fmtPlata(b['$'][k],'$'));
+    if(b['U$D'][k]) p.push(fmtPlata(b['U$D'][k],'U$D'));
+    return p.length ? p.join('<br>') : '—';
+  };
+  const fila = (lbl,k,cls) => `<tr class="${cls||''}"><td>${lbl}</td><td class="num">${celda(delMes,k)}</td><td class="num">${celda(delAnio,k)}</td></tr>`;
+  cont.innerHTML = `
+    <table class="caja-tabla">
+      <thead><tr><th>Caja</th><th class="num">${mes?nombreMes(mes):'Todos los meses'}</th><th class="num">Acumulado ${anio}</th></tr></thead>
+      <tbody>
+        ${fila('Cobros','cobros')}
+        ${fila('Gastos fijos','fijos')}
+        ${fila('Gastos variables','variables')}
+        ${fila('Aportes de caja','aportes')}
+        ${fila('Resultado (cobros − gastos)','resultado','caja-res')}
+      </tbody>
+    </table>
+    <div class="caja-nota">Un gasto cuenta como <b>fijo</b> si lo marcaste «gasto fijo mensual» al cargarlo. Los <b>aportes de caja</b> son la plata que ponen ustedes, así que no entran en el resultado: se cargan como ingreso con la categoría «Aporte de caja».</div>`;
+}
 function renderMovimientos() {
   const q = (document.getElementById('mov-buscar').value||'').toLowerCase().trim();
   const selMes = document.getElementById('mov-mes');
@@ -1816,20 +2199,11 @@ function renderMovimientos() {
   }
   list.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
 
-  const n = v => parseFloat(v)||0;
   const cobros = list.filter(m=>m.tipo==='ingreso');
   const gastos = list.filter(m=>m.tipo==='egreso');
-  const iARS = cobros.filter(m=>m.moneda==='$').reduce((a,b)=>a+n(b.monto),0);
-  const iUSD = cobros.filter(m=>m.moneda==='U$D').reduce((a,b)=>a+n(b.monto),0);
-  const gARS = gastos.filter(m=>m.moneda==='$').reduce((a,b)=>a+n(b.monto),0);
-  const gUSD = gastos.filter(m=>m.moneda==='U$D').reduce((a,b)=>a+n(b.monto),0);
   const titulo = q ? `resultado de «${q}»` : (mes ? nombreMes(mes) : 'todos los meses');
   document.getElementById('mov-periodo').textContent = titulo;
-  document.getElementById('mov-totals').innerHTML = `
-    <div class="dcard"><div class="dcard-label">Cobros ARS</div><div class="dcard-val pos">$ ${iARS.toLocaleString('es-AR',{maximumFractionDigits:0})}</div></div>
-    <div class="dcard"><div class="dcard-label">Cobros USD</div><div class="dcard-val pos">U$D ${iUSD.toLocaleString('es-AR',{maximumFractionDigits:0})}</div></div>
-    <div class="dcard"><div class="dcard-label">Gastos ARS</div><div class="dcard-val warn">$ ${gARS.toLocaleString('es-AR',{maximumFractionDigits:0})}</div></div>
-    <div class="dcard"><div class="dcard-label">Gastos USD</div><div class="dcard-val warn">U$D ${gUSD.toLocaleString('es-AR',{maximumFractionDigits:0})}</div></div>`;
+  renderCaja(mes);
 
   // Cada movimiento como renglón compacto de su columna
   const fila = m => {
@@ -1837,7 +2211,7 @@ function renderMovimientos() {
     const rep = esRepartido(m);
     const repBadge = m.quien_pago === 'Ambos' ? '' :
       ` <span class="badge ${rep?'badge-green':'badge-amber'}" style="cursor:pointer" title="Tocar para marcar ${rep?'pendiente':'repartido'}" onclick="toggleRepartido('${m.id}')">${rep?'✓ Repartido':'½ Pendiente'}</span>`;
-    const detalle = [m.categoria, m.forma_pago, m.quien_pago].filter(Boolean).join(' · ');
+    const detalle = [m.categoria, String(m.fijo||'')==='1' ? '🔁 fijo' : '', m.forma_pago, m.quien_pago].filter(Boolean).join(' · ');
     const montoStr = (m.moneda||'$') + ' ' + Math.abs(parseFloat(m.monto)||0).toLocaleString('es-AR',{maximumFractionDigits:0});
     return `<tr>
       <td style="white-space:nowrap;color:var(--ink3)">${fmtFecha(m.fecha)}</td>
@@ -1880,6 +2254,7 @@ async function saveMovimiento() {
     categoria:  document.getElementById('mov-cat').value,
     trabajo_id: document.getElementById('mov-trabajo').value,
     repartido:  document.getElementById('mov-repartido').checked ? '1' : '',
+    fijo:       document.getElementById('mov-fijo').checked ? '1' : '',
   };
   if(!data.monto || !data.fecha){ toast('Completá monto y fecha',true); return; }
   // Si adjuntó un comprobante, lo subimos a Drive y guardamos el link.
@@ -1936,6 +2311,29 @@ async function deleteMovimiento(id) {
 // ==============================
 // PRESUPUESTOS
 // ==============================
+// Abre un trabajo nuevo ya cargado con los datos del presupuesto.
+// Al guardarlo quedan vinculados (lo hace saveTrabajo con presPendiente).
+function crearTrabajoDesdePresupuesto(presId){
+  const p = DB.presupuestos.find(x => x.id === presId);
+  if(!p) return;
+  if(p.trabajo_id && DB.trabajos.some(t => t.id === p.trabajo_id)){
+    toast('Este presupuesto ya tiene un trabajo vinculado', true); return;
+  }
+  nuevoTrabajo();
+  presPendiente = presId;
+  document.getElementById('trab-cliente').value = p.cliente || '';
+  const sel = document.getElementById('trab-tipo');
+  if(p.tipo_trabajo && Array.prototype.some.call(sel.options, o => o.value === p.tipo_trabajo)){
+    sel.value = p.tipo_trabajo;
+    modalTipoChanged();
+  }
+  document.getElementById('trab-monto-ars').value = parseFloat(p.monto_ars)>0 ? p.monto_ars : '';
+  document.getElementById('trab-monto-usd').value = parseFloat(p.monto_usd)>0 ? p.monto_usd : '';
+  document.getElementById('trab-estado').value = p.estado==='Aprobado' ? 'En curso' : 'Esperando cliente';
+  document.getElementById('trab-fecha').value = (p.fecha||'').split('T')[0] || new Date().toISOString().split('T')[0];
+  document.getElementById('trab-comentario').value = `Trabajo abierto desde el presupuesto del ${fmtFecha(p.fecha)}.`;
+  document.getElementById('modal-trabajo-title').textContent = 'Nuevo trabajo (desde el presupuesto)';
+}
 function renderPresupuestos() {
   const list = [...DB.presupuestos].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
   const tbody = document.getElementById('pres-tbody');
@@ -1944,7 +2342,12 @@ function renderPresupuestos() {
     return `<span class="badge ${map[e]||'badge-gray'}">${e}</span>`;
   };
   if(!list.length){ tbody.innerHTML='<tr class="empty-row"><td colspan="8">No hay presupuestos registrados</td></tr>'; renderDatosCalculo(); return; }
-  tbody.innerHTML = list.map(p => `<tr>
+  tbody.innerHTML = list.map(p => {
+    const trab = p.trabajo_id ? DB.trabajos.find(t => t.id === p.trabajo_id) : null;
+    const accion = trab
+      ? `<button class="btn sm" onclick="irAlTrabajo('${trab.id}')" title="Abrir el trabajo">↗ ${escHtml(trab.cliente||'Trabajo')}</button>`
+      : `<button class="btn sm success" onclick="crearTrabajoDesdePresupuesto('${p.id}')" title="Abrir un trabajo con estos datos">＋ Trabajo</button>`;
+    return `<tr>
     <td>${fmtFecha(p.fecha)}</td>
     <td>${p.cliente}</td>
     <td>${p.tipo_trabajo}</td>
@@ -1952,8 +2355,10 @@ function renderPresupuestos() {
     <td>${parseFloat(p.monto_usd)>0 ? 'U$D '+parseFloat(p.monto_usd).toLocaleString('es-AR',{maximumFractionDigits:0}) : '—'}</td>
     <td>${estadoBadge(p.estado)}</td>
     <td style="font-size:11px;color:var(--ink3)">${p.notas||'—'}</td>
-    <td><button class="btn sm danger" onclick="deletePresupuesto('${p.id}')">✕</button></td>
-  </tr>`).join('');
+    <td style="white-space:nowrap">${accion}
+      <button class="btn sm danger" onclick="deletePresupuesto('${p.id}')">✕</button></td>
+  </tr>`;
+  }).join('');
   renderDatosCalculo();
 }
 // El deslizador de arriba del cuadro refleja su scroll horizontal (como el tablero)
@@ -1969,23 +2374,20 @@ function jsonObj(s){ try{ const v=JSON.parse(s); return v && typeof v==='object'
 function renderDatosCalculo(){
   const tbody = document.getElementById('calc-tbody');
   if(!tbody) return;
+  // Solo los presupuestos que TODAVÍA NO tienen un trabajo abierto: los que sí
+  // lo tienen muestran sus datos de cálculo dentro de la ficha del trabajo.
   const filas = [];
-  const conRegistro = new Set();
   DB.presupuestos.forEach(p => {
+    const tieneTrabajo = p.trabajo_id && DB.trabajos.some(t => t.id === p.trabajo_id);
+    if(tieneTrabajo) return;
     const d = jsonObj(p.datos_calculo);
-    if(d){ filas.push(d); if(p.trabajo_id) conRegistro.add(p.trabajo_id); }
-  });
-  // Presupuestos anteriores a este cuadro: la foto del cálculo quedó guardada en el trabajo
-  DB.trabajos.forEach(t => {
-    if(conRegistro.has(t.id)) return;
-    const d = jsonObj(t.presupuesto_datos);
-    if(d) filas.push(d);
+    if(d) filas.push({ p, d });
   });
   if(!filas.length){
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="11">Todavía no hay presupuestos generados con la calculadora</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="13">No hay presupuestos sueltos: los que tienen un trabajo abierto muestran sus datos de cálculo dentro de la ficha del trabajo.</td></tr>';
     return;
   }
-  filas.sort((a,b) => new Date(b.fecha||0) - new Date(a.fecha||0));
+  filas.sort((a,b) => new Date(b.d.fecha||0) - new Date(a.d.fecha||0));
   // Busca un parámetro de la calculadora por palabra clave y le agrega la unidad del rótulo
   const busca = (params, claves) => {
     const k = Object.keys(params).find(x => claves.some(c => x.toLowerCase().includes(c)));
@@ -1994,7 +2396,7 @@ function renderDatosCalculo(){
     return params[k] + u;
   };
   const plata = v => (parseFloat(v)>0) ? '$ '+Math.round(parseFloat(v)).toLocaleString('es-AR') : '—';
-  tbody.innerHTML = filas.map(d => {
+  tbody.innerHTML = filas.map(({p, d}) => {
     const c = d.calculadora||{}, params = c.params||{}, a = c.arancel||{};
     const per = busca(params, ['perímetro','perimetro']);
     const vt  = busca(params, ['valor de tierra','valuación','valuacion','base imponible']);
@@ -2012,6 +2414,8 @@ function renderDatosCalculo(){
       <td>${plata(a.t8)}</td>
       <td>${plata(a.tcp)}</td>
       <td>${monto ? (d.moneda==='U$D'?'U$D ':'$ ')+monto.toLocaleString('es-AR',{maximumFractionDigits:0}) : '—'}</td>
+      <td style="font-size:11px;color:var(--ink3);white-space:nowrap">${escHtml(d.arancel_version||'—')}</td>
+      <td><button class="btn sm success" onclick="crearTrabajoDesdePresupuesto('${p.id}')" title="Abrir un trabajo con estos datos">＋ Trabajo</button></td>
     </tr>`;
   }).join('');
   syncCalcScroll();
@@ -2335,7 +2739,10 @@ window.addEventListener('message', e => {
   if(e.data && e.data.type === 'umepayTrabajosCambiaron') loadAll();
 });
 // Abre el formulario en blanco para crear (limpia el id oculto -> es alta, no edición)
+// Presupuesto que se está convirtiendo en trabajo (se vincula al guardar)
+let presPendiente = null;
 function nuevoTrabajo() {
+  presPendiente = null;
   ['trab-id','trab-cliente','trab-desc','trab-comentario','trab-monto-ars','trab-monto-usd','trab-pres-ref','trab-proxima','trab-limite','trab-carpeta'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('trab-tipo').selectedIndex = 0;
   document.getElementById('trab-estado').value = 'En curso';
@@ -2356,6 +2763,7 @@ function nuevoMovimiento() {
   document.getElementById('mov-fecha').value = new Date().toISOString().split('T')[0];
   document.getElementById('mov-comprobante').value = '';
   document.getElementById('mov-repartido').checked = false;
+  document.getElementById('mov-fijo').checked = false;
   updateMovLabel();
   openModal('modal-movimiento');
 }
@@ -2383,7 +2791,10 @@ function toast(msg, isErr=false) {
 }
 function fmtFecha(s) {
   if(!s) return '—';
-  const d = new Date(s);
+  // Una fecha suelta ("2026-09-15") la lee el navegador como medianoche UTC y
+  // acá, que estamos en UTC-3, se mostraba el día anterior. Se arma a mano.
+  const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const d = m ? new Date(+m[1], +m[2]-1, +m[3]) : new Date(s);
   if(isNaN(d)) return s;
   return d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
 }

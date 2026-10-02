@@ -268,6 +268,9 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
 // (4,408 → 5,786, +31,26%) y las tasas de Control Previo por la
 // Res. 909-1-26. La Tasa 8 y la del Certificado de Amojonamiento no cambian.
 // ══════════════════════════════════════════════════════════════════
+// Versión de la planilla del Colegio con la que se calcula. Queda guardada en
+// cada presupuesto, para saber después con qué arancel se armó.
+const ARANCEL_VERSION = 'VS16 (vigente desde el 01/10/2026)';
 // Valores del arancel VS16 (CODAR, coeficiente 5,786 — vigente desde el 01/10/2026).
 // Los honorarios subieron un 31,26% respecto de la VS14 (coeficiente 4,408).
 const C = {
@@ -862,6 +865,8 @@ function datosPresupuesto(){
     cuenta:g('p-cuenta'), superficie:g('p-sup'), nomenclatura:g('p-nomen'), designacion:g('p-desig'), tipo_parcela:g('p-tipoparcela'),
     tipo:NOMBRES[g('p-tipo')]||g('p-tipo'), moneda:g('p-moneda'), monto:g('p-monto'),
     plazo:g('p-plazo'), pago:g('p-pago'),
+    generado_el: new Date().toISOString(),
+    arancel_version: ARANCEL_VERSION,
     calculadora: cat?{categoria:cat, params, arancel:lastResult}:null
   };
 }

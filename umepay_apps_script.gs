@@ -3,7 +3,8 @@
  *  Backend en Google Apps Script para la app "Umepay Gestión" (GitHub Pages)
  *
  *  Hojas que usa: "trabajos", "movimientos", "presupuestos", "compromisos",
- *  "apuntes". La app web (index.html) se conecta a este script vía fetch.
+ *  "apuntes", "tramites". La app web (index.html) se conecta a este script
+ *  vía fetch.
  *
  *  Los eventos del calendario (hoja "compromisos") además se copian al
  *  calendario de Google de esta cuenta, para verlos en el celular. Ver la
@@ -20,7 +21,7 @@
  *     Copiá la URL /exec y pegala en la pestaña "Configuración" de la app.
  ****************************************************************************/
 
-var HOJAS = ['trabajos', 'movimientos', 'presupuestos', 'compromisos', 'apuntes'];
+var HOJAS = ['trabajos', 'movimientos', 'presupuestos', 'compromisos', 'apuntes', 'tramites'];
 
 // Subcarpetas de Drive, creadas DENTRO de la carpeta donde vive la planilla
 // (por ej. "AgriApp"). Así todo lo de la app queda junto al Sheet.
@@ -47,7 +48,11 @@ var COLUMNAS = {
   compromisos: ['id', 'titulo', 'fecha', 'hora', 'lugar', 'tipo',
                 'trabajo_id', 'nota', 'estado', 'aviso_min', 'created_at', 'gcal_id'],
   apuntes: ['id', 'titulo', 'categoria', 'contenido', 'fuente',
-            'archivo_url', 'archivo_nombre', 'created_at']
+            'archivo_url', 'archivo_nombre', 'created_at'],
+  // Visados y trámites de cada trabajo (Colegio, Catastro, DPV, Bioagroindustria…).
+  // Con la fecha de envío y la de respuesta se mide cuánto tarda cada organismo.
+  tramites: ['id', 'trabajo_id', 'organismo', 'expediente', 'fecha_envio',
+             'fecha_respuesta', 'estado', 'link', 'nota', 'created_at']
 };
 
 /* ========================================================================

@@ -111,6 +111,22 @@ Abrí Google Calendar en el teléfono → menú (☰) → fijate que **"Umepay -
 
 ---
 
+## Parte D — Hoja de trámites y visados (~5 min)
+
+La pestaña Trabajos usa una hoja nueva, **`tramites`**, para anotar cada envío a visar (Colegio, Catastro, DPV, Bioagroindustria…) con la fecha en que salió y la fecha en que contestaron. Con eso la app calcula cuánto tarda cada organismo.
+
+Es el mismo procedimiento de la Parte C:
+
+1. Abrí `umepay_apps_script.gs`, **Ctrl+A**, **Ctrl+C**.
+2. Google Sheet → **Extensiones → Apps Script** → **Ctrl+A**, **Ctrl+V** → **Ctrl+S**.
+3. **Implementar → Gestionar implementaciones → lápiz → Versión: Nueva versión → Implementar**.
+
+No hace falta dar permisos nuevos (la hoja se crea sola la primera vez que cargues un trámite). La URL no cambia.
+
+Las demás novedades (resumen de caja con gastos fijos y aportes, datos de cálculo adentro de cada trabajo, abrir un trabajo desde un presupuesto) son solo de la app: se publican con el push y no tocan la planilla.
+
+---
+
 ## Cómo se usa día a día
 
 - **Trabajos:** ves cada trabajo como tarjeta con su estado y comentario. "↺ Estado" actualiza rápido el estado y deja una nota fechada. "✎ Editar" cambia todos los datos.
