@@ -2223,7 +2223,9 @@ function renderCompromisos(){
   const filas = [];
   let cobrarArs=0, cobrarUsd=0, pagar=0, sinCargar=0;
   DB.trabajos.forEach(t => {
-    if(t.estado === 'Cobrado') return;
+    // Solo los trabajos en curso: un pausado o uno esperando al cliente no es
+    // plata con la que se pueda contar.
+    if(t.estado !== 'En curso') return;
     const s = saldoDe(t), ta = tasasDe(t);
     const cArs = Math.max(0, s.ars), cUsd = Math.max(0, s.usd);
     if(cArs<=0 && cUsd<=0 && ta.falta<=0) return;
@@ -2232,7 +2234,7 @@ function renderCompromisos(){
     filas.push({ t, cArs, cUsd, ta });
   });
   if(!filas.length){
-    body.innerHTML = '<div class="ficha-dato">No hay nada pendiente: todos los trabajos están cobrados y con las tasas pagadas.</div>';
+    body.innerHTML = '<div class="ficha-dato">No hay nada pendiente en los trabajos en curso.</div>';
     return;
   }
   filas.sort((a,b) => (b.ta.falta - a.ta.falta) || (b.cArs - a.cArs));
@@ -2263,7 +2265,8 @@ function renderCompromisos(){
     </table>
     <div class="caja-nota">Si todo sale como está previsto, te van a <b>entrar ${fmtPlata(cobrarArs,'$')}${cobrarUsd>0?' + '+fmtPlata(cobrarUsd,'U$D'):''}</b> y vas a tener que <b>poner ${fmtPlata(pagar,'$')}</b> de tasas:
       queda a favor <b>${fmtPlata(neto,'$')}${cobrarUsd>0?' + '+fmtPlata(cobrarUsd,'U$D'):''}</b> (la mitad de eso es de cada socio).
-      ${sinCargar ? `<br>⚠ Hay <b>${sinCargar} trabajo${sinCargar>1?'s':''}</b> sin las tasas previstas cargadas: abrilos y ponelas en «✎ Editar» para que el total sea real.` : ''}</div>`;
+      ${sinCargar ? `<br>⚠ Hay <b>${sinCargar} trabajo${sinCargar>1?'s':''}</b> sin las tasas previstas cargadas: abrilos y ponelas en «✎ Editar» para que el total sea real.` : ''}
+      <br>Solo cuenta los trabajos <b>en curso</b>: los pausados y los que esperan al cliente no son plata con la que se pueda contar.</div>`;
 }
 // ── CAJA: cobros, gastos fijos, gastos variables, aportes y acumulado del año ──
 // Siempre se calcula sobre la planilla entera (no sobre el buscador), para que
