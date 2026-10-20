@@ -87,9 +87,15 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 .apunte-cont{font-size:12px;color:var(--ink2);line-height:1.6;margin-bottom:8px;white-space:normal}
 .apunte-fuente{font-size:11px;color:var(--ink3);margin-bottom:8px;word-break:break-word}
 .apunte-fuente a{color:var(--green)}
-/* ── MAIN ── */
-.main{max-width:1100px;margin:0 auto;padding:24px 20px}
+/* ── MAIN ──
+   En la compu la app usa el ancho real de la pantalla (hasta 1600px) y las
+   pestañas se reacomodan en columnas, en vez de estirar lo mismo. */
+.main{max-width:1600px;margin:0 auto;padding:24px 28px}
 .tab{display:none}.tab.active{display:block}
+/* Grilla de tarjetas (normativas): 1 columna en el cel, 2 o 3 en la compu */
+.card-grid{display:grid;grid-template-columns:1fr;gap:10px;align-items:start}
+@media(min-width:1050px){ .card-grid{grid-template-columns:repeat(2,1fr)} }
+@media(min-width:1500px){ .card-grid{grid-template-columns:repeat(3,1fr)} }
 /* ── DASHBOARD CARDS ── */
 .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:24px}
 .dcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh)}
@@ -241,12 +247,13 @@ tr:hover td{background:var(--bg)}
 .carpeta.cerrada .carpeta-flecha{transform:rotate(-90deg)}
 .carpeta.cerrada .carpeta-body{display:none}
 /* ── Tablero de trabajos (columnas por estado) ── */
-.board-wrap{margin:0 calc(50% - 50vw);padding:0 18px}
+.board-wrap{margin:0;padding:0}
 .board-topscroll{overflow-x:auto;overflow-y:hidden;height:14px;margin-bottom:4px}
 .board-topscroll>div{height:1px}
 .board{display:flex;gap:12px;overflow-x:auto;align-items:flex-start;padding-bottom:10px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .board::-webkit-scrollbar{display:none}
 .board-col{flex:1 0 285px;max-width:370px;background:var(--bg2);border-radius:var(--r);padding:10px 10px 4px}
+@media(min-width:1500px){ .board-col{flex:1 0 320px;max-width:430px} }
 .board-col-hdr{display:flex;align-items:center;gap:8px;margin:2px 2px 9px;font-size:11px}
 .board-cnt{margin-left:auto;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1px 8px;font-size:10.5px;color:var(--ink2)}
 .mini-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 13px;margin-bottom:9px;cursor:pointer;box-shadow:var(--sh)}
@@ -263,13 +270,19 @@ tr:hover td{background:var(--bg)}
 .board-vermas{text-align:center;font-size:11px;color:var(--ink3);padding:6px;cursor:pointer;user-select:none}
 .board-vermas:hover{color:var(--ink)}
 /* ── Dashboard: calendario y tareas lado a lado ── */
-.dash-cols{margin:0 calc(50% - 50vw);padding:0 18px;display:grid;grid-template-columns:1.25fr 1fr;gap:16px;align-items:start}
+.dash-cols{display:grid;grid-template-columns:1.25fr 1fr;gap:18px;align-items:start}
 .dash-cols .accion-panel{max-height:calc(100vh - 175px);overflow-y:auto}
 .dash-cols .accion-grid{grid-template-columns:1fr}
-@media(max-width:1000px){ .dash-cols{grid-template-columns:1fr;margin:0;padding:0} .dash-cols .accion-panel{max-height:none} }
+@media(min-width:1500px){ .dash-cols{grid-template-columns:1.4fr 1fr;gap:22px} }
+@media(max-width:1000px){ .dash-cols{grid-template-columns:1fr} .dash-cols .accion-panel{max-height:none} }
 /* ── Ingresos y gastos en dos columnas (balance) ── */
 .mov-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
 @media(max-width:900px){ .mov-cols{grid-template-columns:1fr} }
+/* Resumen arriba: la caja y el balance entre socios, uno al lado del otro */
+.fin-top{display:grid;grid-template-columns:1fr;gap:16px;align-items:stretch;margin-bottom:16px}
+@media(min-width:1200px){ .fin-top{grid-template-columns:1.5fr 1fr} }
+.fin-top .caja-card,.fin-top .balance-card{margin-bottom:0;display:flex;flex-direction:column}
+.fin-top .balance-card>div:last-child{margin-top:auto}
 .mov-col-hdr{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;padding:8px 12px;border-radius:var(--r) var(--r) 0 0;border:1px solid var(--border);border-bottom:none}
 .mov-col-hdr.ing{background:var(--green3);color:var(--green)}
 .mov-col-hdr.gas{background:var(--amber2);color:var(--amber)}
@@ -279,7 +292,11 @@ tr:hover td{background:var(--bg)}
 /* ── Ficha del trabajo en pantalla completa ── */
 .ficha-bg{display:none;position:fixed;inset:0;background:var(--bg);z-index:190;overflow-y:auto}
 .ficha-bg.open{display:block}
-.ficha{max-width:840px;margin:0 auto;padding:16px 14px 70px}
+.ficha{max-width:1280px;margin:0 auto;padding:16px 14px 70px}
+/* En la compu la ficha se abre en dos columnas: a la izquierda el trabajo y
+   sus trámites, a la derecha la plata, los archivos y el historial. */
+.ficha-cols{display:grid;grid-template-columns:1fr;gap:0}
+@media(min-width:1100px){ .ficha-cols{grid-template-columns:1.15fr 1fr;gap:18px;align-items:start} }
 .ficha-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
 .ficha-cliente{font-family:var(--serif);font-size:21px;font-weight:600}
 .ficha-tipo{font-size:12px;color:var(--ink3);margin:2px 0 12px}
@@ -483,9 +500,38 @@ tr:hover td{background:var(--bg)}
       <button class="btn success" onclick="nuevoMovimiento()">+ Registrar movimiento</button>
     </div>
   </div>
-  <!-- Subtotales rápidos del período elegido -->
-  <div style="font-size:12px;color:var(--ink3);margin-bottom:8px">Mostrando: <b id="mov-periodo">—</b></div>
-  <div class="caja-card" id="mov-totals"></div>
+  <!-- Resumen arriba: caja (mes y año) + balance entre socios -->
+  <div class="fin-top">
+    <div class="caja-card" id="mov-totals"></div>
+    <div class="balance-card">
+      <div class="balance-title">Balance entre socios — plata sin repartir</div>
+      <div class="balance-row">
+        <div class="balance-who">Santiago</div>
+        <div class="balance-amounts">
+          <span id="bs-stg-ars">—</span>
+          <span id="bs-stg-usd">—</span>
+        </div>
+      </div>
+      <div class="balance-row">
+        <div class="balance-who">Julia</div>
+        <div class="balance-amounts">
+          <span id="bs-jul-ars">—</span>
+          <span id="bs-jul-usd">—</span>
+        </div>
+      </div>
+      <div class="balance-verdict" id="balance-verdict">—</div>
+      <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <div style="font-size:11px;color:var(--ink3);max-width:420px">Cuenta solo lo que todavía no se dividió. Cuando se repartan la plata, tocá el botón — o marcá movimiento por movimiento desde la lista.</div>
+        <button class="btn sm success" onclick="saldarTodo()">💸 Ya repartimos</button>
+      </div>
+    </div>
+  </div>
+  <!-- Lo que todavía no pasó: tasas por pagar y segundas mitades por cobrar -->
+  <details class="tiempos" id="compromisos-panel" open>
+    <summary>💰 Lo que falta pagar y lo que falta cobrar</summary>
+    <div class="tiempos-body" id="compromisos-body"></div>
+  </details>
+  <div style="font-size:12px;color:var(--ink3);margin-bottom:8px">Movimientos de: <b id="mov-periodo">—</b></div>
   <!-- Balance en dos columnas: ingresos | gastos -->
   <div class="mov-cols">
     <div>
@@ -505,29 +551,6 @@ tr:hover td{background:var(--bg)}
           <tbody id="mov-tbody-gas"><tr class="empty-row"><td colspan="4">Cargando...</td></tr></tbody>
         </table>
       </div>
-    </div>
-  </div>
-  <!-- Balance entre socios (lo que queda por repartir) -->
-  <div class="balance-card">
-    <div class="balance-title">Balance entre socios — plata sin repartir</div>
-    <div class="balance-row">
-      <div class="balance-who">Santiago</div>
-      <div class="balance-amounts">
-        <span id="bs-stg-ars">—</span>
-        <span id="bs-stg-usd">—</span>
-      </div>
-    </div>
-    <div class="balance-row">
-      <div class="balance-who">Julia</div>
-      <div class="balance-amounts">
-        <span id="bs-jul-ars">—</span>
-        <span id="bs-jul-usd">—</span>
-      </div>
-    </div>
-    <div class="balance-verdict" id="balance-verdict">—</div>
-    <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-      <div style="font-size:11px;color:var(--ink3);max-width:420px">Cuenta solo lo que todavía no se dividió. Cuando se repartan la plata, tocá el botón — o marcá movimiento por movimiento desde Ingresos/Gastos.</div>
-      <button class="btn sm success" onclick="saldarTodo()">💸 Ya repartimos</button>
     </div>
   </div>
 </div>
@@ -605,7 +628,7 @@ tr:hover td{background:var(--bg)}
       <option>Otro</option>
     </select>
   </div>
-  <div class="trab-cards" id="apuntes-list"><div style="text-align:center;color:var(--ink3);padding:40px">Cargando...</div></div>
+  <div class="card-grid" id="apuntes-list"><div style="text-align:center;color:var(--ink3);padding:40px">Cargando...</div></div>
 </div>
 <!-- ═══════════════ SETUP ═══════════════ -->
 <div class="tab" id="tab-setup">
@@ -760,6 +783,11 @@ tr:hover td{background:var(--bg)}
         </div>
       </div>
       <div class="field-hint" style="margin-top:-6px">El «cobrado» se calcula solo, con los ingresos vinculados a este trabajo en Ingresos / Gastos.</div>
+      <div class="field" style="margin-top:12px">
+        <label>Tasas previstas — Caja 8470 + Colegio (ARS)</label>
+        <input type="number" id="trab-tasas" placeholder="0">
+        <div class="field-hint" id="trab-tasas-hint">Lo que calculaste que vas a tener que pagar por este trabajo. Lo ya pagado se descuenta solo, con los gastos vinculados de categoría «Tasa / Arancel» o «Aporte previsional».</div>
+      </div>
       <div class="sec-title" style="margin-top:14px">Registrar un cobro (opcional)</div>
       <div id="trab-cobro-estado" class="cobro-wrap"></div>
       <div class="g2">
@@ -861,7 +889,7 @@ tr:hover td{background:var(--bg)}
           <label>Categoría</label>
           <select id="mov-cat">
             <option>Honorarios</option>
-            <option>Aporte de caja</option>
+            <option>Aporte de socios</option>
             <option>Tasa / Arancel</option>
             <option>Combustible / Traslado</option>
             <option>Insumos</option>
@@ -1436,6 +1464,17 @@ function cobradoDe(t){
   };
 }
 function fmtPlata(v, mon){ return (mon==='U$D'?'U$D ':'$ ') + Math.round(v).toLocaleString('es-AR'); }
+// Lo que falta cobrar y lo que falta pagar de tasas, en la ficha del trabajo
+function tasasFichaHtml(t){
+  const ta = tasasDe(t), s = saldoDe(t);
+  const falta = [s.ars>0?fmtPlata(s.ars,'$'):'', s.usd>0?fmtPlata(s.usd,'U$D'):''].filter(Boolean).join(' + ');
+  const p = [];
+  if(falta) p.push(`<span class="cobrado">Falta cobrar: <b>${falta}</b></span>`);
+  if(ta.previstas) p.push(`<span class="gastado">Tasas previstas: <b>${fmtPlata(ta.previstas,'$')}</b></span>`);
+  if(ta.previstas || ta.pagadas) p.push(`<span class="gastado">Tasas pagadas: <b>${fmtPlata(ta.pagadas,'$')}</b></span>`);
+  if(ta.falta>0) p.push(`<span class="neto">Falta pagar: <b>${fmtPlata(ta.falta,'$')}</b></span>`);
+  return p.length ? `<div class="ficha-tot">${p.join('')}</div>` : '';
+}
 // Cuánto se cobró y cuánto se gastó en un trabajo, por moneda
 function totalesTrabajoHtml(movs){
   if(!movs.length) return '';
@@ -1467,6 +1506,44 @@ function saldoDe(t){
     ars: (parseFloat(t.monto_ars)||0) - c.ars,
     usd: (parseFloat(t.monto_usd)||0) - c.usd
   };
+}
+// ══════════════════════════════════════════════════════════════
+// COMPROMISOS DE PLATA: tasas que faltan pagar y plata que falta cobrar
+// Las tasas gordas (Caja 8470 y Colegio) se calculan al presupuestar y se
+// pagan durante el trabajo; el 50% final se cobra cuando Catastro aprueba.
+// ══════════════════════════════════════════════════════════════
+const CAT_TASAS = ['Tasa / Arancel','Aporte previsional'];
+// Lo que ya se pagó de tasas en este trabajo (gastos vinculados, en pesos)
+function tasasPagadasDe(t){
+  return DB.movimientos
+    .filter(m => m.trabajo_id===t.id && m.tipo!=='ingreso' && (m.moneda||'$')==='$'
+                 && CAT_TASAS.indexOf(m.categoria||'') >= 0)
+    .reduce((a,b)=>a+(parseFloat(b.monto)||0), 0);
+}
+function tasasDe(t){
+  const previstas = parseFloat(t.tasas_previstas)||0;
+  const pagadas = tasasPagadasDe(t);
+  return { previstas, pagadas, falta: Math.max(0, previstas - pagadas) };
+}
+// Lo que el presupuesto había calculado de tasas, para sugerirlo en el modal
+function tasasDelPresupuesto(t){
+  const pres = DB.presupuestos.find(p => p.trabajo_id===t.id && jsonObj(p.datos_calculo));
+  const d = pres ? jsonObj(pres.datos_calculo) : jsonObj(t.presupuesto_datos);
+  const a = (d && d.calculadora && d.calculadora.arancel) || null;
+  if(!a) return null;
+  const ap=parseFloat(a.ap)||0, t8=parseFloat(a.t8)||0, tcp=parseFloat(a.tcp)||0;
+  if(!ap && !t8 && !tcp) return null;
+  return { ap, t8, tcp, total: ap+t8+tcp };
+}
+function pintarHintTasas(t){
+  const hint = document.getElementById('trab-tasas-hint');
+  if(!hint) return;
+  const base = 'Lo que calculaste que vas a tener que pagar por este trabajo. Lo ya pagado se descuenta solo, con los gastos vinculados de categoría «Tasa / Arancel» o «Aporte previsional».';
+  const s = t ? tasasDelPresupuesto(t) : null;
+  if(!s){ hint.innerHTML = base; return; }
+  hint.innerHTML = base +
+    `<br><b>Según el presupuesto:</b> Aportes 18% ${fmtPlata(s.ap,'$')} + Tasa 8 ${fmtPlata(s.t8,'$')} + Control Previo ${fmtPlata(s.tcp,'$')} = <b>${fmtPlata(s.total,'$')}</b> ` +
+    `<a href="#" onclick="document.getElementById('trab-tasas').value=${Math.round(s.total)};return false;">usar este número</a>`;
 }
 // Botón «💰 Cobro» de la tarjeta: abre el ingreso pre-completado con el saldo pendiente.
 // Registra la plata sin tocar el estado del trabajo (cobrado no es lo mismo que terminado).
@@ -1895,27 +1972,34 @@ function renderFicha(){
       ${tieneSaldo?`<button class="btn sm success" onclick="registrarCobro('${t.id}')">💰 Registrar cobro</button>`:''}
       <button class="btn sm danger" onclick="deleteTrabajo('${t.id}')">✕ Eliminar</button>
     </div>
-    ${datos?`<div class="ficha-sec"><div class="ficha-sec-title">Datos del trabajo</div><div class="ficha-dato">${datos}</div></div>`:''}
-    ${etapas?`<div class="ficha-sec"><div class="ficha-sec-title">Etapas</div>${etapas}</div>`:''}
-    <div class="ficha-sec">
-      <div class="ficha-sec-title">Trámites y visados (${tramitesDe(t).length})
-        <button class="btn sm success" onclick="nuevoTramite('${t.id}')">＋ Trámite</button></div>
-      ${tramitesHtml(t)}
+    <div class="ficha-cols">
+      <div>
+        ${datos?`<div class="ficha-sec"><div class="ficha-sec-title">Datos del trabajo</div><div class="ficha-dato">${datos}</div></div>`:''}
+        ${etapas?`<div class="ficha-sec"><div class="ficha-sec-title">Etapas</div>${etapas}</div>`:''}
+        <div class="ficha-sec">
+          <div class="ficha-sec-title">Trámites y visados (${tramitesDe(t).length})
+            <button class="btn sm success" onclick="nuevoTramite('${t.id}')">＋ Trámite</button></div>
+          ${tramitesHtml(t)}
+        </div>
+        ${presu?`<div class="ficha-sec"><div class="ficha-sec-title">Presupuesto y datos de cálculo</div>${presu}</div>`:''}
+      </div>
+      <div>
+        ${cobro?`<div class="ficha-sec"><div class="ficha-sec-title">Cobro</div>${cobro}</div>`:''}
+        <div class="ficha-sec"><div class="ficha-sec-title">Plata de este trabajo (${movs.length} movimiento${movs.length===1?'':'s'})</div>
+          ${totalesTrabajoHtml(movs)}
+          ${tasasFichaHtml(t)}
+          ${movs.length?`<table class="ficha-mov-tabla">${movs.map(movRow).join('')}</table>`
+            :'<div class="ficha-dato">No hay ingresos ni gastos vinculados. Se cargan desde «Ingresos y Gastos» eligiendo este trabajo.</div>'}
+        </div>
+        <div class="ficha-sec"><div class="ficha-sec-title">Archivos</div>
+          ${archivos.length?archivos.map(a=>`<a class="ficha-archivo" href="${escHtml(a.url)}" target="_blank" rel="noopener">${escHtml(a.nombre)}</a>`).join('')
+            :'<div class="ficha-dato">No hay archivos todavía: acá aparecen el presupuesto PDF y los comprobantes de los movimientos.</div>'}
+        </div>
+        ${pendientes.length?`<div class="ficha-sec"><div class="ficha-sec-title">Vencimientos pendientes</div>
+          ${pendientes.map(c=>`<div class="ficha-dato">⏰ <b>${fmtFecha(c.fecha)}</b> — ${escHtml(c.titulo||'')}</div>`).join('')}</div>`:''}
+        ${hist.length?`<div class="ficha-sec"><div class="ficha-sec-title">Historial (${hist.length})</div><div class="hist-list">${histListHtml(hist)}</div></div>`:''}
+      </div>
     </div>
-    ${presu?`<div class="ficha-sec"><div class="ficha-sec-title">Presupuesto y datos de cálculo</div>${presu}</div>`:''}
-    ${cobro?`<div class="ficha-sec"><div class="ficha-sec-title">Cobro</div>${cobro}</div>`:''}
-    <div class="ficha-sec"><div class="ficha-sec-title">Plata de este trabajo (${movs.length} movimiento${movs.length===1?'':'s'})</div>
-      ${totalesTrabajoHtml(movs)}
-      ${movs.length?`<table class="ficha-mov-tabla">${movs.map(movRow).join('')}</table>`
-        :'<div class="ficha-dato">No hay ingresos ni gastos vinculados. Se cargan desde «Ingresos y Gastos» eligiendo este trabajo.</div>'}
-    </div>
-    <div class="ficha-sec"><div class="ficha-sec-title">Archivos</div>
-      ${archivos.length?archivos.map(a=>`<a class="ficha-archivo" href="${escHtml(a.url)}" target="_blank" rel="noopener">${escHtml(a.nombre)}</a>`).join('')
-        :'<div class="ficha-dato">No hay archivos todavía: acá aparecen el presupuesto PDF y los comprobantes de los movimientos.</div>'}
-    </div>
-    ${pendientes.length?`<div class="ficha-sec"><div class="ficha-sec-title">Vencimientos pendientes</div>
-      ${pendientes.map(c=>`<div class="ficha-dato">⏰ <b>${fmtFecha(c.fecha)}</b> — ${escHtml(c.titulo||'')}</div>`).join('')}</div>`:''}
-    ${hist.length?`<div class="ficha-sec"><div class="ficha-sec-title">Historial (${hist.length})</div><div class="hist-list">${histListHtml(hist)}</div></div>`:''}
   `;
 }
 function openEstado(id) {
@@ -1994,6 +2078,7 @@ async function saveTrabajo() {
     presupuesto_ref:document.getElementById('trab-pres-ref').value,
     fecha_inicio:   document.getElementById('trab-fecha').value,
     carpeta_url:    document.getElementById('trab-carpeta').value.trim(),
+    tasas_previstas:document.getElementById('trab-tasas').value || '0',
   };
   if(!data.cliente){ toast('El cliente es obligatorio',true); return; }
   // Si cambió el comentario, el anterior no se pierde: va al historial
@@ -2074,6 +2159,8 @@ function editTrabajo(id) {
   document.getElementById('trab-estado').value       = t.estado;
   document.getElementById('trab-comentario').value   = t.comentario;
   document.getElementById('trab-carpeta').value      = t.carpeta_url || '';
+  document.getElementById('trab-tasas').value        = parseFloat(t.tasas_previstas)>0 ? t.tasas_previstas : '';
+  pintarHintTasas(t);
   document.getElementById('trab-prioridad').value    = t.prioridad || 'Media';
   document.getElementById('trab-proxima').value      = t.proxima_accion || '';
   document.getElementById('trab-limite').value       = t.fecha_limite ? t.fecha_limite.split('T')[0] : '';
@@ -2127,6 +2214,57 @@ function nombreMes(clave){
   const ms = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   return ms[parseInt(m)-1] + ' ' + y;
 }
+// ── Cuadro «Lo que falta pagar y lo que falta cobrar» ──
+// Por cada trabajo abierto: la plata que todavía no entró (normalmente la
+// segunda mitad) y las tasas presupuestadas que todavía no se pagaron.
+function renderCompromisos(){
+  const body = document.getElementById('compromisos-body');
+  if(!body) return;
+  const filas = [];
+  let cobrarArs=0, cobrarUsd=0, pagar=0, sinCargar=0;
+  DB.trabajos.forEach(t => {
+    if(t.estado === 'Cobrado') return;
+    const s = saldoDe(t), ta = tasasDe(t);
+    const cArs = Math.max(0, s.ars), cUsd = Math.max(0, s.usd);
+    if(cArs<=0 && cUsd<=0 && ta.falta<=0) return;
+    if(!ta.previstas) sinCargar++;
+    cobrarArs += cArs; cobrarUsd += cUsd; pagar += ta.falta;
+    filas.push({ t, cArs, cUsd, ta });
+  });
+  if(!filas.length){
+    body.innerHTML = '<div class="ficha-dato">No hay nada pendiente: todos los trabajos están cobrados y con las tasas pagadas.</div>';
+    return;
+  }
+  filas.sort((a,b) => (b.ta.falta - a.ta.falta) || (b.cArs - a.cArs));
+  const p = v => v>0 ? fmtPlata(v,'$') : '—';
+  const cuerpo = filas.map(({t,cArs,cUsd,ta}) => {
+    const cobrar = [cArs>0?fmtPlata(cArs,'$'):'', cUsd>0?fmtPlata(cUsd,'U$D'):''].filter(Boolean).join('<br>') || '—';
+    const aviso = !ta.previstas ? ' <span class="badge badge-amber" title="Cargá las tasas previstas con ✎ Editar">sin cargar</span>' : '';
+    return `<tr>
+      <td><a href="#" onclick="irAlTrabajo('${t.id}');return false;">${escHtml(t.cliente||'(sin nombre)')}</a>
+        <div style="font-size:10.5px;color:var(--ink3)">${escHtml(t.estado||'')}</div></td>
+      <td class="num">${cobrar}</td>
+      <td class="num">${p(ta.previstas)}${aviso}</td>
+      <td class="num">${p(ta.pagadas)}</td>
+      <td class="num" style="color:var(--amber);font-weight:600">${p(ta.falta)}</td>
+    </tr>`;
+  }).join('');
+  const neto = cobrarArs - pagar;
+  body.innerHTML = `<table class="tiempos-tabla">
+      <thead><tr><th>Trabajo</th><th class="num">Falta cobrar</th><th class="num">Tasas previstas</th>
+        <th class="num">Ya pagadas</th><th class="num">Falta pagar</th></tr></thead>
+      <tbody>${cuerpo}</tbody>
+      <tfoot><tr class="caja-res">
+        <td><b>Total</b></td>
+        <td class="num"><b>${[cobrarArs>0?fmtPlata(cobrarArs,'$'):'', cobrarUsd>0?fmtPlata(cobrarUsd,'U$D'):''].filter(Boolean).join('<br>')||'—'}</b></td>
+        <td class="num"></td><td class="num"></td>
+        <td class="num" style="color:var(--amber)"><b>${p(pagar)}</b></td>
+      </tr></tfoot>
+    </table>
+    <div class="caja-nota">Si todo sale como está previsto, te van a <b>entrar ${fmtPlata(cobrarArs,'$')}${cobrarUsd>0?' + '+fmtPlata(cobrarUsd,'U$D'):''}</b> y vas a tener que <b>poner ${fmtPlata(pagar,'$')}</b> de tasas:
+      queda a favor <b>${fmtPlata(neto,'$')}${cobrarUsd>0?' + '+fmtPlata(cobrarUsd,'U$D'):''}</b> (la mitad de eso es de cada socio).
+      ${sinCargar ? `<br>⚠ Hay <b>${sinCargar} trabajo${sinCargar>1?'s':''}</b> sin las tasas previstas cargadas: abrilos y ponelas en «✎ Editar» para que el total sea real.` : ''}</div>`;
+}
 // ── CAJA: cobros, gastos fijos, gastos variables, aportes y acumulado del año ──
 // Siempre se calcula sobre la planilla entera (no sobre el buscador), para que
 // el resumen no cambie mientras buscás una palabra.
@@ -2135,19 +2273,24 @@ function renderCaja(mes){
   if(!cont) return;
   const n = v => parseFloat(v)||0;
   const anio = (mes||'').slice(0,4) || String(new Date().getFullYear());
-  const esAporte = m => (m.categoria||'') === 'Aporte de caja';
+  const esAporte = m => (m.categoria||'') === 'Aporte de socios';
   const esFijo   = m => String(m.fijo||'') === '1';
+  // Plata que no se queda en el estudio: va al Colegio, a Catastro o a la
+  // Caja de Previsión 8470. Se muestra aparte porque suele ser la mayor parte.
+  const esTasa   = m => ['Tasa / Arancel','Aporte previsional'].indexOf(m.categoria||'') >= 0;
   const bolsa = movs => {
     const r = {};
     ['$','U$D'].forEach(mon => {
       const suma = cond => movs.filter(m => (m.moneda||'$')===mon && cond(m)).reduce((a,b)=>a+n(b.monto),0);
+      const gasto = m => m.tipo!=='ingreso';
       r[mon] = {
-        cobros:    suma(m => m.tipo==='ingreso' && !esAporte(m)),
-        aportes:   suma(m => m.tipo==='ingreso' &&  esAporte(m)),
-        fijos:     suma(m => m.tipo!=='ingreso' &&  esFijo(m)),
-        variables: suma(m => m.tipo!=='ingreso' && !esFijo(m)),
+        cobros:  suma(m => m.tipo==='ingreso' && !esAporte(m)),
+        aportes: suma(m => m.tipo==='ingreso' &&  esAporte(m)),
+        fijos:   suma(m => gasto(m) &&  esFijo(m)),
+        tasas:   suma(m => gasto(m) && !esFijo(m) &&  esTasa(m)),
+        otros:   suma(m => gasto(m) && !esFijo(m) && !esTasa(m)),
       };
-      r[mon].resultado = r[mon].cobros - r[mon].fijos - r[mon].variables;
+      r[mon].resultado = r[mon].cobros - r[mon].fijos - r[mon].tasas - r[mon].otros;
     });
     return r;
   };
@@ -2165,13 +2308,16 @@ function renderCaja(mes){
       <thead><tr><th>Caja</th><th class="num">${mes?nombreMes(mes):'Todos los meses'}</th><th class="num">Acumulado ${anio}</th></tr></thead>
       <tbody>
         ${fila('Cobros','cobros')}
-        ${fila('Gastos fijos','fijos')}
-        ${fila('Gastos variables','variables')}
-        ${fila('Aportes de caja','aportes')}
+        ${fila('Gastos fijos del mes','fijos')}
+        ${fila('Tasas, Colegio y Caja 8470','tasas')}
+        ${fila('Otros gastos','otros')}
+        ${fila('Aportes de los socios','aportes')}
         ${fila('Resultado (cobros − gastos)','resultado','caja-res')}
       </tbody>
     </table>
-    <div class="caja-nota">Un gasto cuenta como <b>fijo</b> si lo marcaste «gasto fijo mensual» al cargarlo. Los <b>aportes de caja</b> son la plata que ponen ustedes, así que no entran en el resultado: se cargan como ingreso con la categoría «Aporte de caja».</div>`;
+    <div class="caja-nota"><b>Tasas, Colegio y Caja 8470</b> junta todo lo que pagás con categoría «Tasa / Arancel» o «Aporte previsional»: es plata que no se queda en el estudio.
+      Un gasto va a <b>fijos</b> si lo marcaste «gasto fijo mensual» al cargarlo.
+      Los <b>aportes de los socios</b> son la plata que ponen Santiago o Julia de su bolsillo (categoría «Aporte de socios») y por eso no entran en el resultado.</div>`;
 }
 function renderMovimientos() {
   const q = (document.getElementById('mov-buscar').value||'').toLowerCase().trim();
@@ -2204,6 +2350,7 @@ function renderMovimientos() {
   const titulo = q ? `resultado de «${q}»` : (mes ? nombreMes(mes) : 'todos los meses');
   document.getElementById('mov-periodo').textContent = titulo;
   renderCaja(mes);
+  renderCompromisos();
 
   // Cada movimiento como renglón compacto de su columna
   const fila = m => {
@@ -2743,7 +2890,8 @@ window.addEventListener('message', e => {
 let presPendiente = null;
 function nuevoTrabajo() {
   presPendiente = null;
-  ['trab-id','trab-cliente','trab-desc','trab-comentario','trab-monto-ars','trab-monto-usd','trab-pres-ref','trab-proxima','trab-limite','trab-carpeta'].forEach(i=>document.getElementById(i).value='');
+  ['trab-id','trab-cliente','trab-desc','trab-comentario','trab-monto-ars','trab-monto-usd','trab-pres-ref','trab-proxima','trab-limite','trab-carpeta','trab-tasas'].forEach(i=>document.getElementById(i).value='');
+  pintarHintTasas(null);
   document.getElementById('trab-tipo').selectedIndex = 0;
   document.getElementById('trab-estado').value = 'En curso';
   document.getElementById('trab-prioridad').value = 'Media';
