@@ -845,7 +845,9 @@ async function cargarTrabajos(){
     TRABAJOS=d.rows||[];
     const sel=document.getElementById('p-trabajo'); if(!sel) return;
     const elegido=sel.value;
-    const activos=TRABAJOS.filter(t=>!['Finalizado','Cobrado'].includes(t.estado));
+    // Alfabético por cliente, sin que molesten mayúsculas ni acentos
+    const activos=TRABAJOS.filter(t=>!['Finalizado','Cobrado'].includes(t.estado))
+      .sort((a,b)=>String(a.cliente||'').localeCompare(String(b.cliente||''),'es',{sensitivity:'base'}));
     const aPres=activos.filter(t=>t.estado==='A presupuestar');
     const otros=activos.filter(t=>t.estado!=='A presupuestar');
     const opt=t=>`<option value="${esc(t.id)}">${esc(t.cliente||'(sin nombre)')} — ${esc(t.tipo_trabajo||'')}</option>`;

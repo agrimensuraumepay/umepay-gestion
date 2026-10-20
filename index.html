@@ -1445,6 +1445,11 @@ const ETAPAS_TPL = {
   'Croquis de subdivisión': ['Medición','Croquis','Entrega'],
 };
 const PRIO_ORDEN = {'Alta':0,'Media':1,'':1,'Baja':2};
+// Orden alfabético por cliente, sin que molesten las mayúsculas ni los acentos.
+// Se usa en las tarjetas del tablero y en todos los desplegables de trabajos.
+const porCliente = (a,b) =>
+  String(a.cliente||'').localeCompare(String(b.cliente||''), 'es', {sensitivity:'base'}) ||
+  String(a.tipo_trabajo||'').localeCompare(String(b.tipo_trabajo||''), 'es', {sensitivity:'base'});
 const ACTIVOS = t => !['Finalizado','Cobrado'].includes(t.estado);
 function parseJson(s, fallback){ try { const v = JSON.parse(s); return Array.isArray(v)?v:fallback; } catch(e){ return fallback; } }
 function historialDe(t){ return parseJson(t.historial, []); }
@@ -1677,8 +1682,7 @@ function renderTrabajos() {
     if(fichaTrabajoId) renderFicha();
     return;
   }
-  const ordenar = arr => arr.sort((a,b) => (PRIO_ORDEN[a.prioridad||'']??1) - (PRIO_ORDEN[b.prioridad||'']??1)
-    || new Date(b.fecha_estado || b.created_at) - new Date(a.fecha_estado || a.created_at));
+  const ordenar = arr => arr.sort(porCliente);
   // Tablero: una columna por estado activo + una columna «Cerrados» (Finalizado y Cobrado)
   const ORDEN = ['En curso','A presupuestar','Esperando cliente','Pausado'];
   const CERRADOS = ['Finalizado','Cobrado'];
@@ -2954,12 +2958,13 @@ function decodeHtml(s='') {
   const t = document.createElement('textarea'); t.innerHTML = s; return t.value;
 }
 function fillWorkSelects() {
+  const alfabetico = DB.trabajos.slice().sort(porCliente);
   const opts = ['<option value="">— Ninguno —</option>',
-    ...DB.trabajos.map(t=>`<option value="${t.id}">${t.cliente} — ${t.tipo_trabajo}</option>`)
+    ...alfabetico.map(t=>`<option value="${t.id}">${t.cliente} — ${t.tipo_trabajo}</option>`)
   ].join('');
   // En Ingresos/Gastos solo se ofrecen los trabajos activos (ni Finalizados ni Cobrados)
   const optsActivos = ['<option value="">— Ninguno —</option>',
-    ...DB.trabajos.filter(ACTIVOS).map(t=>`<option value="${t.id}">${t.cliente} — ${t.tipo_trabajo}</option>`)
+    ...alfabetico.filter(ACTIVOS).map(t=>`<option value="${t.id}">${t.cliente} — ${t.tipo_trabajo}</option>`)
   ].join('');
   document.getElementById('mov-trabajo').innerHTML  = optsActivos;
   document.getElementById('pres-trabajo').innerHTML = opts;
