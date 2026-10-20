@@ -833,7 +833,7 @@ tr:hover td{background:var(--bg)}
 <div class="modal-bg" id="modal-movimiento">
   <div class="modal">
     <div class="modal-hdr">
-      <div class="modal-title">Registrar movimiento</div>
+      <div class="modal-title" id="modal-mov-title">Registrar movimiento</div>
       <button class="modal-close" onclick="closeModal('modal-movimiento')">✕</button>
     </div>
     <div class="modal-body">
@@ -923,11 +923,13 @@ tr:hover td{background:var(--bg)}
       </div>
       <div class="field">
         <label>📎 Comprobante (foto o PDF) — opcional</label>
+        <div id="mov-comprobante-actual" style="font-size:12px;margin-bottom:6px"></div>
         <input type="file" id="mov-comprobante" accept="image/*,application/pdf,.pdf">
         <div class="field-hint">Se guarda en tu Google Drive, carpeta «Umepay - Comprobantes».</div>
       </div>
     </div>
     <div class="modal-footer">
+      <button class="btn danger" id="mov-del-btn" onclick="borrarMovimientoDesdeModal()" style="margin-right:auto;display:none">Eliminar</button>
       <button class="btn" onclick="closeModal('modal-movimiento')">Cancelar</button>
       <button class="btn success" onclick="saveMovimiento()">Guardar</button>
     </div>
@@ -1947,6 +1949,7 @@ function renderFicha(){
       <td style="white-space:nowrap;color:var(--ink3)">${fmtFecha(m.fecha)}</td>
       <td>${escHtml(m.descripcion||m.categoria||'')}${m.comprobante_url?` <a href="${escHtml(m.comprobante_url)}" target="_blank" rel="noopener" title="Ver comprobante" style="text-decoration:none">📎</a>`:''}</td>
       <td class="${esIn?'mov-in':'mov-out'}">${esIn?'+':'−'} ${fmtPlata(parseFloat(m.monto)||0, m.moneda)}</td>
+      <td style="width:1%"><button class="btn sm" onclick="editMovimiento('${m.id}')" title="Editar">✎</button></td>
     </tr>`;
   };
   const etapas = etapasHtml(t, true);
@@ -2372,7 +2375,8 @@ function renderMovimientos() {
       <td>${m.descripcion||''}${m.comprobante_url?` <a href="${m.comprobante_url}" target="_blank" rel="noopener" title="Ver comprobante" style="text-decoration:none">📎</a>`:''}
         <div class="mov-sub">${detalle}${repBadge}</div></td>
       <td style="text-align:right;font-weight:500;white-space:nowrap;color:${isIng?'var(--green)':'var(--amber)'}">${montoStr}</td>
-      <td><button class="btn sm danger" onclick="deleteMovimiento('${m.id}')">✕</button></td>
+      <td style="white-space:nowrap"><button class="btn sm" onclick="editMovimiento('${m.id}')" title="Editar">✎</button>
+        <button class="btn sm danger" onclick="deleteMovimiento('${m.id}')" title="Eliminar">✕</button></td>
     </tr>`;
   };
   const vacio = msg => `<tr class="empty-row"><td colspan="4">${msg}</td></tr>`;
@@ -2919,8 +2923,65 @@ function nuevoMovimiento() {
   document.getElementById('mov-comprobante').value = '';
   document.getElementById('mov-repartido').checked = false;
   document.getElementById('mov-fijo').checked = false;
+  document.getElementById('mov-comprobante-actual').innerHTML = '';
+  document.getElementById('modal-mov-title').textContent = 'Registrar movimiento';
+  document.getElementById('mov-del-btn').style.display = 'none';
   updateMovLabel();
   openModal('modal-movimiento');
+}
+// Pone un valor en un desplegable; si esa opción ya no existe (por ejemplo una
+// categoría vieja que se renombró) la agrega, para no cambiarle el dato sin aviso.
+function setSelect(id, valor){
+  const s = document.getElementById(id);
+  if(!s) return;
+  const v = valor || '';
+  s.value = v;
+  if(v && s.value !== v){
+    s.insertAdjacentHTML('beforeend', `<option>${escHtml(v)}</option>`);
+    s.value = v;
+  }
+}
+// Editar un cobro o un gasto ya cargado
+function editMovimiento(id) {
+  const m = DB.movimientos.find(x => x.id === id);
+  if(!m) return;
+  document.getElementById('mov-id').value        = m.id;
+  document.getElementById('mov-fecha').value     = (m.fecha||'').split('T')[0];
+  document.getElementById('mov-desc').value      = m.descripcion || '';
+  document.getElementById('mov-monto').value     = m.monto || '';
+  setSelect('mov-tipo',   m.tipo || 'ingreso');
+  setSelect('mov-moneda', m.moneda || '$');
+  setSelect('mov-forma',  m.forma_pago);
+  setSelect('mov-quien',  m.quien_pago);
+  setSelect('mov-cat',    m.categoria);
+  // El trabajo puede estar cerrado y no figurar en la lista: lo agregamos para
+  // no perder el vínculo al guardar.
+  const selT = document.getElementById('mov-trabajo');
+  selT.value = m.trabajo_id || '';
+  if(m.trabajo_id && selT.value !== m.trabajo_id){
+    const t = DB.trabajos.find(x => x.id === m.trabajo_id);
+    selT.insertAdjacentHTML('beforeend',
+      `<option value="${escHtml(m.trabajo_id)}">${escHtml(t ? (t.cliente||'')+' — '+(t.tipo_trabajo||'') : 'Trabajo cerrado')}</option>`);
+    selT.value = m.trabajo_id;
+  }
+  document.getElementById('mov-repartido').checked = String(m.repartido||'')==='1';
+  document.getElementById('mov-fijo').checked      = String(m.fijo||'')==='1';
+  document.getElementById('mov-comprobante').value = '';
+  document.getElementById('mov-comprobante-actual').innerHTML = m.comprobante_url
+    ? `📎 Ya tiene uno: <a href="${escHtml(m.comprobante_url)}" target="_blank" rel="noopener">${escHtml(m.comprobante_nombre||'ver comprobante')}</a>
+       <span style="color:var(--ink3)">— si subís otro, lo reemplaza.</span>`
+    : '';
+  document.getElementById('modal-mov-title').textContent =
+    (m.tipo==='ingreso' ? 'Editar cobro' : 'Editar gasto');
+  document.getElementById('mov-del-btn').style.display = 'inline-flex';
+  updateMovLabel();
+  openModal('modal-movimiento');
+}
+async function borrarMovimientoDesdeModal(){
+  const id = document.getElementById('mov-id').value;
+  if(!id) return;
+  closeModal('modal-movimiento');
+  await deleteMovimiento(id);
 }
 function nuevoPresupuesto() {
   ['pres-id','pres-cliente','pres-notas','pres-ars','pres-usd'].forEach(i=>document.getElementById(i).value='');
