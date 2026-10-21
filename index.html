@@ -527,7 +527,7 @@ tr:hover td{background:var(--bg)}
     </div>
   </div>
   <!-- Lo que todavía no pasó: tasas por pagar y segundas mitades por cobrar -->
-  <details class="tiempos" id="compromisos-panel" open>
+  <details class="tiempos" id="compromisos-panel">
     <summary>💰 Lo que falta pagar y lo que falta cobrar</summary>
     <div class="tiempos-body" id="compromisos-body"></div>
   </details>
@@ -786,7 +786,7 @@ tr:hover td{background:var(--bg)}
       <div class="field" style="margin-top:12px">
         <label>Tasas previstas — Caja 8470 + Colegio (ARS)</label>
         <input type="number" id="trab-tasas" placeholder="0">
-        <div class="field-hint" id="trab-tasas-hint">Lo que calculaste que vas a tener que pagar por este trabajo. Lo ya pagado se descuenta solo, con los gastos vinculados de categoría «Tasa / Arancel» o «Aporte previsional».</div>
+        <div class="field-hint" id="trab-tasas-hint">Lo que calculaste que vas a tener que pagar por este trabajo. Lo ya pagado se descuenta solo, con los gastos vinculados de categoría Caja, Colegio, Municipalidad o Visados extras.</div>
       </div>
       <div class="sec-title" style="margin-top:14px">Registrar un cobro (opcional)</div>
       <div id="trab-cobro-estado" class="cobro-wrap"></div>
@@ -887,18 +887,7 @@ tr:hover td{background:var(--bg)}
         </div>
         <div class="field">
           <label>Categoría</label>
-          <select id="mov-cat">
-            <option>Honorarios</option>
-            <option>Aporte de socios</option>
-            <option>Tasa / Arancel</option>
-            <option>Combustible / Traslado</option>
-            <option>Insumos</option>
-            <option>Equipamiento</option>
-            <option>Software</option>
-            <option>Impuestos / AFIP</option>
-            <option>Aporte previsional</option>
-            <option>Otro</option>
-          </select>
+          <select id="mov-cat"></select>
         </div>
       </div>
       <div class="field">
@@ -1519,7 +1508,10 @@ function saldoDe(t){
 // Las tasas gordas (Caja 8470 y Colegio) se calculan al presupuestar y se
 // pagan durante el trabajo; el 50% final se cobra cuando Catastro aprueba.
 // ══════════════════════════════════════════════════════════════
-const CAT_TASAS = ['Tasa / Arancel','Aporte previsional'];
+// Categorías de gasto que son plata que no se queda en el estudio. Las dos
+// últimas son las que se usaban antes de renombrar las categorías.
+const CAT_TASAS = ['Caja','Colegio','Municipalidad','Visados extras',
+                   'Tasa / Arancel','Aporte previsional'];
 // Lo que ya se pagó de tasas en este trabajo (gastos vinculados, en pesos)
 function tasasPagadasDe(t){
   return DB.movimientos
@@ -1545,7 +1537,7 @@ function tasasDelPresupuesto(t){
 function pintarHintTasas(t){
   const hint = document.getElementById('trab-tasas-hint');
   if(!hint) return;
-  const base = 'Lo que calculaste que vas a tener que pagar por este trabajo. Lo ya pagado se descuenta solo, con los gastos vinculados de categoría «Tasa / Arancel» o «Aporte previsional».';
+  const base = 'Lo que calculaste que vas a tener que pagar por este trabajo. Lo ya pagado se descuenta solo, con los gastos vinculados de categoría Caja, Colegio, Municipalidad o Visados extras.';
   const s = t ? tasasDelPresupuesto(t) : null;
   if(!s){ hint.innerHTML = base; return; }
   hint.innerHTML = base +
@@ -2287,7 +2279,7 @@ function renderCaja(mes){
   const esFijo   = m => String(m.fijo||'') === '1';
   // Plata que no se queda en el estudio: va al Colegio, a Catastro o a la
   // Caja de Previsión 8470. Se muestra aparte porque suele ser la mayor parte.
-  const esTasa   = m => ['Tasa / Arancel','Aporte previsional'].indexOf(m.categoria||'') >= 0;
+  const esTasa   = m => CAT_TASAS.indexOf(m.categoria||'') >= 0;
   const bolsa = movs => {
     const r = {};
     ['$','U$D'].forEach(mon => {
@@ -2319,13 +2311,13 @@ function renderCaja(mes){
       <tbody>
         ${fila('Cobros','cobros')}
         ${fila('Gastos fijos del mes','fijos')}
-        ${fila('Tasas, Colegio y Caja 8470','tasas')}
+        ${fila('Tasas, Colegio y Caja','tasas')}
         ${fila('Otros gastos','otros')}
         ${fila('Aportes de los socios','aportes')}
         ${fila('Resultado (cobros − gastos)','resultado','caja-res')}
       </tbody>
     </table>
-    <div class="caja-nota"><b>Tasas, Colegio y Caja 8470</b> junta todo lo que pagás con categoría «Tasa / Arancel» o «Aporte previsional»: es plata que no se queda en el estudio.
+    <div class="caja-nota"><b>Tasas, Colegio y Caja</b> junta todo lo que pagás con categoría Caja, Colegio, Municipalidad o Visados extras: es plata que no se queda en el estudio.
       Un gasto va a <b>fijos</b> si lo marcaste «gasto fijo mensual» al cargarlo.
       Los <b>aportes de los socios</b> son la plata que ponen Santiago o Julia de su bolsillo (categoría «Aporte de socios») y por eso no entran en el resultado.</div>`;
 }
@@ -2385,10 +2377,22 @@ function renderMovimientos() {
   document.getElementById('mov-tbody-ing').innerHTML = cobros.length ? cobros.map(fila).join('') : vacio(q?'Sin ingresos que coincidan':'Sin ingresos en este período');
   document.getElementById('mov-tbody-gas').innerHTML = gastos.length ? gastos.map(fila).join('') : vacio(q?'Sin gastos que coincidan':'Sin gastos en este período');
 }
+// Categorías: las de gasto son las que usa el estudio; las de cobro son pocas.
+// El desplegable se arma según sea ingreso o egreso.
+const CATS_GASTO   = ['Caja','Colegio','Municipalidad','Visados extras','Insumos',
+                      'Planos','Impuestos','Combustible','Otro'];
+const CATS_INGRESO = ['Honorarios','Aporte de socios','Otro'];
 function updateMovLabel() {
   const tipo = document.getElementById('mov-tipo').value;
   document.getElementById('mov-desc-label').textContent = tipo==='ingreso' ? 'Descripción del cobro' : 'Descripción del gasto';
   document.getElementById('mov-quien-label').textContent = tipo==='ingreso' ? '¿Quién cobró?' : '¿Quién pagó?';
+  const sel = document.getElementById('mov-cat');
+  const antes = sel.value;
+  const lista = (tipo==='ingreso' ? CATS_INGRESO : CATS_GASTO);
+  sel.innerHTML = lista.map(c=>`<option>${c}</option>`).join('');
+  // Si la que estaba elegida sirve para este tipo, se mantiene; si no, queda
+  // la primera. Las categorías viejas las vuelve a poner editMovimiento.
+  if(antes && lista.indexOf(antes) >= 0) sel.value = antes;
 }
 // Lee un archivo y lo devuelve como texto base64 (sin el prefijo "data:...").
 function fileToBase64(file) {
@@ -2926,6 +2930,7 @@ function nuevoMovimiento() {
   document.getElementById('mov-comprobante-actual').innerHTML = '';
   document.getElementById('modal-mov-title').textContent = 'Registrar movimiento';
   document.getElementById('mov-del-btn').style.display = 'none';
+  document.getElementById('mov-cat').innerHTML = ''; // que no arrastre la categoría anterior
   updateMovLabel();
   openModal('modal-movimiento');
 }
@@ -2950,6 +2955,7 @@ function editMovimiento(id) {
   document.getElementById('mov-desc').value      = m.descripcion || '';
   document.getElementById('mov-monto').value     = m.monto || '';
   setSelect('mov-tipo',   m.tipo || 'ingreso');
+  updateMovLabel(); // arma las categorías según sea cobro o gasto
   setSelect('mov-moneda', m.moneda || '$');
   setSelect('mov-forma',  m.forma_pago);
   setSelect('mov-quien',  m.quien_pago);
@@ -2974,7 +2980,6 @@ function editMovimiento(id) {
   document.getElementById('modal-mov-title').textContent =
     (m.tipo==='ingreso' ? 'Editar cobro' : 'Editar gasto');
   document.getElementById('mov-del-btn').style.display = 'inline-flex';
-  updateMovLabel();
   openModal('modal-movimiento');
 }
 async function borrarMovimientoDesdeModal(){
