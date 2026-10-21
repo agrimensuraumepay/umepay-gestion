@@ -291,10 +291,11 @@ tr:hover td{background:var(--bg)}
 .mov-foot .lin{display:flex;justify-content:space-between;gap:12px;padding:3px 0;color:var(--ink2)}
 .mov-foot .lin .num{font-family:var(--mono);white-space:nowrap;text-align:right}
 .mov-foot .tot{font-weight:600;color:var(--ink);border-top:1px solid var(--border2);margin-top:5px;padding-top:7px}
-.mov-resultado{margin-top:16px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r);box-shadow:var(--sh);display:flex;justify-content:space-between;align-items:center;
-  gap:14px;flex-wrap:wrap;font-size:13px;color:var(--ink2)}
-.mov-resultado b{font-family:var(--mono);color:var(--ink);font-size:14px}
+.mov-resultado{margin-top:16px;padding:6px 16px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);box-shadow:var(--sh);font-size:13px;color:var(--ink2)}
+.mov-resultado .lin{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:9px 0}
+.mov-resultado .lin+.lin{border-top:1px solid var(--border)}
+.mov-resultado b{font-family:var(--mono);color:var(--ink);font-size:14px;white-space:nowrap}
 /* Balance entre socios: una sola línea a lo ancho */
 .balance-wide{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:12px 16px;margin-bottom:16px}
 .balance-wide .balance-title{margin-bottom:0;white-space:nowrap}
@@ -2352,8 +2353,6 @@ function pieMovimientos(cobros, gastos, mes){
   const plata = (ars, usd) =>
     [ars?fmtPlata(ars,'$'):'', usd?fmtPlata(usd,'U$D'):''].filter(Boolean).join(' · ') || '—';
   const esAporte = m => (m.categoria||'') === 'Aporte de socios';
-  const esFijo   = m => String(m.fijo||'') === '1';
-  const esTasa   = m => CAT_EXTERNAS.indexOf(m.categoria||'') >= 0;
 
   // Ingresos: los aportes de los socios se muestran aparte, no son ganancia
   const cobAr = sum(cobros,'$',m=>!esAporte(m)),  cobUs = sum(cobros,'U$D',m=>!esAporte(m));
@@ -2363,28 +2362,24 @@ function pieMovimientos(cobros, gastos, mes){
     lin = `<div class="lin"><span>Cobros</span><span class="num">${plata(cobAr,cobUs)}</span></div>
            <div class="lin"><span>Aportes de los socios</span><span class="num">${plata(apAr,apUs)}</span></div>`;
   }
+  // Si está filtrando por una categoría, el total lleva ese nombre
+  const cat = document.getElementById('mov-filtro-cat').value;
   document.getElementById('mov-foot-ing').innerHTML = lin +
-    `<div class="lin tot"><span>Total ingresos</span><span class="num">${plata(cobAr+apAr, cobUs+apUs)}</span></div>`;
+    `<div class="lin tot"><span>Total ${escHtml(cat || 'ingresos')}</span><span class="num">${plata(cobAr+apAr, cobUs+apUs)}</span></div>`;
 
-  // Gastos: fijos, lo que se le paga a los organismos, y el resto
-  const fAr = sum(gastos,'$',esFijo),                        fUs = sum(gastos,'U$D',esFijo);
-  const tAr = sum(gastos,'$',m=>!esFijo(m) &&  esTasa(m)),   tUs = sum(gastos,'U$D',m=>!esFijo(m) &&  esTasa(m));
-  const oAr = sum(gastos,'$',m=>!esFijo(m) && !esTasa(m)),   oUs = sum(gastos,'U$D',m=>!esFijo(m) && !esTasa(m));
+  const gAr = sum(gastos,'$'), gUs = sum(gastos,'U$D');
   document.getElementById('mov-foot-gas').innerHTML =
-    `<div class="lin"><span>Gastos fijos</span><span class="num">${plata(fAr,fUs)}</span></div>
-     <div class="lin"><span>Tasas, Colegio y Caja</span><span class="num">${plata(tAr,tUs)}</span></div>
-     <div class="lin"><span>Otros gastos</span><span class="num">${plata(oAr,oUs)}</span></div>
-     <div class="lin tot"><span>Total gastos</span><span class="num">${plata(fAr+tAr+oAr, fUs+tUs+oUs)}</span></div>`;
+    `<div class="lin tot"><span>Total ${escHtml(cat || 'gastos')}</span><span class="num">${plata(gAr,gUs)}</span></div>`;
 
-  // Abajo: el resultado de lo filtrado y, de referencia, el acumulado del año
-  const resAr = cobAr - (fAr+tAr+oAr), resUs = cobUs - (fUs+tUs+oUs);
-  const anio = (mes||'').slice(0,4) || String(new Date().getFullYear());
+  // Abajo: el balance de lo que se está viendo y, fijo, el acumulado del año
+  const anio = String(new Date().getFullYear());
   const delAnio = DB.movimientos.filter(m => (m.fecha||'').slice(0,4) === anio);
-  const aIn = sum(delAnio.filter(m=>m.tipo==='ingreso'),'$',m=>!esAporte(m));
-  const aEg = sum(delAnio.filter(m=>m.tipo!=='ingreso'),'$');
+  const anIn = delAnio.filter(m => m.tipo==='ingreso' && !esAporte(m));
+  const anEg = delAnio.filter(m => m.tipo!=='ingreso');
   document.getElementById('mov-resultado').innerHTML =
-    `<span>Resultado de lo que estás viendo: <b>${plata(resAr,resUs)}</b></span>
-     <span style="font-size:11.5px;color:var(--ink3)">Acumulado ${anio}: cobros ${fmtPlata(aIn,'$')} − gastos ${fmtPlata(aEg,'$')} = <b style="font-size:13px">${fmtPlata(aIn-aEg,'$')}</b></span>`;
+    `<div class="lin"><span>Balance de lo que estás viendo</span><b>${plata(cobAr-gAr, cobUs-gUs)}</b></div>
+     <div class="lin"><span>Acumulado ${anio}</span><b>${plata(
+        sum(anIn,'$') - sum(anEg,'$'), sum(anIn,'U$D') - sum(anEg,'U$D'))}</b></div>`;
 }
 // ══════════════════════════════════════════════════════════════
 // DÓNDE ESTÁ LA PLATA (hoja «caja»)
