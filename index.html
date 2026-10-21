@@ -354,8 +354,12 @@ tr:hover td{background:var(--bg)}
 .caja-tabla tr.caja-res td{border-bottom:none;border-top:2px solid var(--border2);
   font-weight:600;color:var(--ink);padding-top:9px}
 .caja-nota{font-size:11px;color:var(--ink3);margin-top:9px;line-height:1.5}
+/* Los dos paneles plegables, uno al lado del otro en la compu */
+.paneles{display:grid;grid-template-columns:1fr;gap:0;align-items:start}
+@media(min-width:1200px){ .paneles{grid-template-columns:1.7fr 1fr;gap:16px} }
+.paneles>.tiempos{margin-bottom:16px}
+@media(min-width:1200px){ .paneles>.tiempos{margin-bottom:18px} }
 /* Dónde está parada la plata: efectivo y USDT de cada socio */
-.plata-card{margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
 .plata-tabla{width:100%;border-collapse:collapse;font-size:12.5px}
 .plata-tabla th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;
   color:var(--ink3);font-weight:600;padding:5px 8px;border-bottom:1px solid var(--border)}
@@ -531,15 +535,19 @@ tr:hover td{background:var(--bg)}
         <div style="font-size:11px;color:var(--ink3);max-width:420px">Cuenta solo lo que todavía no se dividió. Cuando se repartan la plata, tocá el botón — o marcá movimiento por movimiento desde la lista.</div>
         <button class="btn sm success" onclick="saldarTodo()">💸 Ya repartimos</button>
       </div>
-      <!-- Dónde está parada la plata: efectivo y USDT de cada uno -->
-      <div class="plata-card" id="plata-caja"></div>
     </div>
   </div>
-  <!-- Lo que todavía no pasó: tasas por pagar y segundas mitades por cobrar -->
-  <details class="tiempos" id="compromisos-panel">
-    <summary>💰 Lo que falta pagar y lo que falta cobrar</summary>
-    <div class="tiempos-body" id="compromisos-body"></div>
-  </details>
+  <!-- Dos paneles plegables, uno al lado del otro: lo que falta mover y dónde está la plata -->
+  <div class="paneles">
+    <details class="tiempos" id="compromisos-panel">
+      <summary>💰 Lo que falta pagar y lo que falta cobrar</summary>
+      <div class="tiempos-body" id="compromisos-body"></div>
+    </details>
+    <details class="tiempos" id="plata-panel">
+      <summary>👛 Dónde está la plata</summary>
+      <div class="tiempos-body" id="plata-caja"></div>
+    </details>
+  </div>
   <!-- Filtros: van acá abajo porque filtran las dos listas, no los totales de arriba -->
   <div class="mov-filtros">
     <input id="mov-buscar" class="url-input" style="flex:1;min-width:170px;margin:0"
@@ -2405,10 +2413,6 @@ function renderPlataCaja(){
   const ult = DB.caja.map(c=>c.actualizado).filter(Boolean).sort().pop();
   const nota = (DB.caja.find(c=>c.nota) || {}).nota || '';
   cont.innerHTML = `
-    <div class="balance-title" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-      <span>Dónde está la plata</span>
-      <button class="btn sm" onclick="editarPlataCaja()">✎ Actualizar</button>
-    </div>
     <table class="plata-tabla">
       <thead><tr><th>Bolsillo</th><th class="num">Pesos</th><th class="num">Dólares</th></tr></thead>
       <tbody>${filas}
@@ -2417,9 +2421,12 @@ function renderPlataCaja(){
           <td class="num">${tUsd ? fmtPlata(tUsd,'U$D') : '—'}</td></tr>
       </tbody>
     </table>
-    <div style="font-size:11px;color:var(--ink3);margin-top:8px">
-      ${nota ? escHtml(nota)+'<br>' : ''}
-      ${ult ? 'Actualizado el '+fmtFecha(ult) : 'Todavía sin cargar: tocá «Actualizar» y poné lo que tienen hoy.'}</div>`;
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-top:10px;flex-wrap:wrap">
+      <div style="font-size:11px;color:var(--ink3);line-height:1.5">
+        ${nota ? escHtml(nota)+'<br>' : ''}
+        ${ult ? 'Actualizado el '+fmtFecha(ult) : 'Todavía sin cargar: tocá «Actualizar» y poné lo que tienen hoy.'}</div>
+      <button class="btn sm" onclick="editarPlataCaja()">✎ Actualizar</button>
+    </div>`;
 }
 function editarPlataCaja(){
   BOLSILLOS.forEach(b => {
