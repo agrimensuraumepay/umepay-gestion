@@ -894,13 +894,14 @@ tr:hover td{background:var(--bg)}
       <div class="g3">
         <div class="field">
           <label>Monto *</label>
-          <input type="number" id="mov-monto" placeholder="0">
+          <input type="number" id="mov-monto" placeholder="0" oninput="onMonedaMov()">
         </div>
         <div class="field">
           <label>Moneda</label>
-          <select id="mov-moneda">
+          <select id="mov-moneda" onchange="onMonedaMov()">
             <option value="$">$ (ARS)</option>
             <option value="U$D">U$D</option>
+            <option value="USDT">USDT</option>
           </select>
         </div>
         <div class="field">
@@ -912,10 +913,16 @@ tr:hover td{background:var(--bg)}
           </select>
         </div>
       </div>
+      <!-- Cotización: solo cuando se paga con USDT -->
+      <div class="field" id="mov-cambio-wrap" style="display:none">
+        <label>¿A cuánto cambiaste el USDT?</label>
+        <input type="number" id="mov-cambio" placeholder="Ej: 1450" oninput="onMonedaMov()">
+        <div class="field-hint" id="mov-cambio-hint">Pesos por cada USDT. Con eso se calcula el monto real del gasto.</div>
+      </div>
       <div class="g2">
         <div class="field">
           <label id="mov-quien-label">¿Quién cobró?</label>
-          <select id="mov-quien">
+          <select id="mov-quien" onchange="onMonedaMov()">
             <option value="Santiago">Santiago</option>
             <option value="Julia">Julia</option>
             <option value="Ambos">Ambos / Cuenta empresa</option>
@@ -925,6 +932,15 @@ tr:hover td{background:var(--bg)}
           <label>Categoría</label>
           <select id="mov-cat"></select>
         </div>
+      </div>
+      <!-- De dónde salió la plata: del bolsillo de uno o de la caja del estudio -->
+      <div class="field" id="mov-origen-wrap">
+        <label>¿De dónde salió la plata?</label>
+        <select id="mov-origen" onchange="onMonedaMov()">
+          <option value="Personal">Del bolsillo de uno de los dos</option>
+          <option value="Caja">De la caja del estudio</option>
+        </select>
+        <div class="field-hint" id="mov-origen-hint">Si sale de la caja no hay nada que repartir: se descuenta del bolsillo correspondiente en «Dinero en caja».</div>
       </div>
       <div class="field">
         <label>Trabajo vinculado (opcional)</label>
@@ -1389,8 +1405,8 @@ function renderDashboardLocal() {
   const movs = DB.movimientos;
   const n = v => parseFloat(v) || 0;
   // Balance entre socios: solo cuenta movimientos SIN repartir ("Ambos" ya nació dividido)
-  const pendRep = movs.filter(m => !esRepartido(m) && m.quien_pago !== 'Ambos');
-  const sumP = (tipo, quien, mon) => pendRep.filter(m=>m.tipo===tipo&&m.quien_pago===quien&&m.moneda===mon).reduce((a,b)=>a+n(b.monto),0);
+  const pendRep = movs.filter(m => !esRepartido(m) && m.quien_pago !== 'Ambos' && !esDeCaja(m));
+  const sumP = (tipo, quien, mon) => pendRep.filter(m=>m.tipo===tipo&&m.quien_pago===quien).reduce((a,b)=>a+montoEn(b,mon),0);
   // positivo → Santiago le debe a Julia: mitad de lo que Julia puso + mitad de lo que Santiago cobró
   const neto = mon => (sumP('egreso','Julia',mon) + sumP('ingreso','Santiago',mon)
                      - sumP('egreso','Santiago',mon) - sumP('ingreso','Julia',mon)) / 2;
@@ -1527,11 +1543,21 @@ function cobradoDe(t){
   const movs = DB.movimientos.filter(m => m.tipo==='ingreso' && m.trabajo_id === t.id);
   const n = v => parseFloat(v)||0;
   return {
-    ars: movs.filter(m=>m.moneda==='$').reduce((a,b)=>a+n(b.monto),0),
-    usd: movs.filter(m=>m.moneda==='U$D').reduce((a,b)=>a+n(b.monto),0)
+    ars: movs.reduce((a,b)=>a+montoEn(b,'$'),0),
+    usd: movs.reduce((a,b)=>a+montoEn(b,'U$D'),0)
   };
 }
 function fmtPlata(v, mon){ return (mon==='U$D'?'U$D ':'$ ') + Math.round(v).toLocaleString('es-AR'); }
+// Cuánto suma un movimiento en una moneda. Lo pagado con USDT cuenta como
+// pesos, al cambio que se usó ese día: el gasto en sí fue en pesos.
+function montoEn(m, mon){
+  const v = parseFloat(m.monto)||0;
+  const suya = m.moneda || '$';
+  if(suya === 'USDT') return mon === '$' ? (parseFloat(m.monto_pesos) || v*(parseFloat(m.cambio)||0)) : 0;
+  return suya === mon ? v : 0;
+}
+// Salió de la caja del estudio, no del bolsillo de ninguno de los dos
+function esDeCaja(m){ return (m.origen||'') === 'Caja'; }
 // Lo que falta cobrar y lo que falta pagar de tasas, en la ficha del trabajo
 function tasasFichaHtml(t){
   const ta = tasasDe(t), s = saldoDe(t);
@@ -1548,8 +1574,8 @@ function totalesTrabajoHtml(movs){
   if(!movs.length) return '';
   const n = v => parseFloat(v)||0;
   return ['$','U$D'].map(mon => {
-    const ing = movs.filter(m => m.tipo==='ingreso' && (m.moneda||'$')===mon).reduce((a,b)=>a+n(b.monto),0);
-    const gas = movs.filter(m => m.tipo!=='ingreso' && (m.moneda||'$')===mon).reduce((a,b)=>a+n(b.monto),0);
+    const ing = movs.filter(m => m.tipo==='ingreso').reduce((a,b)=>a+montoEn(b,mon),0);
+    const gas = movs.filter(m => m.tipo!=='ingreso').reduce((a,b)=>a+montoEn(b,mon),0);
     if(!ing && !gas) return '';
     return `<div class="ficha-tot">
       <span class="cobrado">Cobrado: <b>${fmtPlata(ing, mon)}</b></span>
@@ -1590,9 +1616,9 @@ const CAT_TASAS = ['Caja','Colegio','Tasa / Arancel','Aporte previsional'];
 // Lo que ya se pagó de tasas en este trabajo (gastos vinculados, en pesos)
 function tasasPagadasDe(t){
   return DB.movimientos
-    .filter(m => m.trabajo_id===t.id && m.tipo!=='ingreso' && (m.moneda||'$')==='$'
+    .filter(m => m.trabajo_id===t.id && m.tipo!=='ingreso'
                  && CAT_TASAS.indexOf(m.categoria||'') >= 0)
-    .reduce((a,b)=>a+(parseFloat(b.monto)||0), 0);
+    .reduce((a,b)=>a+montoEn(b,'$'), 0);
 }
 function tasasDe(t){
   const previstas = parseFloat(t.tasas_previstas)||0;
@@ -2348,8 +2374,8 @@ function renderCompromisos(){
 function pieMovimientos(cobros, gastos, mes){
   const n = v => parseFloat(v)||0;
   const sum = (arr, mon, cond) => arr
-    .filter(m => (m.moneda||'$')===mon && (!cond || cond(m)))
-    .reduce((a,b)=>a+n(b.monto), 0);
+    .filter(m => !cond || cond(m))
+    .reduce((a,b)=>a+montoEn(b,mon), 0);
   const plata = (ars, usd) =>
     [ars?fmtPlata(ars,'$'):'', usd?fmtPlata(usd,'U$D'):''].filter(Boolean).join(' · ') || '—';
   const esAporte = m => (m.categoria||'') === 'Aporte de socios';
@@ -2520,10 +2546,15 @@ function renderMovimientos() {
   const fila = m => {
     const isIng = m.tipo === 'ingreso';
     const rep = esRepartido(m);
-    const repBadge = m.quien_pago === 'Ambos' ? '' :
+    const repBadge = (m.quien_pago === 'Ambos' || esDeCaja(m)) ? '' :
       ` <span class="badge ${rep?'badge-green':'badge-amber'}" style="cursor:pointer" title="Tocar para marcar ${rep?'pendiente':'repartido'}" onclick="toggleRepartido('${m.id}')">${rep?'✓ Repartido':'½ Pendiente'}</span>`;
-    const detalle = [m.categoria, String(m.fijo||'')==='1' ? '🔁 fijo' : '', m.forma_pago, m.quien_pago].filter(Boolean).join(' · ');
-    const montoStr = (m.moneda||'$') + ' ' + Math.abs(parseFloat(m.monto)||0).toLocaleString('es-AR',{maximumFractionDigits:0});
+    const usdt = m.moneda==='USDT'
+      ? `${(parseFloat(m.monto)||0).toLocaleString('es-AR')} USDT a $${(parseFloat(m.cambio)||0).toLocaleString('es-AR')}` : '';
+    const detalle = [m.categoria, String(m.fijo||'')==='1' ? '🔁 fijo' : '', usdt,
+      esDeCaja(m) ? '👛 de caja' : '', m.forma_pago, m.quien_pago].filter(Boolean).join(' · ');
+    const montoStr = m.moneda==='USDT'
+      ? fmtPlata(montoEn(m,'$'),'$')
+      : (m.moneda||'$') + ' ' + Math.abs(parseFloat(m.monto)||0).toLocaleString('es-AR',{maximumFractionDigits:0});
     return `<tr>
       <td style="white-space:nowrap;color:var(--ink3)">${fmtFecha(m.fecha)}</td>
       <td>${m.descripcion||''}${m.comprobante_url?` <a href="${m.comprobante_url}" target="_blank" rel="noopener" title="Ver comprobante" style="text-decoration:none">📎</a>`:''}
@@ -2555,6 +2586,36 @@ function updateMovLabel() {
   // Si la que estaba elegida sirve para este tipo, se mantiene; si no, queda
   // la primera. Las categorías viejas las vuelve a poner editMovimiento.
   if(antes && lista.indexOf(antes) >= 0) sel.value = antes;
+  onMonedaMov();
+}
+// Muestra la cotización cuando se paga con USDT y avisa de qué bolsillo sale
+function onMonedaMov(){
+  const mon     = document.getElementById('mov-moneda').value;
+  const esUsdt  = mon === 'USDT';
+  const esGasto = document.getElementById('mov-tipo').value !== 'ingreso';
+  const monto   = parseFloat(document.getElementById('mov-monto').value)||0;
+  const cambio  = parseFloat(document.getElementById('mov-cambio').value)||0;
+  document.getElementById('mov-cambio-wrap').style.display = esUsdt ? '' : 'none';
+  document.getElementById('mov-cambio-hint').innerHTML = (esUsdt && monto && cambio)
+    ? `${monto.toLocaleString('es-AR')} USDT × $${cambio.toLocaleString('es-AR')} = <b>${fmtPlata(monto*cambio,'$')}</b>`
+    : 'Pesos por cada USDT. Con eso se calcula el monto real del gasto.';
+  // De dónde salió la plata solo aplica a los gastos
+  document.getElementById('mov-origen-wrap').style.display = esGasto ? '' : 'none';
+  const hint = document.getElementById('mov-origen-hint');
+  const quien = document.getElementById('mov-quien').value;
+  if(esGasto && document.getElementById('mov-origen').value === 'Caja'){
+    if(quien === 'Ambos'){
+      hint.innerHTML = '⚠ Elegí si lo pagó Santiago o Julia: la plata sale del bolsillo de alguno de los dos.';
+    } else {
+      const bolsillo = (esUsdt ? 'USDT ' : 'Efectivo ') + quien;
+      const r = filaCaja(bolsillo);
+      const enDolares = esUsdt || mon === 'U$D';
+      const hay = enDolares ? (parseFloat(r.monto_usd)||0) : (parseFloat(r.monto_ars)||0);
+      hint.innerHTML = `Se descuenta de <b>${bolsillo}</b>, que hoy tiene ${fmtPlata(hay, enDolares?'U$D':'$')}. No entra en el reparto entre socios.`;
+    }
+  } else {
+    hint.innerHTML = 'Si sale de la caja no hay nada que repartir: se descuenta del bolsillo correspondiente en «Dinero en caja».';
+  }
 }
 // Lee un archivo y lo devuelve como texto base64 (sin el prefijo "data:...").
 function fileToBase64(file) {
@@ -2579,8 +2640,20 @@ async function saveMovimiento() {
     trabajo_id: document.getElementById('mov-trabajo').value,
     repartido:  document.getElementById('mov-repartido').checked ? '1' : '',
     fijo:       document.getElementById('mov-fijo').checked ? '1' : '',
+    origen:     document.getElementById('mov-tipo').value !== 'ingreso'
+                  ? document.getElementById('mov-origen').value : '',
   };
   if(!data.monto || !data.fecha){ toast('Completá monto y fecha',true); return; }
+  // Pagado con USDT: guardamos la cotización y el monto real en pesos
+  if(data.moneda === 'USDT'){
+    const cambio = parseFloat(document.getElementById('mov-cambio').value)||0;
+    if(!cambio){ toast('Poné a cuánto cambiaste el USDT', true); return; }
+    data.cambio = String(cambio);
+    data.monto_pesos = String(Math.round((parseFloat(data.monto)||0) * cambio));
+  } else { data.cambio = ''; data.monto_pesos = ''; }
+  if(data.origen === 'Caja' && data.quien_pago === 'Ambos'){
+    toast('Para un gasto de caja elegí si lo pagó Santiago o Julia', true); return;
+  }
   // Si adjuntó un comprobante, lo subimos a Drive y guardamos el link.
   const file = document.getElementById('mov-comprobante').files[0];
   if (file) {
@@ -2598,6 +2671,9 @@ async function saveMovimiento() {
   }
   const esNuevo = !id;
   await saveData('movimientos', id, data);
+  // Si lo pagó con plata del estudio, se descuenta del bolsillo. Solo al
+  // crearlo: si después lo editás, la caja la corregís a mano.
+  if(esNuevo && data.origen === 'Caja' && data.quien_pago !== 'Ambos') await descontarDeCaja(data);
   closeModal('modal-movimiento');
   // Si es un gasto nuevo vinculado a un trabajo, queda anotado en la bitácora con fecha y descripción
   if (esNuevo && data.tipo === 'egreso' && data.trabajo_id) {
@@ -3092,6 +3168,8 @@ function nuevoMovimiento() {
   document.getElementById('mov-comprobante-actual').innerHTML = '';
   document.getElementById('modal-mov-title').textContent = 'Registrar movimiento';
   document.getElementById('mov-del-btn').style.display = 'none';
+  document.getElementById('mov-cambio').value = '';
+  document.getElementById('mov-origen').value = 'Personal';
   document.getElementById('mov-cat').innerHTML = ''; // que no arrastre la categoría anterior
   updateMovLabel();
   openModal('modal-movimiento');
@@ -3132,6 +3210,8 @@ function editMovimiento(id) {
       `<option value="${escHtml(m.trabajo_id)}">${escHtml(t ? (t.cliente||'')+' — '+(t.tipo_trabajo||'') : 'Trabajo cerrado')}</option>`);
     selT.value = m.trabajo_id;
   }
+  document.getElementById('mov-cambio').value = m.cambio || '';
+  setSelect('mov-origen', m.origen || 'Personal');
   document.getElementById('mov-repartido').checked = String(m.repartido||'')==='1';
   document.getElementById('mov-fijo').checked      = String(m.fijo||'')==='1';
   document.getElementById('mov-comprobante').value = '';
@@ -3143,6 +3223,21 @@ function editMovimiento(id) {
     (m.tipo==='ingreso' ? 'Editar cobro' : 'Editar gasto');
   document.getElementById('mov-del-btn').style.display = 'inline-flex';
   openModal('modal-movimiento');
+}
+// Resta de «Dinero en caja» lo que se pagó con plata del estudio
+async function descontarDeCaja(data){
+  const esUsdt = data.moneda === 'USDT';
+  const bolsillo = (esUsdt ? 'USDT ' : 'Efectivo ') + data.quien_pago;
+  const r = filaCaja(bolsillo);
+  const monto = parseFloat(data.monto)||0;
+  const enDolares = esUsdt || data.moneda === 'U$D';
+  const nuevo = { bolsillo, actualizado: new Date().toISOString() };
+  if(enDolares) nuevo.monto_usd = String((parseFloat(r.monto_usd)||0) - monto);
+  else          nuevo.monto_ars = String((parseFloat(r.monto_ars)||0) - monto);
+  try{
+    await saveData('caja', r.id || '', nuevo);
+    toast(`Se descontaron ${esUsdt ? monto.toLocaleString('es-AR')+' USDT' : fmtPlata(monto, data.moneda)} de ${bolsillo}`);
+  }catch(e){ toast('El gasto se guardó, pero no se pudo descontar de la caja: '+e.message, true); }
 }
 async function borrarMovimientoDesdeModal(){
   const id = document.getElementById('mov-id').value;
