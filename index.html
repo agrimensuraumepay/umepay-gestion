@@ -284,6 +284,24 @@ tr:hover td{background:var(--bg)}
 .fin-top .caja-card,.fin-top .balance-card{margin-bottom:0;display:flex;flex-direction:column}
 .fin-top .balance-card>div:last-child{margin-top:auto}
 .mov-col-hdr{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;padding:8px 12px;border-radius:var(--r) var(--r) 0 0;border:1px solid var(--border);border-bottom:none}
+/* Totales al pie de cada columna: siguen lo que muestran los filtros */
+.mov-cols .table-wrap{border-radius:0}
+.mov-foot{background:var(--surface2);border:1px solid var(--border);border-top:none;
+  border-radius:0 0 var(--r) var(--r);padding:9px 12px;font-size:12px;box-shadow:var(--sh)}
+.mov-foot .lin{display:flex;justify-content:space-between;gap:12px;padding:3px 0;color:var(--ink2)}
+.mov-foot .lin .num{font-family:var(--mono);white-space:nowrap;text-align:right}
+.mov-foot .tot{font-weight:600;color:var(--ink);border-top:1px solid var(--border2);margin-top:5px;padding-top:7px}
+.mov-resultado{margin-top:16px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);box-shadow:var(--sh);display:flex;justify-content:space-between;align-items:center;
+  gap:14px;flex-wrap:wrap;font-size:13px;color:var(--ink2)}
+.mov-resultado b{font-family:var(--mono);color:var(--ink);font-size:14px}
+/* Balance entre socios: una sola línea a lo ancho */
+.balance-wide{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:12px 16px;margin-bottom:16px}
+.balance-wide .balance-title{margin-bottom:0;white-space:nowrap}
+.balance-wide .bw-quien{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.balance-wide .bw-quien b{font-weight:500;color:var(--ink)}
+.balance-wide .balance-amounts{font-size:12px}
+.balance-wide .balance-verdict{margin-top:0;flex:1;min-width:220px}
 .mov-col-hdr.ing{background:var(--green3);color:var(--green)}
 .mov-col-hdr.gas{background:var(--amber2);color:var(--amber)}
 .mov-cols .table-wrap{border-radius:0 0 var(--r) var(--r)}
@@ -511,31 +529,15 @@ tr:hover td{background:var(--bg)}
     </div>
     <button class="btn success" onclick="nuevoMovimiento()">+ Registrar movimiento</button>
   </div>
-  <!-- Resumen arriba: caja (mes y año) + balance entre socios -->
-  <div class="fin-top">
-    <div class="caja-card" id="mov-totals"></div>
-    <div class="balance-card">
-      <div class="balance-title">Balance entre socios — plata sin repartir</div>
-      <div class="balance-row">
-        <div class="balance-who">Santiago</div>
-        <div class="balance-amounts">
-          <span id="bs-stg-ars">—</span>
-          <span id="bs-stg-usd">—</span>
-        </div>
-      </div>
-      <div class="balance-row">
-        <div class="balance-who">Julia</div>
-        <div class="balance-amounts">
-          <span id="bs-jul-ars">—</span>
-          <span id="bs-jul-usd">—</span>
-        </div>
-      </div>
-      <div class="balance-verdict" id="balance-verdict">—</div>
-      <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-        <div style="font-size:11px;color:var(--ink3);max-width:420px">Cuenta solo lo que todavía no se dividió. Cuando se repartan la plata, tocá el botón — o marcá movimiento por movimiento desde la lista.</div>
-        <button class="btn sm success" onclick="saldarTodo()">💸 Ya repartimos</button>
-      </div>
-    </div>
+  <!-- Balance entre socios: una sola línea a lo ancho -->
+  <div class="balance-card balance-wide" title="Cuenta solo lo que todavía no se dividió">
+    <div class="balance-title">Sin repartir</div>
+    <div class="bw-quien"><b>Santiago</b>
+      <div class="balance-amounts"><span id="bs-stg-ars">—</span><span id="bs-stg-usd">—</span></div></div>
+    <div class="bw-quien"><b>Julia</b>
+      <div class="balance-amounts"><span id="bs-jul-ars">—</span><span id="bs-jul-usd">—</span></div></div>
+    <div class="balance-verdict" id="balance-verdict">—</div>
+    <button class="btn sm success" onclick="saldarTodo()">💸 Ya repartimos</button>
   </div>
   <!-- Dos paneles plegables, uno al lado del otro: lo que falta mover y dónde está la plata -->
   <div class="paneles">
@@ -544,7 +546,7 @@ tr:hover td{background:var(--bg)}
       <div class="tiempos-body" id="compromisos-body"></div>
     </details>
     <details class="tiempos" id="plata-panel">
-      <summary>👛 Dónde está la plata</summary>
+      <summary>👛 Dinero en caja</summary>
       <div class="tiempos-body" id="plata-caja"></div>
     </details>
   </div>
@@ -554,6 +556,11 @@ tr:hover td{background:var(--bg)}
       placeholder="🔍 Buscar palabra (ej: mojones)" oninput="renderMovimientos()">
     <select id="mov-mes" class="url-input" style="width:auto;margin:0" onchange="renderMovimientos()"></select>
     <select id="mov-filtro-cat" class="url-input" style="width:auto;margin:0" onchange="renderMovimientos()"></select>
+    <select id="mov-filtro-fijo" class="url-input" style="width:auto;margin:0" onchange="renderMovimientos()">
+      <option value="">— Fijos y no fijos —</option>
+      <option value="1">Solo gastos fijos</option>
+      <option value="0">Sin los gastos fijos</option>
+    </select>
     <button class="btn sm" onclick="limpiarFiltrosMov()">Limpiar</button>
   </div>
   <div style="font-size:12px;color:var(--ink3);margin-bottom:8px">Movimientos de: <b id="mov-periodo">—</b></div>
@@ -567,6 +574,7 @@ tr:hover td{background:var(--bg)}
           <tbody id="mov-tbody-ing"><tr class="empty-row"><td colspan="4">Cargando...</td></tr></tbody>
         </table>
       </div>
+      <div class="mov-foot" id="mov-foot-ing"></div>
     </div>
     <div>
       <div class="mov-col-hdr gas">↓ Gastos <span class="mov-cnt" id="mov-cnt-gas"></span></div>
@@ -576,8 +584,10 @@ tr:hover td{background:var(--bg)}
           <tbody id="mov-tbody-gas"><tr class="empty-row"><td colspan="4">Cargando...</td></tr></tbody>
         </table>
       </div>
+      <div class="mov-foot" id="mov-foot-gas"></div>
     </div>
   </div>
+  <div class="mov-resultado" id="mov-resultado"></div>
 </div>
 <!-- ═══════════════ PRESUPUESTOS ═══════════════ -->
 <div class="tab" id="tab-presupuestos">
@@ -1204,7 +1214,7 @@ tr:hover td{background:var(--bg)}
 <div class="modal-bg" id="modal-plata">
   <div class="modal" style="max-width:460px">
     <div class="modal-hdr">
-      <div class="modal-title">¿Dónde está la plata?</div>
+      <div class="modal-title">Dinero en caja</div>
       <button class="modal-close" onclick="closeModal('modal-plata')">✕</button>
     </div>
     <div class="modal-body">
@@ -2331,59 +2341,50 @@ function renderCompromisos(){
       ${sinCargar ? `<br>⚠ Hay <b>${sinCargar} trabajo${sinCargar>1?'s':''}</b> sin las tasas previstas cargadas: abrilos y ponelas en «✎ Editar» para que el total sea real.` : ''}
       <br>Solo cuenta los trabajos <b>en curso</b>: los pausados y los que esperan al cliente no son plata con la que se pueda contar.</div>`;
 }
-// ── CAJA: cobros, gastos fijos, gastos variables, aportes y acumulado del año ──
-// Siempre se calcula sobre la planilla entera (no sobre el buscador), para que
-// el resumen no cambie mientras buscás una palabra.
-function renderCaja(mes){
-  const cont = document.getElementById('mov-totals');
-  if(!cont) return;
+// ── Totales al pie de cada columna ──
+// Siempre siguen lo que muestran los filtros: si pedís octubre y categoría
+// Caja, los totales son los de octubre y de esa categoría.
+function pieMovimientos(cobros, gastos, mes){
   const n = v => parseFloat(v)||0;
-  const anio = (mes||'').slice(0,4) || String(new Date().getFullYear());
+  const sum = (arr, mon, cond) => arr
+    .filter(m => (m.moneda||'$')===mon && (!cond || cond(m)))
+    .reduce((a,b)=>a+n(b.monto), 0);
+  const plata = (ars, usd) =>
+    [ars?fmtPlata(ars,'$'):'', usd?fmtPlata(usd,'U$D'):''].filter(Boolean).join(' · ') || '—';
   const esAporte = m => (m.categoria||'') === 'Aporte de socios';
   const esFijo   = m => String(m.fijo||'') === '1';
-  // Plata que no se queda en el estudio: va al Colegio, a Catastro o a la
-  // Caja de Previsión 8470. Se muestra aparte porque suele ser la mayor parte.
   const esTasa   = m => CAT_EXTERNAS.indexOf(m.categoria||'') >= 0;
-  const bolsa = movs => {
-    const r = {};
-    ['$','U$D'].forEach(mon => {
-      const suma = cond => movs.filter(m => (m.moneda||'$')===mon && cond(m)).reduce((a,b)=>a+n(b.monto),0);
-      const gasto = m => m.tipo!=='ingreso';
-      r[mon] = {
-        cobros:  suma(m => m.tipo==='ingreso' && !esAporte(m)),
-        aportes: suma(m => m.tipo==='ingreso' &&  esAporte(m)),
-        fijos:   suma(m => gasto(m) &&  esFijo(m)),
-        tasas:   suma(m => gasto(m) && !esFijo(m) &&  esTasa(m)),
-        otros:   suma(m => gasto(m) && !esFijo(m) && !esTasa(m)),
-      };
-      r[mon].resultado = r[mon].cobros - r[mon].fijos - r[mon].tasas - r[mon].otros;
-    });
-    return r;
-  };
-  const delMes  = bolsa(mes ? DB.movimientos.filter(m => (m.fecha||'').slice(0,7)===mes) : DB.movimientos);
-  const delAnio = bolsa(DB.movimientos.filter(m => (m.fecha||'').slice(0,4)===anio));
-  const celda = (b,k) => {
-    const p = [];
-    if(b['$'][k])   p.push(fmtPlata(b['$'][k],'$'));
-    if(b['U$D'][k]) p.push(fmtPlata(b['U$D'][k],'U$D'));
-    return p.length ? p.join('<br>') : '—';
-  };
-  const fila = (lbl,k,cls) => `<tr class="${cls||''}"><td>${lbl}</td><td class="num">${celda(delMes,k)}</td><td class="num">${celda(delAnio,k)}</td></tr>`;
-  cont.innerHTML = `
-    <table class="caja-tabla">
-      <thead><tr><th>Caja</th><th class="num">${mes?nombreMes(mes):'Todos los meses'}</th><th class="num">Acumulado ${anio}</th></tr></thead>
-      <tbody>
-        ${fila('Cobros','cobros')}
-        ${fila('Gastos fijos del mes','fijos')}
-        ${fila('Tasas, Colegio y Caja','tasas')}
-        ${fila('Otros gastos','otros')}
-        ${fila('Aportes de los socios','aportes')}
-        ${fila('Resultado (cobros − gastos)','resultado','caja-res')}
-      </tbody>
-    </table>
-    <div class="caja-nota"><b>Tasas, Colegio y Caja</b> junta todo lo que pagás con categoría Caja, Colegio, Municipalidad, Visados extras o Informes de dominio: es plata que no se queda en el estudio.
-      Un gasto va a <b>fijos</b> si lo marcaste «gasto fijo mensual» al cargarlo.
-      Los <b>aportes de los socios</b> son la plata que ponen Santiago o Julia de su bolsillo (categoría «Aporte de socios») y por eso no entran en el resultado.</div>`;
+
+  // Ingresos: los aportes de los socios se muestran aparte, no son ganancia
+  const cobAr = sum(cobros,'$',m=>!esAporte(m)),  cobUs = sum(cobros,'U$D',m=>!esAporte(m));
+  const apAr  = sum(cobros,'$',esAporte),         apUs  = sum(cobros,'U$D',esAporte);
+  let lin = '';
+  if(apAr || apUs){
+    lin = `<div class="lin"><span>Cobros</span><span class="num">${plata(cobAr,cobUs)}</span></div>
+           <div class="lin"><span>Aportes de los socios</span><span class="num">${plata(apAr,apUs)}</span></div>`;
+  }
+  document.getElementById('mov-foot-ing').innerHTML = lin +
+    `<div class="lin tot"><span>Total ingresos</span><span class="num">${plata(cobAr+apAr, cobUs+apUs)}</span></div>`;
+
+  // Gastos: fijos, lo que se le paga a los organismos, y el resto
+  const fAr = sum(gastos,'$',esFijo),                        fUs = sum(gastos,'U$D',esFijo);
+  const tAr = sum(gastos,'$',m=>!esFijo(m) &&  esTasa(m)),   tUs = sum(gastos,'U$D',m=>!esFijo(m) &&  esTasa(m));
+  const oAr = sum(gastos,'$',m=>!esFijo(m) && !esTasa(m)),   oUs = sum(gastos,'U$D',m=>!esFijo(m) && !esTasa(m));
+  document.getElementById('mov-foot-gas').innerHTML =
+    `<div class="lin"><span>Gastos fijos</span><span class="num">${plata(fAr,fUs)}</span></div>
+     <div class="lin"><span>Tasas, Colegio y Caja</span><span class="num">${plata(tAr,tUs)}</span></div>
+     <div class="lin"><span>Otros gastos</span><span class="num">${plata(oAr,oUs)}</span></div>
+     <div class="lin tot"><span>Total gastos</span><span class="num">${plata(fAr+tAr+oAr, fUs+tUs+oUs)}</span></div>`;
+
+  // Abajo: el resultado de lo filtrado y, de referencia, el acumulado del año
+  const resAr = cobAr - (fAr+tAr+oAr), resUs = cobUs - (fUs+tUs+oUs);
+  const anio = (mes||'').slice(0,4) || String(new Date().getFullYear());
+  const delAnio = DB.movimientos.filter(m => (m.fecha||'').slice(0,4) === anio);
+  const aIn = sum(delAnio.filter(m=>m.tipo==='ingreso'),'$',m=>!esAporte(m));
+  const aEg = sum(delAnio.filter(m=>m.tipo!=='ingreso'),'$');
+  document.getElementById('mov-resultado').innerHTML =
+    `<span>Resultado de lo que estás viendo: <b>${plata(resAr,resUs)}</b></span>
+     <span style="font-size:11.5px;color:var(--ink3)">Acumulado ${anio}: cobros ${fmtPlata(aIn,'$')} − gastos ${fmtPlata(aEg,'$')} = <b style="font-size:13px">${fmtPlata(aIn-aEg,'$')}</b></span>`;
 }
 // ══════════════════════════════════════════════════════════════
 // DÓNDE ESTÁ LA PLATA (hoja «caja»)
@@ -2463,6 +2464,7 @@ async function savePlataCaja(){
 function limpiarFiltrosMov(){
   document.getElementById('mov-buscar').value = '';
   document.getElementById('mov-filtro-cat').value = '';
+  document.getElementById('mov-filtro-fijo').value = '';
   const selMes = document.getElementById('mov-mes');
   selMes.disabled = false;
   selMes.value = new Date().toISOString().slice(0,7);
@@ -2502,14 +2504,20 @@ function renderMovimientos() {
     list = list.filter(m => (m.fecha||'').slice(0,7) === mes);
   }
   if(cat) list = list.filter(m => (m.categoria||'') === cat);
+  // Filtro de gastos fijos («solo fijos» deja la columna de ingresos vacía a propósito)
+  const fijo = document.getElementById('mov-filtro-fijo').value;
+  const esFijoMov = m => m.tipo!=='ingreso' && String(m.fijo||'')==='1';
+  if(fijo==='1')      list = list.filter(esFijoMov);
+  else if(fijo==='0') list = list.filter(m => !esFijoMov(m));
   list.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
 
-  const cobros = list.filter(m=>m.tipo==='ingreso');
-  const gastos = list.filter(m=>m.tipo==='egreso');
+  const cobros = list.filter(m => m.tipo==='ingreso');
+  const gastos = list.filter(m => m.tipo!=='ingreso');
   const titulo = (q ? `resultado de «${q}»` : (mes ? nombreMes(mes) : 'todos los meses'))
-    + (cat ? ` · categoría ${cat}` : '');
+    + (cat ? ` · categoría ${cat}` : '')
+    + (fijo==='1' ? ' · solo gastos fijos' : fijo==='0' ? ' · sin gastos fijos' : '');
   document.getElementById('mov-periodo').textContent = titulo;
-  renderCaja(mes);
+  pieMovimientos(cobros, gastos, mes);
   renderCompromisos();
   renderPlataCaja();
 
