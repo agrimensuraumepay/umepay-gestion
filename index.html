@@ -786,7 +786,7 @@ tr:hover td{background:var(--bg)}
       <div class="field" style="margin-top:12px">
         <label>Tasas previstas — Caja 8470 + Colegio (ARS)</label>
         <input type="number" id="trab-tasas" placeholder="0">
-        <div class="field-hint" id="trab-tasas-hint">Lo que calculaste que vas a tener que pagar por este trabajo. Lo ya pagado se descuenta solo, con los gastos vinculados de categoría Caja, Colegio, Municipalidad o Visados extras.</div>
+        <div class="field-hint" id="trab-tasas-hint">Lo que calculaste que vas a tener que pagar por este trabajo. Lo ya pagado se descuenta solo, con los gastos vinculados de categoría Caja o Colegio.</div>
       </div>
       <div class="sec-title" style="margin-top:14px">Registrar un cobro (opcional)</div>
       <div id="trab-cobro-estado" class="cobro-wrap"></div>
@@ -1508,10 +1508,13 @@ function saldoDe(t){
 // Las tasas gordas (Caja 8470 y Colegio) se calculan al presupuestar y se
 // pagan durante el trabajo; el 50% final se cobra cuando Catastro aprueba.
 // ══════════════════════════════════════════════════════════════
-// Categorías de gasto que son plata que no se queda en el estudio. Las dos
-// últimas son las que se usaban antes de renombrar las categorías.
-const CAT_TASAS = ['Caja','Colegio','Municipalidad','Visados extras',
-                   'Tasa / Arancel','Aporte previsional'];
+// Plata que no se queda en el estudio: va a un organismo. Es la fila
+// «Tasas, Colegio y Caja» del cuadro de caja.
+const CAT_EXTERNAS = ['Caja','Colegio','Municipalidad','Visados extras','Informes de dominio',
+                      'Tasa / Arancel','Aporte previsional'];
+// Las dos tasas gordas que se presupuestan trabajo por trabajo: son las que se
+// descuentan de las «tasas previstas». Las extras no entran acá a propósito.
+const CAT_TASAS = ['Caja','Colegio','Tasa / Arancel','Aporte previsional'];
 // Lo que ya se pagó de tasas en este trabajo (gastos vinculados, en pesos)
 function tasasPagadasDe(t){
   return DB.movimientos
@@ -1537,7 +1540,7 @@ function tasasDelPresupuesto(t){
 function pintarHintTasas(t){
   const hint = document.getElementById('trab-tasas-hint');
   if(!hint) return;
-  const base = 'Lo que calculaste que vas a tener que pagar por este trabajo. Lo ya pagado se descuenta solo, con los gastos vinculados de categoría Caja, Colegio, Municipalidad o Visados extras.';
+  const base = 'Lo que calculaste que vas a tener que pagar por este trabajo. Lo ya pagado se descuenta solo, con los gastos vinculados de categoría Caja o Colegio.';
   const s = t ? tasasDelPresupuesto(t) : null;
   if(!s){ hint.innerHTML = base; return; }
   hint.innerHTML = base +
@@ -2279,7 +2282,7 @@ function renderCaja(mes){
   const esFijo   = m => String(m.fijo||'') === '1';
   // Plata que no se queda en el estudio: va al Colegio, a Catastro o a la
   // Caja de Previsión 8470. Se muestra aparte porque suele ser la mayor parte.
-  const esTasa   = m => CAT_TASAS.indexOf(m.categoria||'') >= 0;
+  const esTasa   = m => CAT_EXTERNAS.indexOf(m.categoria||'') >= 0;
   const bolsa = movs => {
     const r = {};
     ['$','U$D'].forEach(mon => {
@@ -2317,7 +2320,7 @@ function renderCaja(mes){
         ${fila('Resultado (cobros − gastos)','resultado','caja-res')}
       </tbody>
     </table>
-    <div class="caja-nota"><b>Tasas, Colegio y Caja</b> junta todo lo que pagás con categoría Caja, Colegio, Municipalidad o Visados extras: es plata que no se queda en el estudio.
+    <div class="caja-nota"><b>Tasas, Colegio y Caja</b> junta todo lo que pagás con categoría Caja, Colegio, Municipalidad, Visados extras o Informes de dominio: es plata que no se queda en el estudio.
       Un gasto va a <b>fijos</b> si lo marcaste «gasto fijo mensual» al cargarlo.
       Los <b>aportes de los socios</b> son la plata que ponen Santiago o Julia de su bolsillo (categoría «Aporte de socios») y por eso no entran en el resultado.</div>`;
 }
@@ -2379,8 +2382,8 @@ function renderMovimientos() {
 }
 // Categorías: las de gasto son las que usa el estudio; las de cobro son pocas.
 // El desplegable se arma según sea ingreso o egreso.
-const CATS_GASTO   = ['Caja','Colegio','Municipalidad','Visados extras','Insumos',
-                      'Planos','Impuestos','Combustible','Otro'];
+const CATS_GASTO   = ['Caja','Colegio','Municipalidad','Visados extras','Informes de dominio',
+                      'Insumos','Instrumental','Planos','Impuestos','Combustible','Otro'];
 const CATS_INGRESO = ['Honorarios','Aporte de socios','Otro'];
 function updateMovLabel() {
   const tipo = document.getElementById('mov-tipo').value;
