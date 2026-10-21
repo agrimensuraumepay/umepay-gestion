@@ -4,7 +4,7 @@
  *
  *  Hojas que usa: "trabajos", "movimientos", "presupuestos", "compromisos",
  *  "apuntes", "tramites". La app web (index.html) se conecta a este script
- *  vía fetch.
+ *  script vía fetch.
  *
  *  Los eventos del calendario (hoja "compromisos") además se copian al
  *  calendario de Google de esta cuenta, para verlos en el celular. Ver la
@@ -21,7 +21,7 @@
  *     Copiá la URL /exec y pegala en la pestaña "Configuración" de la app.
  ****************************************************************************/
 
-var HOJAS = ['trabajos', 'movimientos', 'presupuestos', 'compromisos', 'apuntes', 'tramites'];
+var HOJAS = ['trabajos', 'movimientos', 'presupuestos', 'compromisos', 'apuntes', 'tramites', 'caja'];
 
 // Subcarpetas de Drive, creadas DENTRO de la carpeta donde vive la planilla
 // (por ej. "AgriApp"). Así todo lo de la app queda junto al Sheet.
@@ -52,7 +52,10 @@ var COLUMNAS = {
   // Visados y trámites de cada trabajo (Colegio, Catastro, DPV, Bioagroindustria…).
   // Con la fecha de envío y la de respuesta se mide cuánto tarda cada organismo.
   tramites: ['id', 'trabajo_id', 'organismo', 'expediente', 'fecha_envio',
-             'fecha_respuesta', 'estado', 'link', 'nota', 'created_at']
+             'fecha_respuesta', 'estado', 'link', 'nota', 'created_at'],
+  // Dónde está parada la plata del estudio: efectivo y USDT, de cada socio.
+  // Son cuatro filas fijas que la app va actualizando.
+  caja: ['id', 'bolsillo', 'monto_ars', 'monto_usd', 'nota', 'actualizado', 'created_at']
 };
 
 /* ========================================================================
