@@ -2436,18 +2436,38 @@ const BOLSILLOS = [
   { id:'USDT Julia',        campo:'us-jul', ars:false },
 ];
 function filaCaja(nombre){ return DB.caja.find(c => c.bolsillo === nombre) || {}; }
+// A qué bolsillo toca un movimiento de caja
+function bolsilloDe(m){
+  return ((m.moneda === 'USDT') ? 'USDT ' : 'Efectivo ') + (m.quien_pago || '');
+}
+// Saldo de un bolsillo = lo último que cargaste a mano, más todos los
+// movimientos de caja que registraste DESPUÉS de esa carga. Así, si editás o
+// borrás un movimiento, el saldo se reacomoda solo.
+function saldoBolsillo(nombre){
+  const r = filaCaja(nombre);
+  let ars = parseFloat(r.monto_ars)||0, usd = parseFloat(r.monto_usd)||0;
+  const movs = DB.movimientos.filter(m => esDeCaja(m) && bolsilloDe(m) === nombre
+    && String(m.created_at||'') > String(r.actualizado||''));
+  movs.forEach(m => {
+    const v = (parseFloat(m.monto)||0) * (m.tipo === 'ingreso' ? 1 : -1);
+    if(m.moneda === 'USDT' || m.moneda === 'U$D') usd += v; else ars += v;
+  });
+  return { ars, usd, movs: movs.length };
+}
 function renderPlataCaja(){
   const cont = document.getElementById('plata-caja');
   if(!cont) return;
-  const n = v => parseFloat(v)||0;
-  let tArs=0, tUsd=0;
+  // En la caja los centavos importan (los USDT vienen con decimales)
+  const fmtC = (v, mon) => (mon==='U$D'?'U$D ':'$ ') +
+    v.toLocaleString('es-AR',{maximumFractionDigits: Math.abs(v % 1) > 0.004 ? 2 : 0});
+  let tArs=0, tUsd=0, tMovs=0;
   const filas = BOLSILLOS.map(b => {
-    const r = filaCaja(b.id);
-    const ars = b.ars ? n(r.monto_ars) : 0, usd = n(r.monto_usd);
-    tArs += ars; tUsd += usd;
+    const sa = saldoBolsillo(b.id);
+    const ars = b.ars ? sa.ars : 0;
+    tArs += ars; tUsd += sa.usd; tMovs += sa.movs;
     return `<tr><td>${b.id}</td>
-      <td class="num">${b.ars ? (ars ? fmtPlata(ars,'$') : '—') : ''}</td>
-      <td class="num">${usd ? fmtPlata(usd,'U$D') : '—'}</td></tr>`;
+      <td class="num">${b.ars ? (ars ? fmtC(ars,'$') : '—') : ''}</td>
+      <td class="num">${sa.usd ? fmtC(sa.usd,'U$D') : '—'}</td></tr>`;
   }).join('');
   const ult = DB.caja.map(c=>c.actualizado).filter(Boolean).sort().pop();
   const nota = (DB.caja.find(c=>c.nota) || {}).nota || '';
@@ -2456,26 +2476,27 @@ function renderPlataCaja(){
       <thead><tr><th>Bolsillo</th><th class="num">Pesos</th><th class="num">Dólares</th></tr></thead>
       <tbody>${filas}
         <tr class="plata-tot"><td>Total</td>
-          <td class="num">${tArs ? fmtPlata(tArs,'$') : '—'}</td>
-          <td class="num">${tUsd ? fmtPlata(tUsd,'U$D') : '—'}</td></tr>
+          <td class="num">${tArs ? fmtC(tArs,'$') : '—'}</td>
+          <td class="num">${tUsd ? fmtC(tUsd,'U$D') : '—'}</td></tr>
       </tbody>
     </table>
     <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-top:10px;flex-wrap:wrap">
       <div style="font-size:11px;color:var(--ink3);line-height:1.5">
         ${nota ? escHtml(nota)+'<br>' : ''}
-        ${ult ? 'Actualizado el '+fmtFecha(ult) : 'Todavía sin cargar: tocá «Actualizar» y poné lo que tienen hoy.'}</div>
+        ${ult ? 'Cargado a mano el '+fmtFecha(ult) : 'Todavía sin cargar: tocá «Actualizar» y poné lo que tienen hoy.'}
+        ${tMovs ? `, más ${tMovs} movimiento${tMovs>1?'s':''} de caja registrado${tMovs>1?'s':''} después.` : ''}</div>
       <button class="btn sm" onclick="editarPlataCaja()">✎ Actualizar</button>
     </div>`;
 }
 function editarPlataCaja(){
   BOLSILLOS.forEach(b => {
-    const r = filaCaja(b.id);
+    const sa = saldoBolsillo(b.id);
     if(b.ars){
       const e = document.getElementById('pl-'+b.campo+'-ars');
-      if(e) e.value = parseFloat(r.monto_ars)>0 ? r.monto_ars : '';
+      if(e) e.value = sa.ars ? Math.round(sa.ars*100)/100 : '';
     }
     const u = document.getElementById('pl-'+b.campo+'-usd');
-    if(u) u.value = parseFloat(r.monto_usd)>0 ? r.monto_usd : '';
+    if(u) u.value = sa.usd ? Math.round(sa.usd*100)/100 : '';
   });
   document.getElementById('pl-nota').value = (DB.caja.find(c=>c.nota) || {}).nota || '';
   openModal('modal-plata');
@@ -2636,9 +2657,9 @@ function onMonedaMov(){
         : '⚠ Elegí si lo cobró Santiago o Julia: la plata entra en el bolsillo de alguno de los dos.';
     } else {
       const bolsillo = (esUsdt ? 'USDT ' : 'Efectivo ') + quien;
-      const r = filaCaja(bolsillo);
+      const sa = saldoBolsillo(bolsillo);
       const enDolares = esUsdt || mon === 'U$D';
-      const hay = enDolares ? (parseFloat(r.monto_usd)||0) : (parseFloat(r.monto_ars)||0);
+      const hay = enDolares ? sa.usd : sa.ars;
       hint.innerHTML = `${esGasto?'Se descuenta de':'Se suma a'} <b>${bolsillo}</b>, que hoy tiene ${fmtPlata(hay, enDolares?'U$D':'$')}. No entra en el reparto entre socios.`;
     }
   } else {
@@ -2702,9 +2723,6 @@ async function saveMovimiento() {
   }
   const esNuevo = !id;
   await saveData('movimientos', id, data);
-  // Si la plata sale o queda en la caja, se mueve el bolsillo. Solo al
-  // crearlo: si después lo editás, la caja la corregís a mano.
-  if(esNuevo && data.origen === 'Caja' && data.quien_pago !== 'Ambos') await moverEnCaja(data);
   closeModal('modal-movimiento');
   // Si es un gasto nuevo vinculado a un trabajo, queda anotado en la bitácora con fecha y descripción
   if (esNuevo && data.tipo === 'egreso' && data.trabajo_id) {
@@ -3115,6 +3133,7 @@ async function saveData(sheet, id, data) {
     } else {
       res = await api('insert', sheet, { data });
       data.id = res.id;
+      if(!data.created_at) data.created_at = new Date().toISOString();
       DB[sheet].push(data);
     }
     // Los eventos se copian al Google Calendar del estudio. Si eso falla,
@@ -3254,24 +3273,6 @@ function editMovimiento(id) {
     (m.tipo==='ingreso' ? 'Editar cobro' : 'Editar gasto');
   document.getElementById('mov-del-btn').style.display = 'inline-flex';
   openModal('modal-movimiento');
-}
-// Suma o resta en «Dinero en caja»: un cobro que queda en la caja la
-// aumenta, un gasto pagado con plata del estudio la baja.
-async function moverEnCaja(data){
-  const esUsdt   = data.moneda === 'USDT';
-  const bolsillo = (esUsdt ? 'USDT ' : 'Efectivo ') + data.quien_pago;
-  const r        = filaCaja(bolsillo);
-  const signo    = data.tipo === 'ingreso' ? 1 : -1;
-  const monto    = (parseFloat(data.monto)||0) * signo;
-  const enDolares= esUsdt || data.moneda === 'U$D';
-  const nuevo = { bolsillo, actualizado: new Date().toISOString() };
-  if(enDolares) nuevo.monto_usd = String((parseFloat(r.monto_usd)||0) + monto);
-  else          nuevo.monto_ars = String((parseFloat(r.monto_ars)||0) + monto);
-  const cuanto = esUsdt ? Math.abs(monto).toLocaleString('es-AR')+' USDT' : fmtPlata(Math.abs(monto), data.moneda);
-  try{
-    await saveData('caja', r.id || '', nuevo);
-    toast(signo>0 ? `Se sumaron ${cuanto} a ${bolsillo}` : `Se descontaron ${cuanto} de ${bolsillo}`);
-  }catch(e){ toast('El movimiento se guardó, pero no se pudo tocar la caja: '+e.message, true); }
 }
 async function borrarMovimientoDesdeModal(){
   const id = document.getElementById('mov-id').value;
