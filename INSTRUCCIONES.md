@@ -71,6 +71,23 @@ Abrí esa URL. Andá a la pestaña **⚙ Configuración**. Pegá en el casillero
 
 ---
 
+## Seguridad — la URL del conector no va en el código
+
+La URL `/exec` del Apps Script es **la llave de la planilla**: cualquiera que la tenga puede leer y escribir los datos del estudio. El repositorio de la app es **público** (GitHub Pages gratis lo exige), así que la URL **no está escrita en el código**.
+
+Eso significa que la primera vez que abrís la app en un dispositivo nuevo —tu compu, tu celular, el de Santiago— la app arranca en **Configuración** y te pide la URL. La pegás una sola vez y queda guardada en ese navegador.
+
+**Si alguna vez la URL se filtra** (la pegaste en un chat, la subiste sin querer, lo que sea), la solución es cambiar la cerradura:
+
+1. Google Sheet → **Extensiones → Apps Script → Implementar → Nueva implementación** (no "nueva versión": una implementación nueva, que da una URL distinta). Copiá la URL nueva.
+2. Pegala en la app, en **Configuración**, y probá que traiga los datos.
+3. Volvé a **Gestionar implementaciones** y **archivá la implementación vieja**: ahí la URL anterior deja de funcionar, aunque alguien la tenga.
+4. Pegá la URL nueva en los demás dispositivos.
+
+Hacelo en ese orden: si archivás la vieja antes de tener la nueva andando, la app se queda sin datos hasta que la pegues.
+
+---
+
 ## Parte C — Conectar el calendario con Google Calendar (~5 min)
 
 Los eventos que cargás en la pestaña **Calendario** de la app se copian solos a un calendario de Google llamado **"Umepay - Estudio"**, así los ves en el celular. Es de ida nomás: de la app al calendario, no al revés.

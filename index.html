@@ -701,9 +701,15 @@ tr:hover td{background:var(--bg)}
     <div class="setup-step">
       <div class="step-num">4</div>
       <div class="step-content">
-        <div class="step-title">Pegar la URL acá abajo</div>
+        <div class="step-title">Pegar la URL acá abajo — una vez por dispositivo</div>
         <div class="step-desc">
-          Pegá la URL del Web App aquí. Se guarda en tu navegador automáticamente.
+          Pegá la URL del Web App aquí. Se guarda <strong>solo en este dispositivo</strong> y no se vuelve a pedir.
+          <div style="background:var(--amber2);color:var(--amber);padding:10px 12px;border-radius:6px;margin:8px 0;font-size:12px;line-height:1.6">
+            <strong>Por qué hay que pegarla en cada dispositivo.</strong> Esta URL es la llave de la planilla:
+            quien la tenga puede leer y escribir los datos del estudio. Por eso no está escrita en el código de
+            la app, que es público (GitHub Pages gratis obliga a que el repositorio lo sea). La tenés que pegar
+            en tu compu, en tu celular y en el dispositivo de Santiago, y no compartirla con nadie más.
+          </div>
           <input type="text" class="url-input" id="script-url-input"
             placeholder="https://script.google.com/macros/s/.../exec"
             oninput="saveUrl()">
@@ -1329,8 +1335,10 @@ tr:hover td{background:var(--bg)}
 // ==============================
 // URL del Apps Script por defecto: permite que la app funcione en cualquier
 // navegador sin tener que configurarla. Se puede sobrescribir desde Configuración.
-const SCRIPT_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbwzHetjPSymULtE8kjPQ0xkuUP3Qh8hgbyeczL43sAWhZBwfUKVVYIMOCYtV5swsdLk/exec';
-let SCRIPT_URL = localStorage.getItem('umepay_script_url') || SCRIPT_URL_DEFAULT;
+// La URL del conector NO va en el código: este repo es público (GitHub Pages
+// gratis lo exige) y cualquiera que la viera podría leer y escribir la
+// planilla. Se guarda en cada dispositivo, una sola vez, desde Configuración.
+let SCRIPT_URL = localStorage.getItem('umepay_script_url') || '';
 let DB = { trabajos: [], movimientos: [], presupuestos: [], compromisos: [], apuntes: [], tramites: [], caja: [] };
 let connected = false;
 // ==============================
@@ -3371,7 +3379,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('url-status').textContent = '✓ URL guardada en este navegador';
     loadAll();
   } else {
-    setStatus(false, 'Sin configurar — ver pestaña Configuración');
+    setStatus(false, 'Sin configurar');
+    showTab('setup');
+    toast('Pegá la URL del conector para que la app vea tus datos', true);
   }
   // Registra el service worker (permite instalar la app y usarla básica sin internet)
   if ('serviceWorker' in navigator) {

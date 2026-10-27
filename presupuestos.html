@@ -788,9 +788,16 @@ function imprimirPDF(){
   win.document.close();
 }
 // Guarda el presupuesto como PDF en Google Drive (carpeta AgriApp/Presupuestos).
-const SCRIPT_URL_DEFAULT='https://script.google.com/macros/s/AKfycbwzHetjPSymULtE8kjPQ0xkuUP3Qh8hgbyeczL43sAWhZBwfUKVVYIMOCYtV5swsdLk/exec';
-const SCRIPT_URL = localStorage.getItem('umepay_script_url') || SCRIPT_URL_DEFAULT;
+// La URL del conector se configura una vez por dispositivo desde la pestaña
+// Configuración de la app. Acá no va escrita: el repo es público.
+const SCRIPT_URL = localStorage.getItem('umepay_script_url') || '';
 async function guardarEnDrive(){
+  if(!SCRIPT_URL){
+    const st=document.getElementById('drive-status');
+    st.style.color='var(--red)';
+    st.textContent='Falta configurar la URL del conector (pestaña Configuración de la app). El botón «Imprimir / PDF» funciona igual.';
+    return;
+  }
   const cliente=(document.getElementById('p-cliente').value||'Presupuesto').trim();
   const fecha=document.getElementById('p-fecha').value||'';
   const filename='Presupuesto - '+cliente+(fecha?' - '+fecha:'');
@@ -840,6 +847,7 @@ async function guardarEnDrive(){
 // ── Vincular el presupuesto a un trabajo de Gestión ──
 let TRABAJOS=[];
 async function cargarTrabajos(){
+  if(!SCRIPT_URL) return; // sin conector configurado el selector queda vacío
   try{
     const url=new URL(SCRIPT_URL);
     url.searchParams.set('action','getAll'); url.searchParams.set('sheet','trabajos');
