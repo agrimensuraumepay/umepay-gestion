@@ -245,7 +245,7 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
       <div class="field"><label>Forma de pago</label><input id="p-pago" value="50% en concepto de seña y 50% al finalizar."></div>
     </div>
     <div class="field" style="margin-top:10px"><label>Validez</label><input id="p-validez" value="Presupuesto válido por 15 días a partir del día de la fecha."></div>
-    <div class="field" style="margin-top:10px"><label>Observaciones (si lo dejás vacío, no aparece en el PDF)</label><input id="p-notas" value="El monto incluye las tasas de visado correspondientes."></div>
+    <div class="field" style="margin-top:10px"><label>Observaciones (si lo dejás vacío, no aparece en el PDF)</label><input id="p-notas" value="El monto incluye las tasas de visado correspondientes. No incluye las tasas de visado municipal, que quedan a cargo del cliente."></div>
   </div>
   <div class="btn-row">
     <button class="btn primary" onclick="renderPreview()">👁 Vista previa</button>
@@ -698,7 +698,10 @@ function buildDoc(){
     pago?`${b('Condiciones de pago:')} ${esc(pago)}`:'',
     notas?`${b('Observaciones:')} ${esc(notas)}`:'',
   ].filter(Boolean).join('<br>');
-  const tasasIncluidas=(notas||'').toLowerCase().includes('tasas');
+  // El renglón «Tasas / visados: Incluidas» solo si las observaciones hablan de
+  // tasas y no aclaran que algo queda afuera (ahí lo explica el texto).
+  const notasL=(notas||'').toLowerCase();
+  const tasasIncluidas=notasL.includes('tasas') && !notasL.includes('no incluye');
 
   return `
   <table width="100%" style="border-collapse:collapse"><tr>
