@@ -3328,11 +3328,13 @@ function fillWorkSelects() {
   const opts = ['<option value="">— Ninguno —</option>',
     ...alfabetico.map(t=>`<option value="${t.id}">${t.cliente} — ${t.tipo_trabajo}</option>`)
   ].join('');
-  // En Ingresos/Gastos solo se ofrecen los trabajos activos (ni Finalizados ni Cobrados)
-  const optsActivos = ['<option value="">— Ninguno —</option>',
-    ...alfabetico.filter(ACTIVOS).map(t=>`<option value="${t.id}">${t.cliente} — ${t.tipo_trabajo}</option>`)
+  // En Ingresos/Gastos solo se ofrecen los trabajos EN CURSO. Si un movimiento
+  // viejo apunta a otro, editMovimiento igual lo agrega para no perder el vínculo.
+  const optsEnCurso = ['<option value="">— Ninguno —</option>',
+    ...alfabetico.filter(t => t.estado === 'En curso')
+                 .map(t=>`<option value="${t.id}">${t.cliente} — ${t.tipo_trabajo}</option>`)
   ].join('');
-  document.getElementById('mov-trabajo').innerHTML  = optsActivos;
+  document.getElementById('mov-trabajo').innerHTML  = optsEnCurso;
   document.getElementById('pres-trabajo').innerHTML = opts;
   document.getElementById('comp-trabajo').innerHTML = opts;
 }
