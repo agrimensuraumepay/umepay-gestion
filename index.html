@@ -378,6 +378,53 @@ tr:hover td{background:var(--bg)}
 @media(min-width:1200px){ .paneles{grid-template-columns:1.7fr 1fr;gap:16px} }
 .paneles>.tiempos{margin-bottom:16px}
 @media(min-width:1200px){ .paneles>.tiempos{margin-bottom:18px} }
+/* ── MATRIZ DE PUNTAJES CATASTRAL ──
+   Se usa en la tablet, en el campo, con sol y con una mano: botones grandes,
+   mucho contraste y el total siempre a la vista. */
+.mx-barra{position:sticky;top:0;z-index:30;background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--r);padding:12px 14px;margin-bottom:14px;box-shadow:var(--sh);
+  display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+.mx-dato{display:flex;flex-direction:column;gap:2px;min-width:92px}
+.mx-dato span{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3)}
+.mx-dato b{font-family:var(--mono);font-size:19px;color:var(--ink);line-height:1}
+.mx-dato.ok b{color:var(--green)} .mx-dato.mal b{color:var(--red)}
+.mx-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px 14px;margin-bottom:12px;box-shadow:var(--sh)}
+.mx-item.falta{border-color:var(--amber);background:#fffdf7}
+.mx-item.sobra{border-color:var(--red)}
+.mx-item-hdr{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px}
+.mx-item-nom{font-weight:600;font-size:14px;color:var(--ink)}
+.mx-item-cnt{font-family:var(--mono);font-size:12px;color:var(--ink3);white-space:nowrap}
+.mx-item-cnt.ok{color:var(--green)} .mx-item-cnt.mal{color:var(--red);font-weight:700}
+.mx-cats{display:grid;gap:8px}
+.mx-cat{display:flex;gap:10px;align-items:flex-start;border:2px solid var(--border);
+  border-radius:8px;padding:10px 12px;min-height:44px;cursor:pointer;background:var(--bg);
+  user-select:none;transition:border-color .1s,background .1s}
+.mx-cat:active{background:var(--bg2)}
+.mx-cat.on{border-color:var(--green);background:var(--green3)}
+.mx-cat-n{font-family:var(--mono);font-weight:700;font-size:15px;color:var(--ink2);
+  min-width:58px;white-space:nowrap}
+.mx-cat.on .mx-cat-n{color:var(--green)}
+.mx-cat-txt{font-size:12.5px;line-height:1.5;color:var(--ink2);flex:1}
+.mx-cat-veces{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--green);min-width:24px;text-align:right}
+.mx-sinops{font-size:11px;color:var(--ink3);font-style:italic}
+.mx-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px 14px;margin-bottom:10px;box-shadow:var(--sh);cursor:pointer}
+.mx-card:hover{border-color:var(--ink3)}
+.mx-card-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.mx-card-bloque{font-weight:600;color:var(--ink);font-size:14px}
+.mx-card-pts{font-family:var(--mono);font-size:17px;font-weight:600;color:var(--green);white-space:nowrap}
+.mx-card-sub{font-size:11.5px;color:var(--ink3);margin-top:3px}
+.mx-pend{background:var(--amber2);color:var(--amber);border-radius:10px;padding:1px 8px;font-size:10.5px;font-weight:600}
+.mx-grupo{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--green);
+  font-weight:700;margin:18px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.mx-resumen{white-space:pre-wrap;font-family:var(--mono);font-size:11.5px;line-height:1.6;
+  background:var(--bg2);border-radius:8px;padding:12px;max-height:340px;overflow:auto;color:var(--ink2)}
+@media(max-width:640px){
+  .mx-barra{padding:10px;gap:12px}
+  .mx-dato{min-width:72px} .mx-dato b{font-size:17px}
+  .mx-cat{padding:12px 10px}
+}
 /* Dónde está parada la plata: efectivo y USDT de cada socio */
 .plata-tabla{width:100%;border-collapse:collapse;font-size:12.5px}
 .plata-tabla th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;
@@ -465,6 +512,7 @@ tr:hover td{background:var(--bg)}
   <button class="nav-btn" data-tab="trabajos" onclick="showTab('trabajos',this)">◎ Trabajos</button>
   <button class="nav-btn" data-tab="movimientos" onclick="showTab('movimientos',this)">⇄ Ingresos / Gastos</button>
   <button class="nav-btn" data-tab="presupuestos" onclick="showTab('presupuestos',this)">◻ Presupuestos</button>
+  <button class="nav-btn" data-tab="matrices" onclick="showTab('matrices',this)">▦ Matrices</button>
   <button class="nav-btn" data-tab="apuntes" onclick="showTab('apuntes',this)">📚 Normativas</button>
   <button class="nav-btn" data-tab="setup" onclick="showTab('setup',this)">⚙ Configuración</button>
 </div>
@@ -640,6 +688,73 @@ tr:hover td{background:var(--bg)}
   <!-- Vista: Calculadora de honorarios (página presupuestos.html embebida) -->
   <div id="pres-view-calc" style="display:none">
     <iframe id="calc-frame" class="calc-frame" title="Calculadora de honorarios"></iframe>
+  </div>
+</div>
+<!-- ═══════════════ MATRICES DE PUNTAJES ═══════════════ -->
+<div class="tab" id="tab-matrices">
+  <!-- Lista de matrices cargadas -->
+  <div id="mx-vista-lista">
+    <div class="sec-hdr">
+      <div>
+        <div class="sec-title">Matrices de puntajes</div>
+        <div class="sec-sub">Para declarar mejoras en Catastro. Funciona sin señal: se guarda en la tablet y sube cuando hay internet.</div>
+      </div>
+      <button class="btn success" onclick="mxNueva()">+ Nueva matriz</button>
+    </div>
+    <div id="mx-estado-sync" style="margin-bottom:12px"></div>
+    <div id="mx-lista"></div>
+  </div>
+  <!-- Edición de una matriz -->
+  <div id="mx-vista-edit" style="display:none">
+    <div class="sec-hdr">
+      <div>
+        <div class="sec-title" id="mx-edit-titulo">Nueva matriz</div>
+        <div class="sec-sub">Marcá la tipología de cada ítem. Tienen que quedar 16 marcas.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="mxCerrar()">← Volver</button>
+        <button class="btn success" onclick="mxGuardar()">Guardar</button>
+      </div>
+    </div>
+    <div class="g3" style="margin-bottom:12px">
+      <div class="field">
+        <label>Trabajo</label>
+        <select id="mx-trabajo"></select>
+      </div>
+      <div class="field">
+        <label>Bloque *</label>
+        <input id="mx-bloque" placeholder="Ej: 1 · casa 79,04 m²">
+      </div>
+      <div class="field">
+        <label>Superficie cubierta (m²)</label>
+        <input type="number" id="mx-sup" placeholder="79.04" oninput="mxPintarBarra()">
+      </div>
+    </div>
+    <div class="g2" style="margin-bottom:12px">
+      <div class="field">
+        <label>Matriz</label>
+        <select id="mx-codigo" onchange="mxCambiarMatriz()"></select>
+        <div class="field-hint" id="mx-codigo-hint"></div>
+      </div>
+      <div class="field">
+        <label>Nota</label>
+        <input id="mx-nota" placeholder="Lo que quieras acordarte después">
+      </div>
+    </div>
+    <div class="mx-barra" id="mx-barra"></div>
+    <div id="mx-items"></div>
+    <div class="sec-hdr" style="margin-top:22px">
+      <div><div class="sec-title">Para volcar a la PDT</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn sm" onclick="mxCopiar()">⧉ Copiar</button>
+        <button class="btn sm" onclick="mxBajar('txt')">↓ Texto</button>
+        <button class="btn sm" onclick="mxBajar('csv')">↓ CSV</button>
+      </div>
+    </div>
+    <div class="mx-resumen" id="mx-resumen"></div>
+    <div style="margin-top:16px;display:flex;justify-content:flex-end">
+      <button class="btn danger sm" onclick="mxBorrar()">✕ Eliminar esta matriz</button>
+    </div>
   </div>
 </div>
 <!-- ═══════════════ NORMATIVAS / APUNTES ═══════════════ -->
@@ -1372,7 +1487,7 @@ async function apiGet(action, params = {}) {
 async function loadAll() {
   if (!SCRIPT_URL) { setStatus(false, 'Sin URL configurada'); return; }
   try {
-    const [trab, movs, pres, comp, ap, tram, caja] = await Promise.all([
+    const [trab, movs, pres, comp, ap, tram, caja, mats] = await Promise.all([
       apiGet('getAll', { sheet: 'trabajos' }),
       apiGet('getAll', { sheet: 'movimientos' }),
       apiGet('getAll', { sheet: 'presupuestos' }),
@@ -1380,7 +1495,8 @@ async function loadAll() {
       // apuntes y tramites: hojas nuevas; si el backend todavía no las tiene, no rompe el resto
       apiGet('getAll', { sheet: 'apuntes' }).catch(() => ({ rows: [] })),
       apiGet('getAll', { sheet: 'tramites' }).catch(() => ({ rows: [] })),
-      apiGet('getAll', { sheet: 'caja' }).catch(() => ({ rows: [] }))
+      apiGet('getAll', { sheet: 'caja' }).catch(() => ({ rows: [] })),
+      apiGet('getAll', { sheet: 'matrices' }).catch(() => ({ rows: [] }))
     ]);
     DB.trabajos     = trab.rows || [];
     DB.movimientos  = movs.rows || [];
@@ -1389,6 +1505,9 @@ async function loadAll() {
     DB.apuntes      = ap.rows || [];
     DB.tramites     = tram.rows || [];
     DB.caja         = caja.rows || [];
+    mxMerge(mats.rows || []);
+    // Copia de los trabajos para poder elegirlos en el campo, sin señal
+    lsSet(MX_TRAB_KEY, DB.trabajos.map(t => ({id:t.id, cliente:t.cliente, tipo_trabajo:t.tipo_trabajo})));
     setStatus(true, `Conectado — ${new Date().toLocaleTimeString('es-AR')}`);
     renderAll();
   } catch(e) {
@@ -1404,6 +1523,7 @@ function renderAll() {
   renderCalendar();
   renderApuntes();
   renderTiempos();
+  renderMatrices();
   fillWorkSelects();
 }
 // ==============================
@@ -2010,6 +2130,22 @@ function renderTiempos(){
     <div style="font-size:11px;color:var(--ink3);margin-top:8px">Se calcula con los días entre «lo mandé» y «me respondieron», sumando los trámites de todos los trabajos.</div>`;
 }
 
+// Matrices de puntajes cargadas para este trabajo
+function matricesFichaHtml(t){
+  const ms = (typeof MX !== 'undefined' ? MX : []).filter(m => m.trabajo_id === t.id);
+  if(!ms.length) return '';
+  const ppp = mxPPP(ms);
+  const filas = ms.map(m => `<tr><td>${escHtml(m.bloque||'(sin nombre)')}
+      <div style="font-size:10.5px;color:var(--ink3)">${escHtml(m.codigo_matriz||'')}${m.superficie?' · '+escHtml(String(m.superficie))+' m²':''}${m.sync?'':' · sin subir'}</div></td>
+    <td class="num">${mxPuntaje(m)} pts</td></tr>`).join('');
+  return `<div class="ficha-sec">
+    <div class="ficha-sec-title">Matrices de puntajes (${ms.length})
+      <button class="btn sm" onclick="showTab('matrices');">Ver</button></div>
+    <table class="tiempos-tabla">${filas}</table>
+    ${ms.length>1 && ppp ? `<div style="font-size:11.5px;color:var(--ink3);margin-top:8px">Puntaje promedio ponderado de la parcela: <b>${Math.round(ppp*10)/10}</b></div>` : ''}
+  </div>`;
+}
+
 // ── Foto del cálculo con el que se armó el presupuesto de este trabajo ──
 // Primero busca el presupuesto vinculado; si no hay, usa la copia que quedó
 // guardada en el propio trabajo (presupuestos anteriores a esta pantalla).
@@ -2099,6 +2235,7 @@ function renderFicha(){
           ${tramitesHtml(t)}
         </div>
         ${presu?`<div class="ficha-sec"><div class="ficha-sec-title">Presupuesto y datos de cálculo</div>${presu}</div>`:''}
+        ${matricesFichaHtml(t)}
       </div>
       <div>
         ${cobro?`<div class="ficha-sec"><div class="ficha-sec-title">Cobro</div>${cobro}</div>`:''}
@@ -3338,6 +3475,362 @@ function fillWorkSelects() {
   document.getElementById('pres-trabajo').innerHTML = opts;
   document.getElementById('comp-trabajo').innerHTML = opts;
 }
+// ══════════════════════════════════════════════════════════════
+// MATRIZ DE PUNTAJES CATASTRAL (hoja «matrices»)
+// Se completa en el campo, en la tablet y sin señal: todo se guarda primero
+// en el dispositivo y se sube cuando vuelve internet.
+// Reglas: R.N. 2/2025 punto 7.3. Cada matriz lleva exactamente 16 marcas.
+// ══════════════════════════════════════════════════════════════
+const MX_KEY = 'umepay_matrices';            // lo cargado (sincronizado o no)
+const MX_DEF_KEY = 'umepay_matrices_def';    // definición de las 4 matrices
+const MX_TRAB_KEY = 'umepay_trabajos_cache'; // para elegir trabajo sin señal
+let MXDEF = null;   // {matrices:[...], vivienda_media, ...}
+let MX = [];        // matrices cargadas
+let mxEdit = null;  // la que se está editando
+
+function lsGet(k, porDefecto){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):porDefecto; }catch(e){ return porDefecto; } }
+function lsSet(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+// La definición viene del JSON del repo; queda guardada para usarla sin red
+async function mxCargarDef(){
+  MXDEF = lsGet(MX_DEF_KEY, null);
+  try{
+    const r = await fetch('matrices_puntajes_catastro.json', {cache:'no-cache'});
+    if(r.ok){ MXDEF = await r.json(); lsSet(MX_DEF_KEY, MXDEF); }
+  }catch(e){ /* sin red: queda la copia guardada */ }
+  return MXDEF;
+}
+function mxDef(codigo){ return ((MXDEF && MXDEF.matrices) || []).find(m => m.codigo === codigo) || null; }
+
+// ── Datos locales ──────────────────────────────────────────────
+function mxLeer(){ MX = lsGet(MX_KEY, []); return MX; }
+function mxEscribir(){ lsSet(MX_KEY, MX); }
+function mxPendientes(){ return MX.filter(m => !m.sync).length; }
+// Mezcla lo que vino del servidor con lo local: lo que está sin sincronizar manda
+function mxMerge(filas){
+  mxLeer();
+  (filas||[]).forEach(f => {
+    const local = MX.find(m => m.id === f.id);
+    if(local && !local.sync) return;            // tiene cambios sin subir
+    const fila = {
+      id: f.id, trabajo_id: f.trabajo_id||'', bloque: f.bloque||'',
+      codigo_matriz: f.codigo_matriz||'E5',
+      marcas: parseJson(f.marcas, []), puntaje: parseFloat(f.puntaje)||0,
+      superficie: f.superficie||'', fecha: (f.fecha||'').split('T')[0],
+      nota: f.nota||'', sync: 1,
+    };
+    if(local) Object.assign(local, fila); else MX.push(fila);
+  });
+  mxEscribir();
+}
+// Sube lo que quedó pendiente
+async function mxSincronizar(silencioso){
+  if(!SCRIPT_URL || !navigator.onLine) return;
+  const pend = MX.filter(m => !m.sync);
+  if(!pend.length) return;
+  let ok = 0;
+  for(const m of pend){
+    const data = {
+      trabajo_id:m.trabajo_id, bloque:m.bloque, codigo_matriz:m.codigo_matriz,
+      marcas: JSON.stringify(m.marcas), puntaje: String(m.puntaje),
+      superficie: String(m.superficie||''), fecha: m.fecha||'', nota: m.nota||'',
+    };
+    try{
+      if(String(m.id).startsWith('loc_')){
+        const r = await api('insert','matrices',{data});
+        m.id = r.id;
+      } else {
+        await api('update','matrices',{id:m.id, data});
+      }
+      m.sync = 1; ok++;
+    }catch(e){ break; } // si falla uno, dejamos el resto para la próxima
+  }
+  mxEscribir();
+  if(ok && !silencioso) toast(`${ok} matriz${ok>1?'es':''} subida${ok>1?'s':''} a la planilla`);
+  renderMatrices();
+}
+window.addEventListener('online', () => mxSincronizar(true));
+
+// ── Cuentas ────────────────────────────────────────────────────
+function mxPuntaje(m){
+  const def = mxDef(m.codigo_matriz);
+  if(!def) return 0;
+  let p = 0;
+  (m.marcas||[]).forEach(cats => (cats||[]).forEach(c => {
+    const i = def.categorias.indexOf(Number(c));
+    if(i >= 0) p += def.puntos[i];
+  }));
+  return p;
+}
+function mxTotalMarcas(m){ return (m.marcas||[]).reduce((a,c)=>a+((c||[]).length),0); }
+// Puntaje promedio ponderado por superficie cubierta (punto 7.3.9)
+function mxPPP(lista){
+  let num=0, den=0;
+  lista.forEach(m => { const s=parseFloat(m.superficie)||0; if(s>0){ num += mxPuntaje(m)*s; den += s; } });
+  return den ? num/den : 0;
+}
+
+// ── Lista ──────────────────────────────────────────────────────
+function renderMatrices(){
+  const cont = document.getElementById('mx-lista');
+  if(!cont) return;
+  mxLeer();
+  const pend = mxPendientes();
+  const est = document.getElementById('mx-estado-sync');
+  if(est){
+    est.innerHTML = pend
+      ? `<div style="background:var(--amber2);color:var(--amber);padding:9px 12px;border-radius:var(--r);font-size:12.5px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+           <span>⬆ ${pend} matriz${pend>1?'es':''} sin subir a la planilla${navigator.onLine?'':' — estás sin internet'}</span>
+           ${navigator.onLine?'<button class="btn sm" onclick="mxSincronizar()">Subir ahora</button>':''}
+         </div>`
+      : (MX.length ? '<div style="font-size:11.5px;color:var(--ink3)">✓ Todo sincronizado con la planilla</div>' : '');
+  }
+  if(!MX.length){
+    cont.innerHTML = '<div class="ficha-dato">Todavía no cargaste ninguna matriz. Con «+ Nueva matriz» armás la de un bloque constructivo.</div>' + mxReferenciaHtml();
+    return;
+  }
+  // Agrupadas por trabajo
+  const grupos = {};
+  MX.forEach(m => { (grupos[m.trabajo_id||''] = grupos[m.trabajo_id||''] || []).push(m); });
+  const nombreTrab = id => {
+    const t = DB.trabajos.find(x => x.id === id) || lsGet(MX_TRAB_KEY,[]).find(x => x.id === id);
+    return t ? (t.cliente||'(sin nombre)') : (id ? 'Trabajo no encontrado' : 'Sin trabajo asignado');
+  };
+  cont.innerHTML = Object.keys(grupos).sort((a,b)=>nombreTrab(a).localeCompare(nombreTrab(b),'es')).map(id => {
+    const ms = grupos[id].slice().sort((a,b)=>(a.bloque||'').localeCompare(b.bloque||'','es'));
+    const ppp = mxPPP(ms);
+    return `<div class="mx-grupo">${escHtml(nombreTrab(id))}${ms.length>1&&ppp?` · promedio ponderado ${Math.round(ppp*10)/10}`:''}</div>` +
+      ms.map(m => {
+        const n = mxTotalMarcas(m), p = mxPuntaje(m);
+        const def = mxDef(m.codigo_matriz);
+        return `<div class="mx-card" onclick="mxAbrir('${m.id}')">
+          <div class="mx-card-top">
+            <div>
+              <div class="mx-card-bloque">${escHtml(m.bloque||'(sin nombre de bloque)')}
+                ${m.sync?'':'<span class="mx-pend">sin subir</span>'}</div>
+              <div class="mx-card-sub">${escHtml(m.codigo_matriz)}${def?' · '+escHtml(def.descripcion):''}
+                ${m.superficie?' · '+escHtml(String(m.superficie))+' m²':''}
+                · <b style="color:${n===16?'var(--green)':'var(--amber)'}">${n}/16 marcas</b></div>
+            </div>
+            <div class="mx-card-pts">${p} pts</div>
+          </div>
+        </div>`;
+      }).join('');
+  }).join('') + mxReferenciaHtml();
+}
+// Tabla 7.3.8: lo que Catastro asume cuando no se carga matriz
+function mxReferenciaHtml(){
+  const d = [['Vivienda rural principal',70],['Vivienda rural complementaria',60],
+    ['Vivienda urbana hasta 200 m²',64],['Vivienda urbana 201 a 400 m²',86],
+    ['Tinglados y cobertizos',20],['Depósitos o galpones',32],
+    ['Quinchos cerrados',32],['Quinchos abiertos',20],['Locales comerciales',50]];
+  return `<details class="tiempos" style="margin-top:18px">
+    <summary>Puntajes por defecto de Catastro (punto 7.3.8)</summary>
+    <div class="tiempos-body">
+      <table class="tiempos-tabla"><tbody>
+        ${d.map(x=>`<tr><td>${x[0]}</td><td class="num">${x[1]}</td></tr>`).join('')}
+      </tbody></table>
+      <div style="font-size:11px;color:var(--ink3);margin-top:8px">Sirven para comparar contra lo que el SIT ya tiene cargado. Una vivienda estándar de categoría media son 64 puntos; el rango posible va de 16 a 128.
+      Un semicubierto ligado a un bloque cubierto (alero, galería) lleva 10 puntos menos que el bloque principal.</div>
+    </div></details>`;
+}
+
+// ── Edición ────────────────────────────────────────────────────
+function mxNueva(){
+  mxEdit = { id:'loc_'+Date.now()+'_'+Math.floor(Math.random()*10000), trabajo_id:'', bloque:'',
+    codigo_matriz:'E5', marcas:[], superficie:'', fecha:new Date().toISOString().split('T')[0],
+    nota:'', sync:0, nuevo:true };
+  mxPintarEdit();
+}
+function mxAbrir(id){
+  const m = MX.find(x => x.id === id);
+  if(!m) return;
+  mxEdit = JSON.parse(JSON.stringify(m));
+  mxPintarEdit();
+}
+function mxCerrar(){
+  mxEdit = null;
+  document.getElementById('mx-vista-edit').style.display = 'none';
+  document.getElementById('mx-vista-lista').style.display = '';
+  renderMatrices();
+}
+function mxPintarEdit(){
+  document.getElementById('mx-vista-lista').style.display = 'none';
+  document.getElementById('mx-vista-edit').style.display = '';
+  document.getElementById('mx-edit-titulo').textContent = mxEdit.nuevo ? 'Nueva matriz' : 'Editar matriz';
+  // Trabajos: los de la planilla y, sin señal, los que quedaron cacheados
+  const trabs = (DB.trabajos.length ? DB.trabajos : lsGet(MX_TRAB_KEY, [])).slice().sort(porCliente);
+  const selT = document.getElementById('mx-trabajo');
+  selT.innerHTML = '<option value="">— Sin trabajo —</option>' +
+    trabs.map(t=>`<option value="${escHtml(t.id)}">${escHtml(t.cliente||'')}${t.tipo_trabajo?' — '+escHtml(t.tipo_trabajo):''}</option>`).join('');
+  selT.value = mxEdit.trabajo_id || '';
+  const selC = document.getElementById('mx-codigo');
+  selC.innerHTML = ((MXDEF && MXDEF.matrices) || []).map(d=>`<option value="${d.codigo}">${d.codigo} — ${escHtml(d.descripcion)}</option>`).join('');
+  selC.value = mxEdit.codigo_matriz;
+  document.getElementById('mx-bloque').value = mxEdit.bloque || '';
+  document.getElementById('mx-sup').value = mxEdit.superficie || '';
+  document.getElementById('mx-nota').value = mxEdit.nota || '';
+  mxPintarItems();
+}
+function mxCambiarMatriz(){
+  const nuevo = document.getElementById('mx-codigo').value;
+  if(nuevo === mxEdit.codigo_matriz) return;
+  if(mxTotalMarcas(mxEdit) && !confirm('Cambiar de matriz borra las marcas que ya pusiste. ¿Seguir?')){
+    document.getElementById('mx-codigo').value = mxEdit.codigo_matriz; return;
+  }
+  mxEdit.codigo_matriz = nuevo;
+  mxEdit.marcas = [];
+  mxPintarItems();
+}
+function mxPintarItems(){
+  const def = mxDef(mxEdit.codigo_matriz);
+  const cont = document.getElementById('mx-items');
+  const hint = document.getElementById('mx-codigo-hint');
+  if(!def){ cont.innerHTML = '<div class="ficha-dato">No se pudo leer la definición de las matrices. Conectate una vez a internet para que quede guardada.</div>'; return; }
+  hint.innerHTML = `Categorías ${def.categorias.join(', ')} · ${def.puntos.join(' · ')} puntos` +
+    (def.categorias[0] !== 1 ? ' — <b>esta matriz no tiene categoría 1</b>' : '');
+  if(!Array.isArray(mxEdit.marcas)) mxEdit.marcas = [];
+  while(mxEdit.marcas.length < def.items.length) mxEdit.marcas.push([]);
+  cont.innerHTML = def.items.map((it, i) => {
+    const puestas = mxEdit.marcas[i] || [];
+    const estado = puestas.length === it.marcas ? 'ok' : (puestas.length > it.marcas ? 'mal' : '');
+    const clase = puestas.length === it.marcas ? '' : (puestas.length > it.marcas ? 'sobra' : 'falta');
+    const cats = def.categorias.map((c, j) => {
+      const veces = puestas.filter(x => Number(x) === c).length;
+      const ops = (it.opciones && it.opciones[String(c)]) || [];
+      return `<div class="mx-cat ${veces?'on':''}" onclick="mxMarcar(${i},${c})">
+        <div class="mx-cat-n">Cat ${c}<br><span style="font-size:11px;font-weight:400">${def.puntos[j]} pts</span></div>
+        <div class="mx-cat-txt">${ops.length ? escHtml(ops.join(' · ')) : '<span class="mx-sinops">sin descripción cargada</span>'}</div>
+        ${veces ? `<div class="mx-cat-veces" onclick="event.stopPropagation();mxDesmarcar(${i},${c})" title="Sacar una marca">×${veces} −</div>` : ''}
+      </div>`;
+    }).join('');
+    return `<div class="mx-item ${clase}">
+      <div class="mx-item-hdr">
+        <div class="mx-item-nom">${String(it.n).padStart(2,'0')} · ${escHtml(it.nombre)}</div>
+        <div class="mx-item-cnt ${estado}">${puestas.length} de ${it.marcas} marca${it.marcas>1?'s':''}</div>
+      </div>
+      <div class="mx-cats">${cats}</div>
+    </div>`;
+  }).join('');
+  mxPintarBarra();
+}
+function mxMarcar(i, cat){
+  const def = mxDef(mxEdit.codigo_matriz);
+  const it = def.items[i];
+  const puestas = mxEdit.marcas[i] || (mxEdit.marcas[i] = []);
+  if(it.marcas === 1){                       // un solo tilde: se comporta como radio
+    mxEdit.marcas[i] = (puestas.length === 1 && Number(puestas[0]) === cat) ? [] : [cat];
+  } else {
+    puestas.push(cat);
+  }
+  mxPintarItems();
+}
+function mxDesmarcar(i, cat){
+  const puestas = mxEdit.marcas[i] || [];
+  const k = puestas.findIndex(x => Number(x) === cat);
+  if(k >= 0) puestas.splice(k, 1);
+  mxPintarItems();
+}
+function mxPintarBarra(){
+  mxEdit.superficie = document.getElementById('mx-sup').value || '';
+  const n = mxTotalMarcas(mxEdit), p = mxPuntaje(mxEdit);
+  const media = (MXDEF && MXDEF.vivienda_media) || 64;
+  const dif = p - media;
+  document.getElementById('mx-barra').innerHTML = `
+    <div class="mx-dato ${n===16?'ok':'mal'}"><span>Marcas</span><b>${n} / 16</b></div>
+    <div class="mx-dato"><span>Puntaje</span><b>${p}</b></div>
+    <div class="mx-dato"><span>Contra ${media}</span><b>${dif>0?'+':''}${dif}</b></div>
+    <div style="flex:1;min-width:150px;font-size:11.5px;color:${n===16?'var(--green)':'var(--amber)'}">
+      ${n===16 ? '✓ Las 16 marcas puestas' : (n<16 ? `Faltan ${16-n} marca${16-n>1?'s':''}` : `Sobran ${n-16} marca${n-16>1?'s':''}`)}
+      ${p && (p<16||p>128) ? '<br>⚠ El puntaje se fue del rango 16–128: hay un error de conteo' : ''}
+    </div>`;
+  document.getElementById('mx-resumen').textContent = mxResumen();
+}
+function mxResumen(){
+  const def = mxDef(mxEdit.codigo_matriz);
+  if(!def) return '';
+  const t = DB.trabajos.find(x=>x.id===mxEdit.trabajo_id) || lsGet(MX_TRAB_KEY,[]).find(x=>x.id===mxEdit.trabajo_id);
+  const L = [];
+  L.push(`MATRIZ ${def.codigo} — ${def.descripcion}`);
+  if(t) L.push(`Trabajo: ${t.cliente||''}`);
+  L.push(`Bloque: ${document.getElementById('mx-bloque').value||'(sin nombre)'}` +
+         (mxEdit.superficie ? `   ·   Superficie cubierta: ${mxEdit.superficie} m²` : ''));
+  L.push('');
+  def.items.forEach((it, i) => {
+    const puestas = (mxEdit.marcas[i]||[]).slice().sort((a,b)=>a-b);
+    const detalle = puestas.length
+      ? puestas.map(c => `cat ${c} (${def.puntos[def.categorias.indexOf(Number(c))]} pts)`).join(' + ')
+      : '— sin marcar —';
+    L.push(`${String(it.n).padStart(2,'0')} ${(it.nombre+' ').padEnd(26,'.')} ${detalle}`);
+  });
+  L.push('');
+  L.push(`Marcas: ${mxTotalMarcas(mxEdit)} / 16`);
+  L.push(`PUNTAJE DEL BLOQUE: ${mxPuntaje(mxEdit)}`);
+  const nota = document.getElementById('mx-nota').value;
+  if(nota){ L.push(''); L.push('Nota: '+nota); }
+  return L.join('\n');
+}
+function mxCopiar(){
+  const txt = mxResumen();
+  if(navigator.clipboard) navigator.clipboard.writeText(txt).then(()=>toast('Copiado'), ()=>toast('No se pudo copiar',true));
+  else toast('No se pudo copiar', true);
+}
+function mxBajar(formato){
+  const def = mxDef(mxEdit.codigo_matriz);
+  const base = ('Matriz_'+(mxEdit.codigo_matriz||'')+'_'+(document.getElementById('mx-bloque').value||'bloque'))
+    .normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9_-]+/g,'_');
+  let txt, tipo, ext;
+  if(formato === 'csv'){
+    const filas = [['item','nombre','categorias_marcadas','puntos']];
+    def.items.forEach((it,i)=>{
+      const puestas = (mxEdit.marcas[i]||[]);
+      const pts = puestas.reduce((a,c)=>a+def.puntos[def.categorias.indexOf(Number(c))],0);
+      filas.push([it.n, it.nombre, puestas.join(' '), pts]);
+    });
+    filas.push(['','TOTAL','', mxPuntaje(mxEdit)]);
+    txt = filas.map(f=>f.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    tipo='text/csv;charset=utf-8'; ext='csv';
+  } else {
+    txt = mxResumen(); tipo='text/plain;charset=utf-8'; ext='txt';
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿'+txt], {type:tipo}));
+  a.download = base + '.' + ext;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function mxGuardar(){
+  mxEdit.trabajo_id = document.getElementById('mx-trabajo').value;
+  mxEdit.bloque     = document.getElementById('mx-bloque').value.trim();
+  mxEdit.superficie = document.getElementById('mx-sup').value || '';
+  mxEdit.nota       = document.getElementById('mx-nota').value;
+  mxEdit.codigo_matriz = document.getElementById('mx-codigo').value;
+  if(!mxEdit.bloque){ toast('Ponele un nombre al bloque', true); return; }
+  mxEdit.puntaje = mxPuntaje(mxEdit);
+  mxEdit.sync = 0;
+  const n = mxTotalMarcas(mxEdit);
+  delete mxEdit.nuevo;
+  mxLeer();
+  const i = MX.findIndex(m => m.id === mxEdit.id);
+  if(i >= 0) MX[i] = mxEdit; else MX.push(mxEdit);
+  mxEscribir();
+  toast(n === 16 ? 'Matriz guardada en la tablet' : `Guardada con ${n} de 16 marcas — la terminás después`);
+  mxSincronizar(true);
+  mxCerrar();
+}
+async function mxBorrar(){
+  if(!mxEdit) return;
+  if(!confirm('¿Eliminar esta matriz?')) return;
+  const id = mxEdit.id;
+  mxLeer();
+  MX = MX.filter(m => m.id !== id);
+  mxEscribir();
+  if(!String(id).startsWith('loc_')){
+    try{ await api('delete','matrices',{id}); }catch(e){ toast('Se borró acá, pero no se pudo borrar de la planilla', true); }
+  }
+  mxCerrar();
+}
+
 // ==============================
 // SETUP
 // ==============================
@@ -3375,6 +3868,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('pres-fecha').value = hoy;
   document.getElementById('trab-fecha').value = hoy;
   renderCalendar(); // dibuja la grilla del mes aunque todavía no hayan llegado los datos
+  // Las matrices andan sin internet: se pintan con lo que haya guardado acá
+  mxCargarDef().then(() => { renderMatrices(); mxSincronizar(true); });
   // Load saved URL
   if (SCRIPT_URL) {
     document.getElementById('script-url-input').value = SCRIPT_URL;

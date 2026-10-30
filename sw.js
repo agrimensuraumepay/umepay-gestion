@@ -1,9 +1,11 @@
 // Service worker mínimo: permite instalar la app y que funcione básico sin internet.
 // Estrategia: para archivos propios (HTML/CSS/íconos) intenta la red y si no hay,
 // usa la copia guardada. NO toca las llamadas a Google (Apps Script) ni los POST.
-const CACHE = 'umepay-v3';
+const CACHE = 'umepay-v4';
 const ASSETS = ['./', './index.html', './presupuestos.html',
-  './logo-umepay.svg', './icon-192.png', './icon-512.png', './manifest.webmanifest'];
+  './logo-umepay.svg', './icon-192.png', './icon-512.png', './manifest.webmanifest',
+  // La matriz de puntajes se usa en el campo, sin señal: tiene que estar cacheada
+  './matrices_puntajes_catastro.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

@@ -21,7 +21,7 @@
  *     Copiá la URL /exec y pegala en la pestaña "Configuración" de la app.
  ****************************************************************************/
 
-var HOJAS = ['trabajos', 'movimientos', 'presupuestos', 'compromisos', 'apuntes', 'tramites', 'caja'];
+var HOJAS = ['trabajos', 'movimientos', 'presupuestos', 'compromisos', 'apuntes', 'tramites', 'caja', 'matrices'];
 
 // Subcarpetas de Drive, creadas DENTRO de la carpeta donde vive la planilla
 // (por ej. "AgriApp"). Así todo lo de la app queda junto al Sheet.
@@ -55,7 +55,11 @@ var COLUMNAS = {
              'fecha_respuesta', 'estado', 'link', 'nota', 'created_at'],
   // Dónde está parada la plata del estudio: efectivo y USDT, de cada socio.
   // Son cuatro filas fijas que la app va actualizando.
-  caja: ['id', 'bolsillo', 'monto_ars', 'monto_usd', 'nota', 'actualizado', 'created_at']
+  caja: ['id', 'bolsillo', 'monto_ars', 'monto_usd', 'nota', 'actualizado', 'created_at'],
+  // Matriz de puntajes catastral: una fila por bloque constructivo medido.
+  // "marcas" va como JSON compacto para no abrir una columna por casilla.
+  matrices: ['id', 'trabajo_id', 'bloque', 'codigo_matriz', 'marcas', 'puntaje',
+             'superficie', 'fecha', 'nota', 'created_at']
 };
 
 /* ========================================================================

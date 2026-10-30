@@ -1,0 +1,1441 @@
+{
+ "fuente": "R.N. 2/2025 Normas Técnicas Catastrales, punto 7.3 — D.G. Catastro Córdoba",
+ "puntaje_min": 16,
+ "puntaje_max": 128,
+ "vivienda_media": 64,
+ "matrices": [
+  {
+   "codigo": "E5",
+   "descripcion": "Vivienda, hoteles, comercios y oficinas R.N. 5/2014 A.III",
+   "articulo_rn2_2025": "7.3.1",
+   "categorias": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "puntos": [
+    8,
+    6,
+    4,
+    2,
+    1
+   ],
+   "marcas_totales": 16,
+   "items": [
+    {
+     "n": 1,
+     "nombre": "Fachada",
+     "marcas": 1,
+     "opciones": {
+      "1": [
+       "Revestimiento total de mármol o granito natural",
+       "Revestimiento continuo de cristal y aluminio Cristal de gran tamaño con tratamiento Muros cortina vidrio Vidrio fotovoltaico de colores",
+       "Revestimiento metal (placas de acero inoxidable, aluminio o panel sándwich)",
+       "Diseños especiales en hormigón visto"
+      ],
+      "2": [
+       "Revestimientos parciales de mármol o granito natural",
+       "Mármol piezas pequeñas (+70%)",
+       "Piedra natural con encastre",
+       "Porcelanato símil piedra",
+       "Pórfido Panel decorativo símil piedra",
+       "Paños vidriados: templado, blindado, laminado, D. V. H",
+       "Madera con tratamiento Hormigón visto seriado (terminación lisa)",
+       "Panel solar",
+       "Volumetrías sobresalientes"
+      ],
+      "3": [
+       "Revestimiento texturado. salpricrete, símil",
+       "Detalles de piedra o cerámico Bloques de hormigón decorativo Ladrillo a la vista enrasado, junta tomada",
+       "Bolseado Revoque a la cal con detalles",
+       "Revoque grueso planchado con tratamiento Muros ecológicos",
+       "Paños de policarbonato Revoque de base plástica",
+       "Premoldeados de hormigón seriado con terminaciones incorporadas"
+      ],
+      "4": [
+       "Panel tipo vivienda prefabricada sin tratamiento Parcialmente revocado Bloques de hormigón sin junta",
+       "Azotado de cemento Revoque grueso solamente",
+       "Revoque grueso sin enrasarse ni impresión"
+      ],
+      "5": [
+       "Placas de fenólico Mampostería sin revoque",
+       "Chapas de 2° mano Sin cerramiento"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 2,
+     "nombre": "Techos",
+     "marcas": 1,
+     "opciones": {
+      "1": [
+       "ESTRUCTURAS",
+       "Estéreo estructuras",
+       "Estructuras tensadas",
+       "Hormigón casetonado (formas especiales, hierro o madera de grandes luces)",
+       "Laminados de madera con formas especiales",
+       "CUBIERTAS",
+       "Tejas esmaltadas o vidrio Cubierta de pizarra, cobre",
+       "Aberturas automatizadas"
+      ],
+      "2": [
+       "ESTRUCTURAS",
+       "Inclinadas a varias aguas y formas especiales",
+       "Casetonados planos",
+       "Losas nervuradas",
+       "Premoldeados hormigón buena calidad",
+       "Cabriadas de madera",
+       "Reticulados plano (+5,50 m)",
+       "Luces de apoyo estructural (+5,50 m)",
+       "CUBIERTAS",
+       "Tejas comunes / cemento / asfáltica (+50% de la superficie total)",
+       "Chapas no perforadas, prepintadas sobre estructuras compuestas",
+       "Cubiertas metálicas (cierre mecánico)",
+       "Tejas metálicas",
+       "Chapas prepintadas"
+      ],
+      "3": [
+       "ESTRUCTURAS",
+       "Plano / inclinado a 1 o 2 aguas",
+       "Metálico parabólico (tensor - 5,50 m)",
+       "Correas metálicas UPN / Doble T",
+       "Losa plana de hormigón o viguetas",
+       "Tirantes de madera (maciza o laminada -5,50 m)",
+       "Reticulado plano (madera o metal -5,50 m)",
+       "CUBIERTAS",
+       "Tejas comunes (menos del 50%)",
+       "Chapa de base asfáltica tipo onduline",
+       "Chapa sinusoidal o trapezoidal galvanizado natural",
+       "Policarbonato Bovedilla ladrillo común"
+      ],
+      "4": [
+       "ESTRUCTURAS",
+       "Madera o metálica a la vista, reacondicionada simplemente apoyada",
+       "Reticulado de sección triangular de hierro redondo * Caño sección rectangular 3,2 mm",
+       "CUBIERTAS",
+       "Chapa de fibrocemento Chapa acanalada zincada trapezoidal usada",
+       "Chapa plástica",
+       "Incompleta",
+       "Sombrilla cerámica"
+      ],
+      "5": [
+       "ESTRUCTURAS",
+       "Rollizo madera",
+       "Estructura precaria",
+       "Cañas",
+       "CUBIERTAS",
+       "Terciados, fenólicos",
+       "Chapa ondulada de segunda mano De plástico Chapa fibrocemento liviano Mazo de Paja"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 3,
+     "nombre": "Cielorraso",
+     "marcas": 1,
+     "opciones": {
+      "1": [
+       "Artesanados",
+       "Pinturas de mérito (obras de arte aplicada)",
+       "Con molduras especiales de yeso"
+      ],
+      "2": [
+       "Machihembrado de madera de alta calidad (duras o semiduras)",
+       "Suspendidos metálicos",
+       "Molduras de yeso o poliuretano Placas de yeso premoldeados",
+       "Hormigón visto casetonado Fibras acústicas"
+      ],
+      "3": [
+       "Machihembrado de pino o saligna",
+       "Revoque a la cal o yeso con ángulos vivos o molduras de poliestireno Molduras de poliestireno expandido Placas de poliestireno o yeso simple",
+       "Hormigón pintado"
+      ],
+      "4": [
+       "Parcialmente revocado o azotado Revoque grueso solamente",
+       "Sin terminar"
+      ],
+      "5": [
+       "Sin revocar",
+       "Sin cielorraso"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 4,
+     "nombre": "Muros internos",
+     "marcas": 2,
+     "opciones": {
+      "1": [
+       "En mármol o granito natural",
+       "Ornamentaciones especiales en yeso o cemento Cristales, espejos, obras de arte, figuras en relieve",
+       "Paneles decorativos de metal, hormigón o PVC",
+       "Empapelados vinílicos decorativos"
+      ],
+      "2": [
+       "Piedra natural (tallada, con encastre)",
+       "Pórfido o piedra laja",
+       "Paño vidriado (marco de aluminio)",
+       "Tabiques o paños de ladrillo de vidrio Vidrio/espejo Placas decorativas de yeso (Bloques Retak)",
+       "Chapa estampada / perforada",
+       "Paneles acústicos"
+      ],
+      "3": [
+       "Ladrillo Visto Revoques a la cal / fino Pintura texturada de base polímera",
+       "Panel con terminación de laminado plástico (MDF / Melamina)",
+       "Hormigón visto preconfigurado Yeso Liso o placas roca de yeso Revoque grueso planchado con pintura texturada",
+       "Machihembrado de pino Bloque texturado Microcemento y Estuco Empapelados decorativos",
+       "Madera natural o machihembrado especial (duro o semiduro)",
+       "Revestimiento texturado, salpicrette o símil"
+      ],
+      "4": [
+       "Parcialmente revocado Revoque grueso solamente",
+       "Bolseado"
+      ],
+      "5": [
+       "Sin revocar",
+       "Terminación precaria",
+       "Adobe",
+       "Estructura a la vista"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 5,
+     "nombre": "Pisos",
+     "marcas": 2,
+     "opciones": {
+      "1": [
+       "Piso de mármol pulido o granito natural",
+       "Zócalos de Mármol o granito Alfombrado de primera (pelo largo) o decorativos",
+       "Entramado de maderas duras o semiduras con diseños especiales",
+       "Listonado o entablonado de 1° o maderas importadas duras",
+       "Pórfido Patagónico"
+      ],
+      "2": [
+       "Mármol reconstruido, marmolado Cerámicos esmaltados de 1° diseño artesanal (Toseto) con guardas, de alto tránsito Parquet de 1° calidad (maderas duras o semiduras)",
+       "Listonado o entablonado (madera nacional, calidad normal)",
+       "Piedra artesanal"
+      ],
+      "3": [
+       "Calcáreo / Lajas",
+       "Granítico común / Cerámico común o esmaltado monococción",
+       "Mosaico granítico Alfombrado sintético común",
+       "Laminado plástico Parquet común",
+       "Melamina símil madera (Flotante)",
+       "Baldosones prensados bicapa",
+       "Baldosa Cerámica, símil ladrillo Ladrillo artesanal",
+       "Porcelanato Cemento estampado pulido Piso de goma",
+       "Mosaico decorado Microcemento Cemento alisado a máquina",
+       "Piso enrollable o baldosa vinílica"
+      ],
+      "4": [
+       "Calcáreo de 2°",
+       "Ladrillo común con junta tomada",
+       "Piedra común sin trabajar",
+       "Cemento alisado a llana o estucado"
+      ],
+      "5": [
+       "Contrapiso de hormigón pobre",
+       "Ladrillo común sin junta",
+       "Ladrillo molido Lechinada de Cemento Tierra"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 6,
+     "nombre": "Baños",
+     "marcas": 2,
+     "opciones": {
+      "1": [
+       "TIPOLOGÍA",
+       "Tres sanitarios o más",
+       "2 sanitarios, 1 zonificado (3 zonas o más con 2 o más baños en suite)",
+       "Sauna y/o Toilette",
+       "ARTEFACTOS INSTALACIÓN FIJA",
+       "Muebles de madera tallada",
+       "Artefactos decorados",
+       "Ducha en cabina de vidrio y/o columna multifunción",
+       "Artefactos suspendidos",
+       "Artefactos Alta Gama (qubit o simil)",
+       "Vanitory doble de piedra o vidrio (ancho mayor a 80 cm)",
+       "Travertino + cristal + corian +",
+       "Sylestone",
+       "Vanitory doble en porcelana",
+       "Hidromasaje (más de 4 bocas)",
+       "GRIFERÍA",
+       "Diseños y formas especiales (Alta gama)",
+       "Líneas libby, ártica, ídem",
+       "Grifería línea artística",
+       "Grifería decorativa (componentes en porcelana y metal)",
+       "Combinación de 2 metales",
+       "Con sensor y/o iluminación color",
+       "REVESTIMIENTOS",
+       "Hasta techo de cerámico decorativo, granito, o mármol natural h >1,80 m",
+       "Superficie espejada / 2 o más paramentos",
+       "Placa decorativa (veneciana, materiales mixtos, burbujas)",
+       "Metales nobles o piedra",
+       "Paneles vidrios tratados/color/serigrafiados",
+       "Porcelanato tratamiento especial, texturado"
+      ],
+      "2": [
+       "TIPOLOGÍA",
+       "Dos baños, uno en suite o zonificado (2 zonas) y/o toilette",
+       "ARTEFACTOS INSTALACIÓN FIJA",
+       "Bañera con hidromasaje automático hasta 4 bocas",
+       "Mesada de granito o mármol desde 1 m",
+       "Muebles de madera laqueada",
+       "Módulo de ducha vidriado Inodoro con válvula automática",
+       "Vanitory hasta 1m (piedra, vidrio, porcelanato, madera dura o semidura, pino, cedro)",
+       "Vanitory colgante wengue 83 cm",
+       "Mesada de vidrio, termoformada",
+       "GRIFERÍA",
+       "Línea intermedia",
+       "Grifería cromada pesada (componentes metálicos)",
+       "Cierre cerámico Grifo cierre automático REVESTIMIENTOS",
+       "Cerámicos decorativos grandes piezas",
+       "Microcemento (terminación a máquina)",
+       "Placas venecita",
+       "Muros divisorios de vidrio"
+      ],
+      "3": [
+       "TIPOLOGÍA",
+       "Baño único y/o Toilette dimensiones mínimas planta baja",
+       "Dos sanitarios",
+       "ARTEFACTOS INSTALACIÓN FIJA",
+       "Artefactos línea base",
+       "Vanitory hasta 1 m (laqueado, bacha marmolina)",
+       "Artefactos Bari, Florencia,",
+       "Mónaco Artefactos andina, mayo, capea",
+       "Mesada revestida en cerámico Mesada de fibra de vidrio Bañera chapa enlozada",
+       "Artefactos línea estilo Murano, marina, adriática, ídem",
+       "Cuenco de vidrio o vasija cerámica",
+       "GRIFERÍA",
+       "Línea base con mezclador",
+       "Grifería monocomando componente liviano Cierre a vástago Grifería monocomando cromada pico alto/cierre cerámico REVESTIMIENTOS",
+       "Cerámicos y azulejos hasta 2m",
+       "Cemento alisado Vía seca (paneles vistos o pintados)",
+       "Revoque fino/pintura",
+       "Porcelanato común o rectificado pulido Cerámico/mosaico pintados (dos o más colores)"
+      ],
+      "4": [
+       "TIPOLOGÍA",
+       "Baño único ARTEFACTOS INSTALACIÓN FIJA",
+       "Bacha de dimensiones reducidas",
+       "Solo inodoro Inodoro a la turca o pedestal con deposito GRIFERÍA",
+       "Grifería Simple",
+       "Canillas de plástico Solo instalación agua fría",
+       "REVESTIMIENTOS",
+       "Escaso o nulo Estucado, bolseado o revoque grueso Paneles vía seca sin terminar (Durlock)"
+      ],
+      "5": [
+       "TIPOLOGÍA",
+       "Baño externo Sin baño ARTEFACTOS INSTALACIÓN FIJA",
+       "Letrinas/ sin instalación",
+       "Con Inodoro externo a la vivienda",
+       "Instalación Incompleta",
+       "Faltan por instalar artefactos",
+       "GRIFERÍA",
+       "Canilla única",
+       "Sin canilla",
+       "REVESTIMIENTOS",
+       "Muro o tabique, sin revestimiento"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 7,
+     "nombre": "Cocina",
+     "marcas": 2,
+     "opciones": {
+      "1": [
+       "ZONA HÚMEDA",
+       "Monocomando alta gama",
+       "Grifería articulable cierre cerámico con doble cierre",
+       "Grifería artesanal diseños especiales /gourmet",
+       "Bacha doble / triple, acero inoxidable (ancho > 1m, profundidad más 18 cm)",
+       "Bacha cocina encastrable doble con box / multifunción",
+       "Electrodomésticos y artefactos integrados al mobiliario Accesorios rociador independiente, pico alto con cierre cerámico MOBILIARIO, EQUIPAMIENTO Y",
+       "REVESTIMIENTO",
+       "Amoblamiento de madera tallada",
+       "Amoblamiento transiluminado o con iluminación incorporada",
+       "Diseños especiales (gran desarrollo en mesada)",
+       "Revestimientos especiales",
+       "Mesada con desayunador integrado en piedra de alta calidad",
+       "Mesada isla con instalaciones (bacha o cocina)",
+       "Mobiliario integral en sylestone, corian, piedra artificial",
+       "Placas piedra natural (Mármol o granito)",
+       "Placa decorativa, tipo venecita",
+       "Revestimiento vidrio térmico color, serigrafías incorporadas, grandes superficies, mobiliario embutido Revestimiento de placas en acero inoxidable o aluminio integrado, total o parcial (zócalos y cantoneras igual material)",
+       "Revestimiento porcelanato de alta calidad, texturizado, tonalizado Sistema automatizado y comando eléctrico para mobiliarios",
+       "Vidrio color y/o serigrafiado incorporado (cajones y/o superficie de apoyo)",
+       "Electrodomésticos y artefactos integrados al mobiliario Lavavajillas empotrados o sobre mesada (15 cubiertos)",
+       "ARTEFACTOS INSTALACIÓN FIJA",
+       "Cocina industrial digital o eléctrica vitrocerámica digital (6 hornallas, acero inoxidable)",
+       "Cocina industrial (6 hornallas, acero inoxidable)",
+       "Cocina eléctrica (4 hornallas, acero inoxidable)",
+       "Anafe empotrado (6 hornallas)",
+       "Cocina industrial digital (4/6 hornallas)",
+       "Horno eléctrico y anafe vitrocerámica",
+       "Horno de empotrar digital acero inoxidable",
+       "Campana acero inoxidable (3 velocidades, display con sistema táctil)",
+       "Campana isla acero inoxidable (3 velocidades, botón pulsante, control remoto)",
+       "Cámara frigorífica o cava"
+      ],
+      "2": [
+       "ZONA HÚMEDA",
+       "Monocomando mesada con rociador extraíble",
+       "Grifería enlozada o cromada de 1° calidad, de diseño Canillas, formas especiales",
+       "Bacha doble con accesorios (profundidad más de 18cm)",
+       "Bacha doble, acero inoxidable (profundidad > 18cm, diseño irregular)",
+       "Bacha triple (profundidad hasta",
+       "18 cm)",
+       "MOBILIARIO, EQUIPAMIENTO Y",
+       "REVESTIMIENTO",
+       "Muebles, madera dura o semidura (Algarrobo, Cedro,",
+       "Roble)",
+       "Mesada en material preformado (tipo Sylestone/corian)",
+       "Mesada de granito o mármol natural (mayor de 2 m)",
+       "Lavavajillas bajo/sobre mesada",
+       "Amoblamiento de madera (tipo celosía o laqueado de 1°)",
+       "Enchapados en madera (cedro, roble, nogal)",
+       "Revestimientos en porcelanato Revestimientos en lajas o pórfido Revestimiento porcelanato pulido ARTEFACTOS INSTALACIÓN FIJA",
+       "Anafe de empotrar vitrocerámico (4 hornallas)",
+       "Horno de empotrar (frente pintura esmaltada, comando manual)",
+       "Campana para isla de acero inoxidable, más cristal templado"
+      ],
+      "3": [
+       "ZONA HÚMEDA",
+       "Monocomando línea base",
+       "Canilla a vástago, pico móvil",
+       "Pileta doble (profundidad hasta",
+       "18 cm)",
+       "Monocomando con cierre cerámico, 1/4 vuelta",
+       "Monocomando con pico giratorio Grifería común, estándar con mezclador",
+       "Bacha acero inoxidable simple (profundidad hasta 15 cm)",
+       "Pileta enlozada",
+       "MOBILIARIO, EQUIPAMIENTO Y",
+       "REVESTIMIENTO",
+       "Cocinas a medida (desarrollos mayores a los 2 m)",
+       "Mesada isla o doble frente sin instalación",
+       "Cajones telescópicos, extensibles con divisiones internas",
+       "Cierre suave, sist tip on, frentes rebatibles, apertura total",
+       "Compartimientos (módulos grandes sin tiradores)",
+       "Melamina y/o parcialmente vidrio (alacenas) con bordes de aluminio Muebles de pino Mueble MDF + Melamina",
+       "Muebles de madera, chapa o fórmica, combinados",
+       "Mesada acero inoxidable (dimensiones standard)",
+       "Mesada de granito reconstituido o polímeros",
+       "Mesada de piedra natural (desarrollo hasta 2m)",
+       "Mesada de madera con tratamiento Cerámicos comunes o azulejos lisos",
+       "ARTEFACTOS INSTALACIÓN FIJA",
+       "Cocina industrial (4 hornallas)",
+       "Cocina acero inoxidable. (4 hornallas, indicador de temperatura, autolimpiante, encendido piezoeléctrico)",
+       "Cocina 4 hornallas pintada horno doble vidrio, 4 hornallas con encimera y botonera, acero inoxidable y tapa de vidrio Cocina con encendido piezoeléctrico Campana de acero inoxidable (3 velocidades, hasta 75 cm)",
+       "Extractor purificador/diseño compacto clásico Campana enlosada con motor",
+       "Campana piramidal con motor, acero inoxidable"
+      ],
+      "4": [
+       "ZONA HÚMEDA",
+       "Canillas simples, sin mezclador",
+       "Canillas de plástico Una sola canilla (común a vástago)",
+       "Bacha dimensiones reducidas/ compacta",
+       "Bacha simple (profundidad hasta 15 cm)",
+       "MOBILIARIO, EQUIPAMIENTO Y",
+       "REVESTIMIENTO",
+       "Mampostería sin cierre con estante",
+       "Alacenas de chapa",
+       "Sin revestimiento, azulejos de 2° o estucado Mesada de mosaico o cerámico Amoblamiento parcial o nulo ARTEFACTOS INSTALACIÓN FIJA",
+       "Cocina de dimensiones reducidas",
+       "Cocina de dos hornallas",
+       "Campana sin motor, chapa esmaltada"
+      ],
+      "5": [
+       "ZONA HÚMEDA",
+       "Canilla única (instalación a la vista, sin terminar)",
+       "Pileta de cemento Instalación precaria",
+       "Sin Instalación",
+       "MOBILIARIO, EQUIPAMIENTO Y",
+       "REVESTIMIENTO",
+       "Mesada de cemento sobre ladrillo común",
+       "Sin revestimiento ARTEFACTOS INSTALACIÓN FIJA",
+       "Cocina económica",
+       "Anafe de una o dos hornallas",
+       "Fogón",
+       "Instalación precaria",
+       "Sin campana"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 8,
+     "nombre": "Instalaciones",
+     "marcas": 2,
+     "opciones": {
+      "1": [
+       "Calefacción y/o Iluminación especial (domotizada, digital, etc.)",
+       "Losas radiantes",
+       "Ascensor / Montacargas (hasta",
+       "2 plantas)",
+       "Hogar chimenea ornamentada (artesanal)",
+       "Sistema central de aspiración"
+      ],
+      "2": [
+       "Calefacción central por Agua caliente",
+       "Aire acondicionado central frío / calor con balanceado térmico Sistema de seguridad integral con videocámara"
+      ],
+      "3": [
+       "Calefactores individuales",
+       "Aires acondicionados individuales",
+       "Proyección embutida sin terminar de calefacción central",
+       "Agua caliente por calefón o termotanque",
+       "Termo tanque solar",
+       "Hogar chimenea revestido en piedra o estufa a leña de alto rendimiento Hogar chimenea común",
+       "Instalación eléctrica embutida o aérea proyectada",
+       "Detector de humo Portón cochera eléctrico con control remoto o a llave",
+       "Portero visor",
+       "Portón cochera levadizo mecánico o manual)",
+       "Portero eléctrico Alarma cableado externo o embutido"
+      ],
+      "4": [
+       "Instalación incompleta o sin terminar, parcialmente habitable",
+       "Estufa a leña de fundición",
+       "Sin instalación de gas"
+      ],
+      "5": [
+       "Servicio precario de agua fría y eléctrica",
+       "Solo agua fría",
+       "Sin instalaciones"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 9,
+     "nombre": "Carpintería",
+     "marcas": 2,
+     "opciones": {
+      "1": [
+       "Madera con tallados",
+       "Hierro forjado * Vitraux o biselados",
+       "Carpintería grandes superficies autoportantes",
+       "Cortinas automáticas",
+       "Vidrio fotovoltaico Aberturas automatizadas",
+       "Rejas de estilo pesadas (hierro diámetro desde 16 mm)",
+       "Herrajes artesanales de metales nobles",
+       "Puerta ingreso blindada"
+      ],
+      "2": [
+       "Aluminio pesado con premarco a medida",
+       "Aberturas de PVC inyectadas (importadas)",
+       "Puerta enchapada en cedro/símil, lustrada con detalles de aluminio Aberturas a medida",
+       "Herrajes pesados",
+       "Rejas de estilo liviano (hierro diámetro hasta 14 mm)",
+       "Postigones de aluminio (sistema roler automatizada)"
+      ],
+      "3": [
+       "Aluminio liviano línea base seriada",
+       "Aberturas vidrio repartido –",
+       "DVH",
+       "Madera blanda o M.D.F. pintada o barnizada",
+       "Aberturas de PVC",
+       "Puerta placa, aglomerado y o madera blanda con marco de chapa",
+       "Aberturas standard de fabricación seriada, herrajes comunes",
+       "Cortina de madera lustrada",
+       "Postigón de madera con tratamiento Rejas de caño liviano Marcos comunes (chapa o madera)",
+       "Cortina de enrollar (plástico o madera, pintada y/o barnizada)",
+       "Postigón metálico (no aluminio)"
+      ],
+      "4": [
+       "Madera o chapa reacondicionada",
+       "Abertura de chapa económica sin persiana o postigón",
+       "Herrajes de chapa",
+       "Faltan puertas"
+      ],
+      "5": [
+       "Puertas y ventanas precarias",
+       "Rezagos",
+       "Sin carpintería"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 10,
+     "nombre": "Placares",
+     "marcas": 1,
+     "opciones": {
+      "1": [
+       "Vestidor zonificado (mayor a",
+       "5m2)",
+       "Puerta celosía",
+       "En madera dura",
+       "Puertas de vidrio traslucido, color, serigrafiado o espejos",
+       "Iluminación incorporada"
+      ],
+      "2": [
+       "Puerta enchapada (Cedro, Roble o similar) con marco de madera, cajoneras y divisiones",
+       "Herrajes acero inoxidable, aluminio o bronce",
+       "Puertas revestidas en espejo"
+      ],
+      "3": [
+       "Vestidor simple y/o placar sobre",
+       "2 lados de la habitación",
+       "Placar embutido en mampostería o vía seca",
+       "Madera barnizada o pintada (Guatambú o similar) con estantes"
+      ],
+      "4": [
+       "Hueco para placar",
+       "Incompleto / sin puertas",
+       "Estantes aislados",
+       "Solo frente"
+      ],
+      "5": [
+       "No tiene",
+       "Mobiliario para guardado (Ropero)"
+      ]
+     },
+     "opciones_cargadas": true
+    }
+   ]
+  },
+  {
+   "codigo": "E6",
+   "descripcion": "Industria y Galpones R.N. 5/2014 A.IV",
+   "articulo_rn2_2025": "7.3.3",
+   "categorias": [
+    2,
+    3,
+    4,
+    5
+   ],
+   "puntos": [
+    6,
+    4,
+    2,
+    1
+   ],
+   "marcas_totales": 16,
+   "items": [
+    {
+     "n": 1,
+     "nombre": "Fachada",
+     "marcas": 1,
+     "opciones": {
+      "2": [
+       "Superficies continuas de vidrio Cristales especiales o templados",
+       "Revestimiento total o más de 70% con piedra natural o madera",
+       "Premoldeados especiales con terminación incorporada",
+       "Paneles sándwich con aislación térmica",
+       "Revestimiento de aluminio laminado"
+      ],
+      "3": [
+       "Hormigón visto in situ",
+       "Premoldeados tipo standard",
+       "Ladrillo visto con junta tomada",
+       "Revestimiento parcial de piedra",
+       "Ladrillo de hormigón visto con terminación incorporada",
+       "Revoque texturado Cartelería o propaganda incorporada al diseño"
+      ],
+      "4": [],
+      "5": [
+       "Revoque simple a la cal",
+       "Bolseado Revestimiento de bovedillas",
+       "Detalles aislados"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 2,
+     "nombre": "Estructura",
+     "marcas": 2,
+     "opciones": {
+      "2": [
+       "Hormigón más de 20 plantas",
+       "Independiente",
+       "Hormigón armado de formas especiales",
+       "Metálica de grandes luces",
+       "Premoldeados de grandes luces (tipo Astori)",
+       "Cubiertas especiales",
+       "Estéreo estructura",
+       "Sistemas aporticados prefabricados",
+       "Luces de más de 20 metros"
+      ],
+      "3": [
+       "Hormigón entre 17 y 20 plantas",
+       "Hormigón armado de formas simples",
+       "Pretensado o premoldeado en serie",
+       "Chapa autoportante (canalón)",
+       "Estructura con puente carga",
+       "Estructura premoldeada (TIPO",
+       "GALLARA)",
+       "Con aislación térmica",
+       "Viga metálica alma llena",
+       "Cabriadas de madera o hierro"
+      ],
+      "4": [
+       "Hormigón entre 10 y 16 plantas",
+       "Metálica ente 2 y 4 plantas"
+      ],
+      "5": [
+       "Hormigón entre 5 y 9 plantas",
+       "Estructura parabólica simple",
+       "Cubierta de chapa sinusoidal o fibrocemento Cubierta con iluminación cenital con chapas plásticas",
+       "Estructura aporticada caños estructurales"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 3,
+     "nombre": "Terminaciones internas",
+     "marcas": 2,
+     "opciones": {
+      "2": [
+       "Premoldeados especiales con terminación incorporada",
+       "Paneles metálicos especiales con aislaciones térmicas",
+       "Aislaciones especiales, acústicas y térmicas",
+       "Revestimiento de madera de calidad, mármoles o cerámicos texturados",
+       "Revoques completos esmaltados",
+       "Paneles con terminación de metal",
+       "Porcelanato"
+      ],
+      "3": [
+       "Premoldeados standard",
+       "Chapa prepintada",
+       "Mixtos de ladrillo y chapa",
+       "Bloque de hormigón con terminación incorporadas o junta tomada",
+       "Ladrillo de hormigón visto o ladrillo visto Yeso Liso Revoque fino completo Revestimiento aislado de ladrillo visto Terminación mixta de revoque y chapa metálica",
+       "Revestimiento aislado Chapa prepintada",
+       "Cerámicos comunes"
+      ],
+      "4": [],
+      "5": [
+       "Chapa sinusoidal de 2° mano Alambre tejido Revoque simple o bolseado Detalles aislados",
+       "Mampostería de bloques cerámicos o cemento sin revocar",
+       "Ladrillo parcialmente revocado"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 4,
+     "nombre": "Pisos",
+     "marcas": 2,
+     "opciones": {
+      "2": [
+       "Hormigón armado especial o vibrado Granítico de calidad",
+       "Goma",
+       "Porcelanato Mármol o granito natural",
+       "Entablonado de madera de alta calidad",
+       "Alfombras de 1° calidad",
+       "Piso PVC"
+      ],
+      "3": [
+       "Hormigón con terminación a maquina",
+       "Calcáreo común",
+       "Cerámico de calidad",
+       "Parquet madera blanda",
+       "Granítico Hormigón con tratamiento para industrias de alto transito Terminación pintura epoxi con demarcación de zonas",
+       "Piso vinílico (carpeta nivelada + piso)"
+      ],
+      "4": [],
+      "5": [
+       "Ladrillo junta tomada",
+       "Contrapiso solamente",
+       "Cerámico sin esmaltado Calcáreo de inferior calidad"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 5,
+     "nombre": "Cielorraso",
+     "marcas": 1,
+     "opciones": {
+      "2": [
+       "Yeso con molduras",
+       "Formas especiales y/o irregulares suspendidas",
+       "Termoacústicos",
+       "Placas de PVC",
+       "Metálicos",
+       "Placas decorativas"
+      ],
+      "3": [
+       "Revoque fino completo Madera machihembrada",
+       "Fibra sintética",
+       "Placas de yeso Membrana termoacústica",
+       "Placas de telgopor"
+      ],
+      "4": [],
+      "5": [
+       "Revoque grueso Terminaciones precarias",
+       "Revestimientos parciales y/o incompletos",
+       "Materiales reciclados y/o reutilizados",
+       "Rezagos"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 6,
+     "nombre": "Baños",
+     "marcas": 1,
+     "opciones": {
+      "2": [
+       "Privados en oficina",
+       "Vestuarios con duchas",
+       "Artefactos completos",
+       "Revestimientos de cerámicos de calidad",
+       "Equipamiento de acero inoxidable",
+       "Lavatorios con mesada de mármol natural",
+       "Mingitorios con divisorios",
+       "Lavatorio piedra natural continua más de 3mts con bachas múltiples",
+       "Porcelanatos"
+      ],
+      "3": [
+       "Un baño privado en oficinas",
+       "Vestuarios simples",
+       "Artefactos completos (10 personas)",
+       "Cerámicos sin esmaltados o esmerilados monococción",
+       "Lavatorios de pared",
+       "Artefactos comunes",
+       "Equipamiento parcial de acero inoxidable"
+      ],
+      "4": [],
+      "5": [
+       "Un solo baño, compartido Lavatorios de pared",
+       "Mingitorios sin divisorios o acanaletado Paredes estucadas"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 7,
+     "nombre": "Instalaciones",
+     "marcas": 3,
+     "opciones": {
+      "2": [
+       "Sistema integral de seguridad",
+       "Detectores y extintores de incendios",
+       "Aire acondicionado central de frío calor",
+       "Comunicaciones internas integrales",
+       "Montacargas",
+       "Sanitarios climatizados",
+       "Puente Grúa"
+      ],
+      "3": [
+       "Extractores de aire eléctricos",
+       "Detectores de incendios",
+       "Aire acondicionado y calefactores individuales",
+       "Instalaciones eléctricas embutidas o áreas proyectadas (cables, canal, bandejas, etc.)"
+      ],
+      "4": [],
+      "5": [
+       "Extractores eólicos",
+       "Instalaciones eléctricas a la vista (anclajes simples)",
+       "Instalaciones de agua y pluviales a la vista",
+       "Pileta con canilla",
+       "Instalación eléctrica parcial y/o en algunos sectores",
+       "Instalaciones incompletas"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 8,
+     "nombre": "Carpintería",
+     "marcas": 2,
+     "opciones": {
+      "2": [
+       "Acristalamientos continuos con aislaciones especiales",
+       "Grandes ingresos con cerramientos especiales",
+       "Accionamientos automáticos"
+      ],
+      "3": [
+       "Madera o chapa de calidad y dimensiones standard",
+       "Cortinas de enrollar con enrollador especial",
+       "Hormigón"
+      ],
+      "4": [],
+      "5": [
+       "Económica de chapa o madera",
+       "Portones de chapa máximo 3 m",
+       "Sin pintar"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 9,
+     "nombre": "Cocina",
+     "marcas": 2,
+     "opciones": {
+      "2": [],
+      "3": [],
+      "4": [],
+      "5": []
+     },
+     "opciones_cargadas": false
+    }
+   ]
+  },
+  {
+   "codigo": "E7",
+   "descripcion": "Estaciones de servicio R.N. 5/2014 A.V",
+   "articulo_rn2_2025": "7.3.5",
+   "categorias": [
+    2,
+    3,
+    4,
+    5
+   ],
+   "puntos": [
+    6,
+    4,
+    2,
+    1
+   ],
+   "marcas_totales": 16,
+   "items": [
+    {
+     "n": 1,
+     "nombre": "Fachada",
+     "marcas": 1,
+     "opciones": {
+      "2": [
+       "Revestimiento total en aluminio laminado Cristales de gran tamaño térmicos",
+       "Paneles especiales",
+       "Premoldeados de hormigón con terminación incorporada"
+      ],
+      "3": [
+       "Revestimiento metálico de chapa plegada",
+       "Ladrillo visto con junta tomada",
+       "Revestimiento parcial de piedra",
+       "Ladrillo de hormigón visto con terminación incorporada",
+       "Revoque texturado"
+      ],
+      "4": [
+       "Revoque simple a la cal",
+       "Bolseado Revestimiento de bovedillas",
+       "Ladrillo común sin junta tomada"
+      ],
+      "5": [
+       "Sin revestimiento y parcialmente revocada",
+       "Sin terminar"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 2,
+     "nombre": "Estructura",
+     "marcas": 2,
+     "opciones": {
+      "2": [
+       "Metálica de grandes luces, retícula espacial, voladizos, ménsulas",
+       "Hormigón especial in situ de grandes luces",
+       "Estructuras prefabricadas de grandes luces",
+       "Madera laminada para grandes luces"
+      ],
+      "3": [
+       "Hormigón armado de luces normales",
+       "Pretensado o premoldeado en serie",
+       "De fibrocemento autoportante",
+       "Estructura metálica retícula plano o de sección uniforme con tubos estructurales",
+       "Estructura de madera sección uniforme"
+      ],
+      "4": [
+       "Mampostería común",
+       "Prefabricado de ladrillo hueco Estructura metálica simple"
+      ],
+      "5": [
+       "Precario Inexistente"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 3,
+     "nombre": "Cubierta",
+     "marcas": 2,
+     "opciones": {
+      "2": [
+       "Luceras de policarbonato Cubierta metálica con aislaciones especiales",
+       "Pizarra o teja esmaltada"
+      ],
+      "3": [
+       "Cubierta metálica de chapa sinusoidal",
+       "Pieza pretensada de hormigón",
+       "Cubiertas normales con impermeabilizaciones simples",
+       "Teja común",
+       "Canalón hormigón pretensado"
+      ],
+      "4": [
+       "Chapa metálica de 2° mano Chapa de fibrocarbonato"
+      ],
+      "5": [
+       "Precario Inexistente"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 4,
+     "nombre": "Cielorraso",
+     "marcas": 1,
+     "opciones": {
+      "2": [],
+      "3": [],
+      "4": [],
+      "5": []
+     },
+     "opciones_cargadas": false
+    },
+    {
+     "n": 5,
+     "nombre": "Terminaciones internas",
+     "marcas": 1,
+     "opciones": {
+      "2": [
+       "Paneles especiales (materiales combinados",
+       "Aislación térmica y acústica",
+       "Cerámico texturado especial decorativo Madera de calidad",
+       "Piedra natural (mármol o granito)"
+      ],
+      "3": [
+       "Azulejos",
+       "Revoques a la cal o bolseado Ladrillo visto con junta tomada",
+       "Hormigón premoldeado liso Block cementicio visto Paneles yeso tipo Durlock"
+      ],
+      "4": [
+       "Revoque grueso Terminación precaria"
+      ],
+      "5": [
+       "Estructura a la vista"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 6,
+     "nombre": "Pisos",
+     "marcas": 2,
+     "opciones": {
+      "2": [],
+      "3": [],
+      "4": [],
+      "5": []
+     },
+     "opciones_cargadas": false
+    },
+    {
+     "n": 7,
+     "nombre": "Baños",
+     "marcas": 2,
+     "opciones": {
+      "2": [],
+      "3": [],
+      "4": [],
+      "5": []
+     },
+     "opciones_cargadas": false
+    },
+    {
+     "n": 8,
+     "nombre": "Instalaciones generales",
+     "marcas": 2,
+     "opciones": {
+      "2": [],
+      "3": [],
+      "4": [],
+      "5": []
+     },
+     "opciones_cargadas": false
+    },
+    {
+     "n": 9,
+     "nombre": "Instalaciones especiales",
+     "marcas": 2,
+     "opciones": {
+      "2": [
+       "Sectorizada para ejecutivos y obreros",
+       "Lavadero tren automático Ascensor 6 personas por piso Depósitos o bauleras individuales",
+       "Cabina de control con sistema integral de cámaras, generación de tiques y accesos",
+       "Barrera automática con lector digital",
+       "Sistema de cobro digital con tarjeta"
+      ],
+      "3": [
+       "Cabina con reloj analógico Barrera manual comando mecánico"
+      ],
+      "4": [
+       "Registro manual",
+       "Portón manual",
+       "Instalaciones incompletas"
+      ],
+      "5": [
+       "Instalaciones precarias",
+       "Sin instalaciones",
+       "Sin control de acceso"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 10,
+     "nombre": "Carpintería",
+     "marcas": 1,
+     "opciones": {
+      "2": [],
+      "3": [],
+      "4": [],
+      "5": []
+     },
+     "opciones_cargadas": false
+    }
+   ]
+  },
+  {
+   "codigo": "E8",
+   "descripcion": "Superficies Comunes, Edificios PH en altura R.N. 5/2014 A.VI",
+   "articulo_rn2_2025": "7.3.2",
+   "categorias": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "puntos": [
+    8,
+    6,
+    4,
+    2,
+    1
+   ],
+   "marcas_totales": 16,
+   "items": [
+    {
+     "n": 1,
+     "nombre": "Fachada",
+     "marcas": 1,
+     "opciones": {
+      "1": [
+       "Revestimiento total de mármol o granito natural",
+       "Revestimiento continuo de cristal y aluminio Cristal de gran tamaño con tratamiento Muros cortina vidrio Vidrio fotovoltaico de colores",
+       "Revestimiento metal (placas de acero inoxidable, aluminio o panel sándwich)",
+       "Diseños especiales en hormigón visto"
+      ],
+      "2": [
+       "Revestimientos parciales de mármol o granito natural",
+       "Mármol piezas pequeñas (+70%)",
+       "Piedra natural con encastre",
+       "Porcelanato símil piedra",
+       "Pórfido Panel decorativo símil piedra",
+       "Paños vidriados: templado, blindado, laminado, D. V. H",
+       "Madera con tratamiento Hormigón visto seriado (terminación lisa)",
+       "Panel solar",
+       "Volumetrías sobresalientes"
+      ],
+      "3": [
+       "Revestimiento texturado. salpricrete, símil",
+       "Detalles de piedra o cerámico Bloques de hormigón decorativo Paño de policarbonato Muros ecológicos",
+       "Ladrillo a la vista enrasado con junta tomada",
+       "Bolseado Revoque a la cal con detalles",
+       "Revoque grueso planchado con tratamiento Revoque de base plástica",
+       "Premoldeados de hormigón seriado con terminaciones incorporadas"
+      ],
+      "4": [
+       "Panel tipo vivienda prefabricada sin tratamiento Parcialmente revocado Bloques de hormigón sin junta",
+       "Azotado de cemento Revoque grueso solamente",
+       "Revoque grueso sin enrasarse ni impresión"
+      ],
+      "5": [
+       "Placas de fenólico Mampostería sin revoque",
+       "Chapas de 2° mano Sin cerramiento"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 2,
+     "nombre": "Techos",
+     "marcas": 1,
+     "opciones": {
+      "1": [
+       "ESTRUCTURAS",
+       "Estéreo estructuras",
+       "Estructuras tensadas",
+       "Hormigón casetonado (formas especiales, hierro o madera de grandes luces)",
+       "Laminados de madera con formas especiales",
+       "CUBIERTAS",
+       "Tejas esmaltadas o vidrio Cubierta de pizarra, cobre",
+       "Aberturas automatizadas"
+      ],
+      "2": [
+       "ESTRUCTURAS",
+       "Inclinadas a varias aguas y formas especiales",
+       "Casetonados planos",
+       "Losas nervuradas",
+       "Premoldeados hormigón buena calidad",
+       "Cabriadas de madera",
+       "Reticulados plano (+5,50 m)",
+       "Luces de apoyo estructural (+5,50 m)",
+       "CUBIERTAS",
+       "Tejas comunes, cemento o membrana asfáltica (+50% de la superficie total)",
+       "Chapas no perforadas prepintadas sobre estructuras compuestas",
+       "Cubierta. metálica cierre mecánico Tejas metálicas",
+       "Chapas prepintadas"
+      ],
+      "3": [
+       "ESTRUCTURAS",
+       "Plano inclinado a 1 o 2 aguas",
+       "Metálico parabólico (tensor - 5,50 m)",
+       "Correas metálicas UPN / Doble T",
+       "Losa plana de hormigón o viguetas",
+       "Tirantes de madera (maciza o laminada -5,50 m)",
+       "Reticulado plano (madera o metal -5,50 m)",
+       "CUBIERTAS",
+       "Tejas comunes (menos del 50%)",
+       "Chapa de base asfáltica tipo onduline",
+       "Chapa sinusoidal o trapezoidal galvanizado natural",
+       "Policarbonato Bovedilla ladrillo común",
+       "Sombrilla cerámica"
+      ],
+      "4": [
+       "ESTRUCTURAS",
+       "Madera o metálica a la vista, reacondicionada simplemente apoyada",
+       "Reticulado de sección triangular de hierro redondo * Caño sección rectangular 3,2 mm",
+       "CUBIERTAS",
+       "Chapa de fibrocemento Chapa acanalada zincada trapezoidal usada",
+       "Chapa plástica",
+       "Incompleta"
+      ],
+      "5": [
+       "ESTRUCTURAS",
+       "Rollizo madera",
+       "Estructura precaria",
+       "Cañas",
+       "CUBIERTAS",
+       "Terciados, fenólicos",
+       "Chapa ondulada de segunda mano De plástico Chapa fibrocemento liviano Mazo de Paja"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 3,
+     "nombre": "Cielorraso",
+     "marcas": 1,
+     "opciones": {
+      "1": [
+       "Artesanados",
+       "Pinturas de mérito (obras de arte aplicada)",
+       "Con molduras especiales de yeso"
+      ],
+      "2": [
+       "Machihembrado de madera de alta calidad (duras o semiduras)",
+       "Suspendidos metálicos",
+       "Molduras de yeso o poliuretano Placas de yeso premoldeados",
+       "Hormigón visto casetonado Fibras acústicas"
+      ],
+      "3": [
+       "Machihembrado de pino o saligna",
+       "Revoque a la cal o yeso con ángulos vivos o molduras de poliestireno Molduras de poliestireno expandido Placas de poliestireno o yeso simple",
+       "Hormigón pintado"
+      ],
+      "4": [
+       "Parcialmente revocado o azotado Revoque grueso solamente",
+       "Sin terminar"
+      ],
+      "5": [
+       "Sin revocar",
+       "Sin cielorraso"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 4,
+     "nombre": "Muros internos",
+     "marcas": 2,
+     "opciones": {
+      "1": [
+       "En mármol o granito natural",
+       "Ornamentaciones especiales en yeso o cemento Cristales, espejos, obras de arte, figuras en relieve",
+       "Paneles decorativos de metal, hormigón o PVC",
+       "Empapelados vinílicos decorativos"
+      ],
+      "2": [
+       "Piedra natural (tallada, con encastre)",
+       "Pórfido o piedra laja",
+       "Revestimiento texturado, salpicrette o símil",
+       "Paño vidriado (marco de aluminio o PVC)",
+       "Tabiques o paños de ladrillo de vidrio Vidrio/espejo Placas decorativas de yeso (Bloques Retak)",
+       "Chapa estampada / perforada",
+       "Paneles acústicos"
+      ],
+      "3": [
+       "Ladrillo Visto Revoques a la cal / fino Pintura texturada de base polímera",
+       "Panel con terminación de laminado plástico (MDF / Melamina)",
+       "Empapelados decorativos",
+       "Madera natural o machihembrado especial (duro o semiduro)",
+       "Hormigón visto preconfigurado Yeso Liso o placas roca de yeso Revoque grueso planchado con pintura texturada",
+       "Machihembrado de pino Bloque texturado Microcemento y Estuco"
+      ],
+      "4": [
+       "Parcialmente revocado Revoque grueso solamente",
+       "Bolseado Hormigón visto sin terminación"
+      ],
+      "5": [
+       "Sin revocar",
+       "Terminación precaria",
+       "Adobe",
+       "Estructura a la vista"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 5,
+     "nombre": "Pisos",
+     "marcas": 2,
+     "opciones": {
+      "1": [
+       "Piso de mármol pulido o granito natural",
+       "Zócalos de Mármol o granito Alfombrado de primera (pelo largo) o decorativos",
+       "Entramado de maderas duras o semiduras con diseños especiales",
+       "Listonado o entablonado de 1° o maderas importadas duras",
+       "Pórfido Patagónico"
+      ],
+      "2": [
+       "Mármol reconstruido, marmolado Cerámicos esmaltados de 1° diseño artesanal (Toseto) con guardas, de alto tránsito Parquet de 1° calidad (maderas duras o semiduras)",
+       "Listonado o entablonado (madera nacional, calidad normal)",
+       "Piedra artesanal"
+      ],
+      "3": [
+       "Calcáreo / Lajas",
+       "Granítico común / Cerámico común o esmaltado monococción",
+       "Mosaico granítico Porcelanato Cemento estampado pulido Piso de goma",
+       "Mosaico decorado Alfombrado sintético común",
+       "Laminado plástico Parquet común",
+       "Melamina símil madera (Flotante)",
+       "Baldosones prensados bicapa",
+       "Baldosa Cerámica, símil ladrillo Ladrillo artesanal",
+       "Microcemento Cemento alisado a máquina",
+       "Piso enrollable o baldosa vinílica"
+      ],
+      "4": [
+       "Calcáreo de 2°",
+       "Ladrillo común con junta tomada",
+       "Piedra común sin trabajar",
+       "Cemento alisado a llana o estucado"
+      ],
+      "5": [
+       "Contrapiso de hormigón pobre",
+       "Ladrillo común sin junta",
+       "Ladrillo molido Lechinada de Cemento Tierra"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 6,
+     "nombre": "Instalaciones",
+     "marcas": 3,
+     "opciones": {
+      "1": [
+       "Calefacción y/o Iluminación especial (domotizada, digital, etc.)",
+       "Losas radiantes",
+       "Hogar chimenea ornamentada (artesanal)"
+      ],
+      "2": [
+       "Aire acondicionado central frío / calor con balanceado térmico Calefacción central por Agua caliente",
+       "Sistema central de aspiración",
+       "Sistema de seguridad integral con videocámara"
+      ],
+      "3": [
+       "Calefactores individuales",
+       "Aires acondicionados individuales",
+       "Proyección embutida sin terminar de calefacción central",
+       "Hogar chimenea revestido en piedra o estufa a leña de alto rendimiento Detector de humo Portón cochera eléctrico con control remoto o a llave",
+       "Portero electico con visor",
+       "Alarma embutida o con cableado externo"
+      ],
+      "4": [
+       "Instalación incompleta o sin terminar, parcialmente habitable",
+       "Estufa a leña de fundición",
+       "Sin instalación de gas"
+      ],
+      "5": [
+       "Servicio precario de agua fría y eléctrica",
+       "Solo agua fría",
+       "Sin instalaciones"
+      ]
+     },
+     "opciones_cargadas": true
+    },
+    {
+     "n": 7,
+     "nombre": "Carpintería",
+     "marcas": 2,
+     "opciones": {
+      "1": [],
+      "2": [],
+      "3": [],
+      "4": [],
+      "5": []
+     },
+     "opciones_cargadas": false
+    },
+    {
+     "n": 8,
+     "nombre": "Estructura",
+     "marcas": 1,
+     "opciones": {
+      "1": [],
+      "2": [],
+      "3": [],
+      "4": [],
+      "5": []
+     },
+     "opciones_cargadas": false
+    },
+    {
+     "n": 9,
+     "nombre": "Ascensores",
+     "marcas": 1,
+     "opciones": {
+      "1": [],
+      "2": [],
+      "3": [],
+      "4": [],
+      "5": []
+     },
+     "opciones_cargadas": false
+    },
+    {
+     "n": 10,
+     "nombre": "Servicios especiales",
+     "marcas": 2,
+     "opciones": {
+      "1": [],
+      "2": [],
+      "3": [],
+      "4": [],
+      "5": []
+     },
+     "opciones_cargadas": false
+    }
+   ]
+  }
+ ]
+}
