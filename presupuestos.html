@@ -69,12 +69,12 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
 <div class="topbar">
   <div class="topbar-l">
     <div class="topbar-logo">AGRIMENSURA<br>UMEPAY</div>
-    <div class="topbar-title">Calculadora de Honorarios — Arancel VS16 2026</div>
+    <div class="topbar-title">Calculadora de Honorarios — Arancel VS17 2026</div>
   </div>
   <a href="index.html">← Volver a Gestión</a>
 </div>
 <div class="main">
-<div class="note">Arancel VS16 — honorarios vigentes desde el <b>01/10/2026</b> (coeficiente 5,786: subieron 31,26% respecto de la VS14) y tasas de Control Previo de la Res. 909-1-26 (octubre 2026 a enero 2027). La Tasa 8 y la del Certificado de Amojonamiento no cambiaron. Ante cualquier diferencia con tu planilla, avisá.</div>
+<div class="note">Arancel <b>VS17</b> — honorarios vigentes desde el <b>01/10/2026</b> (coeficiente 5,786) y tasas de Control Previo de la Res. 909-1-26 (octubre 2026 a enero 2027). La VS17 corrige la VS16: los tramos del <b>diagrama rural</b> (adicional del Art. 56) estaban escritos a mano y no se actualizaban; ahora son los mismos que los del urbano. Ante cualquier diferencia con tu planilla, avisá.</div>
 <div class="tabs">
   <button class="tab-btn active" onclick="showTab('calc',this)">◈ Calculadora</button>
   <button class="tab-btn" onclick="showTab('presupuesto',this)">◻ Presupuesto PDF</button>
@@ -262,16 +262,18 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
 
 <script>
 // ══════════════════════════════════════════════════════════════════
-// MOTOR DE CÁLCULO — Arancel VS16 2026 (constantes verificadas una por una
-// contra "Honorarios Agrimensura 2026 VS16.xlsx", hojas CODAR y ESQUEMA).
+// MOTOR DE CÁLCULO — Arancel VS17 2026 (constantes verificadas una por una
+// contra "Honorarios Agrimensura 2026 VS17.xlsx", hojas CODAR y ESQUEMA).
+// La VS17 no cambia ningún valor del CODAR respecto de la VS16: lo único que
+// corrige son las fórmulas del diagrama rural (hoja MenRural).
 // Respecto de la VS14: los honorarios suben por el coeficiente CODAR
 // (4,408 → 5,786, +31,26%) y las tasas de Control Previo por la
 // Res. 909-1-26. La Tasa 8 y la del Certificado de Amojonamiento no cambian.
 // ══════════════════════════════════════════════════════════════════
 // Versión de la planilla del Colegio con la que se calcula. Queda guardada en
 // cada presupuesto, para saber después con qué arancel se armó.
-const ARANCEL_VERSION = 'VS16 (vigente desde el 01/10/2026)';
-// Valores del arancel VS16 (CODAR, coeficiente 5,786 — vigente desde el 01/10/2026).
+const ARANCEL_VERSION = 'VS17 (vigente desde el 01/10/2026)';
+// Valores del arancel VS17 (CODAR, coeficiente 5,786 — vigente desde el 01/10/2026).
 // Los honorarios subieron un 31,26% respecto de la VS14 (coeficiente 4,408).
 const C = {
   // Rural Art.49
@@ -299,7 +301,7 @@ const C = {
   taq_base: 489264.16,
   taq_K: {'1:500':86465.984,'1:1000':43227.206,'1:2000':20175.782,'1:5000':14436.07,'1:10000':8609.568},
   dia_campo: 188438.448, dia_gab: 174737.2,
-  // Tasa 8 (ESQUEMA) — sin cambios en la VS16 (siguen las tasas del 01/08/2026)
+  // Tasa 8 (ESQUEMA) — sin cambios en la VS17 (siguen las tasas del 01/08/2026)
   t8_N: 151.536, t8_N19: 872.48, t8_N21: 40409.6, t8_N22: 49928.16,
   // Tasa del Certificado de Amojonamiento (ESQUEMA N27-N31, hoja CA) — sin cambios
   tca_1: 40409.6, tca_2: 49068.8, tca_3: 72160, tca_4: 108240, tca_lote: 2164.8,
@@ -310,24 +312,22 @@ const C = {
 const TERR = {normal:0,arbustos:.5,monte:.75,cenagoso:1.5};
 
 // Diagrama (adicional por valor de tierra) — RURAL: tramos 1.5/1/0.8/0.6%
-function diagRural(v){
+// Topes de los tramos del diagrama — CODAR E133 / G134 / G135, que se
+// actualizan con el coeficiente. Hasta la VS16 la hoja MenRural los tenía
+// escritos a mano (207.360 / 2.073.600 / 4.147.200) y nunca se habían
+// actualizado: ese es el error del Art. 56 que corrige la VS17. Desde la VS17
+// el diagrama rural usa los mismos topes que el urbano.
+const DIAG_B1=56608858.504, DIAG_B2=566088828.052, DIAG_B3=1132177737.108;
+function diagrama(v){
   v=v||0; let d=0;
-  d += v>207360 ? 207360*0.015 : v*0.015;
-  if(v>207360)  d += v>2073600 ? (2073600-207360)*0.01 : (v-207360)*0.01;
-  if(v>2073600) d += v>4147200 ? (4147200-2073600)*0.008 : (v-2073600)*0.008;
-  if(v>4147200) d += (v-4147200)*0.006;
+  d += v>DIAG_B1 ? DIAG_B1*0.015 : v*0.015;
+  if(v>DIAG_B1) d += v>DIAG_B2 ? (DIAG_B2-DIAG_B1)*0.01  : (v-DIAG_B1)*0.01;
+  if(v>DIAG_B2) d += v>DIAG_B3 ? (DIAG_B3-DIAG_B2)*0.008 : (v-DIAG_B2)*0.008;
+  if(v>DIAG_B3) d += (v-DIAG_B3)*0.006;
   return d;
 }
-// Diagrama URBANO (tramos con topes altos; suele ser 0 si no se carga valor)
-function diagUrb(v){
-  // Topes CODAR E133 / G134 / G135 (también se actualizan con el coeficiente).
-  v=v||0; const B1=56608858.504,B2=566088828.052,B3=1132177737.108; let d=0;
-  d += v>B1 ? B1*0.015 : v*0.015;
-  if(v>B1) d += v>B2 ? (B2-B1)*0.01 : (v-B1)*0.01;
-  if(v>B2) d += v>B3 ? (B3-B2)*0.008 : (v-B2)*0.008;
-  if(v>B3) d += (v-B3)*0.006;
-  return d;
-}
+const diagRural = diagrama;   // desde la VS17 son el mismo cálculo
+const diagUrb   = diagrama;
 // Subdivisión Art.50 (% sobre honorario de mensura) — rural
 function subFrac(hm, frac){
   frac=frac||0;
@@ -1061,7 +1061,7 @@ function showTab(name,btn){
 }
 // Auto-test de control (consola)
 function selfTest(){
-  const r=t8Rural(1,1893); console.log('Tasa8 rural 1893ha/1lote =', Math.round(r), '(esperado ~353.202; la Tasa 8 no cambio en la VS16)');
+  const r=t8Rural(1,1893); console.log('Tasa8 rural 1893ha/1lote =', Math.round(r), '(esperado ~353.202; la Tasa 8 no cambio en la VS17)');
 }
 // Modo embebido: cuando la calculadora se muestra DENTRO de la pestaña Presupuestos
 // (index.html la carga con ?embed=1), ocultamos su barra superior propia y le
