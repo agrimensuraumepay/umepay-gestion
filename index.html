@@ -131,6 +131,12 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 .btn.danger{background:var(--red2);color:var(--red);border-color:var(--red)}
 .btn.sm{padding:4px 10px;font-size:11px}
 /* ── TABLE ── */
+/* Fila que se despliega debajo de un presupuesto suelto con sus datos de cálculo */
+.pres-calc{background:var(--bg2,#fafafa);padding:12px 16px}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 18px}
+.calc-grid>div{display:flex;flex-direction:column;gap:2px}
+.calc-grid span{font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3)}
+.calc-grid b{font-size:13px;color:var(--ink)}
 .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
 /* Tablas anchas: scroll horizontal (la barra visible es la de arriba, espejada) */
 .table-wrap.scroll-x{overflow-x:auto;scrollbar-width:none}
@@ -657,31 +663,11 @@ tr:hover td{background:var(--bg)}
       <table>
         <thead>
           <tr>
-            <th>Fecha</th><th>Cliente</th><th>Trabajo</th><th>Monto ARS</th>
-            <th>Monto USD</th><th>Estado</th><th>Notas</th><th></th>
+            <th>Fecha</th><th>Cliente</th><th>Tipo</th><th>Monto ARS</th>
+            <th>Monto USD</th><th>Trabajo</th><th></th>
           </tr>
         </thead>
-        <tbody id="pres-tbody"><tr class="empty-row"><td colspan="8">Cargando...</td></tr></tbody>
-      </table>
-    </div>
-    <!-- Cuadro con los datos usados para calcular cada presupuesto generado con la calculadora -->
-    <div class="sec-hdr" style="margin-top:28px">
-      <div>
-        <div class="sec-title">Datos de cálculo — presupuestos sin trabajo</div>
-        <div class="sec-sub">Los que ya tienen un trabajo abierto muestran estos datos adentro de la ficha del trabajo. Desde acá podés abrirles uno.</div>
-      </div>
-    </div>
-    <div class="board-topscroll" id="calc-topscroll"><div></div></div>
-    <div class="table-wrap scroll-x" id="calc-wrap">
-      <table style="min-width:1320px">
-        <thead>
-          <tr>
-            <th>Fecha</th><th>Cliente</th><th>Tipo</th><th>Superficie</th><th>Perímetro</th>
-            <th>Base imponible</th><th>Hon. Colegio</th><th>Aportes 18%</th><th>Tasa 8</th>
-            <th>Tasa Control</th><th>Presupuestado</th><th>Planilla</th><th></th>
-          </tr>
-        </thead>
-        <tbody id="calc-tbody"><tr class="empty-row"><td colspan="13">Cargando...</td></tr></tbody>
+        <tbody id="pres-tbody"><tr class="empty-row"><td colspan="7">Cargando...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -1101,7 +1087,7 @@ tr:hover td{background:var(--bg)}
 <div class="modal-bg" id="modal-presupuesto">
   <div class="modal">
     <div class="modal-hdr">
-      <div class="modal-title">Registrar presupuesto</div>
+      <div class="modal-title" id="pres-modal-titulo">Registrar presupuesto</div>
       <button class="modal-close" onclick="closeModal('modal-presupuesto')">✕</button>
     </div>
     <div class="modal-body">
@@ -2931,88 +2917,67 @@ function crearTrabajoDesdePresupuesto(presId){
 function renderPresupuestos() {
   const list = [...DB.presupuestos].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
   const tbody = document.getElementById('pres-tbody');
-  const estadoBadge = e => {
-    const map = {'Enviado':'badge-blue','Aprobado':'badge-green','Rechazado':'badge-red','Vencido':'badge-amber'};
-    return `<span class="badge ${map[e]||'badge-gray'}">${e}</span>`;
-  };
-  if(!list.length){ tbody.innerHTML='<tr class="empty-row"><td colspan="8">No hay presupuestos registrados</td></tr>'; renderDatosCalculo(); return; }
+  if(!list.length){ tbody.innerHTML='<tr class="empty-row"><td colspan="7">No hay presupuestos registrados</td></tr>'; return; }
+  const plataCol = (v, mon) => parseFloat(v)>0
+    ? (mon==='U$D'?'U$D ':'$ ')+parseFloat(v).toLocaleString('es-AR',{maximumFractionDigits:0}) : '—';
   tbody.innerHTML = list.map(p => {
     const trab = p.trabajo_id ? DB.trabajos.find(t => t.id === p.trabajo_id) : null;
-    const accion = trab
+    // Con trabajo abierto: el link al trabajo. Sin trabajo: el botón para abrirlo.
+    const colTrabajo = trab
       ? `<button class="btn sm" onclick="irAlTrabajo('${trab.id}')" title="Abrir el trabajo">↗ ${escHtml(trab.cliente||'Trabajo')}</button>`
       : `<button class="btn sm success" onclick="crearTrabajoDesdePresupuesto('${p.id}')" title="Abrir un trabajo con estos datos">＋ Trabajo</button>`;
+    // Los datos de cálculo solo cuelgan de los presupuestos sueltos: los que ya
+    // tienen trabajo abierto los muestran dentro de la ficha del trabajo.
+    const d = trab ? null : jsonObj(p.datos_calculo);
+    const verCalc = d
+      ? `<button class="btn sm" id="pcb_${p.id}" onclick="togglePresCalc('${p.id}')" title="Ver con qué datos se calculó">▸ Cálculo</button> `
+      : '';
     return `<tr>
-    <td>${fmtFecha(p.fecha)}</td>
-    <td>${p.cliente}</td>
-    <td>${p.tipo_trabajo}</td>
-    <td>${parseFloat(p.monto_ars)>0 ? '$ '+parseFloat(p.monto_ars).toLocaleString('es-AR',{maximumFractionDigits:0}) : '—'}</td>
-    <td>${parseFloat(p.monto_usd)>0 ? 'U$D '+parseFloat(p.monto_usd).toLocaleString('es-AR',{maximumFractionDigits:0}) : '—'}</td>
-    <td>${estadoBadge(p.estado)}</td>
-    <td style="font-size:11px;color:var(--ink3)">${p.notas||'—'}</td>
-    <td style="white-space:nowrap">${accion}
-      <button class="btn sm danger" onclick="deletePresupuesto('${p.id}')">✕</button></td>
-  </tr>`;
+      <td>${fmtFecha(p.fecha)}</td>
+      <td>${escHtml(p.cliente||'—')}</td>
+      <td>${escHtml(p.tipo_trabajo||'—')}</td>
+      <td>${plataCol(p.monto_ars,'$')}</td>
+      <td>${plataCol(p.monto_usd,'U$D')}</td>
+      <td>${colTrabajo}</td>
+      <td style="white-space:nowrap">${verCalc}<button class="btn sm" onclick="editPresupuesto('${p.id}')" title="Editar">✎</button>
+        <button class="btn sm danger" onclick="deletePresupuesto('${p.id}')" title="Borrar">✕</button></td>
+    </tr>` + (d ? `<tr id="pc_${p.id}" style="display:none"><td colspan="7" class="pres-calc">${calcHtml(d)}</td></tr>` : '');
   }).join('');
-  renderDatosCalculo();
 }
-// El deslizador de arriba del cuadro refleja su scroll horizontal (como el tablero)
-function syncCalcScroll(){
-  const top=document.getElementById('calc-topscroll'), wrapEl=document.getElementById('calc-wrap');
-  if(!top||!wrapEl) return;
-  top.firstElementChild.style.width=wrapEl.scrollWidth+'px';
-  top.onscroll=()=>{ wrapEl.scrollLeft=top.scrollLeft; };
-  wrapEl.onscroll=()=>{ top.scrollLeft=wrapEl.scrollLeft; };
-}
-// ── Cuadro «Datos de cálculo»: qué se usó para armar cada presupuesto de la calculadora ──
 function jsonObj(s){ try{ const v=JSON.parse(s); return v && typeof v==='object' && !Array.isArray(v) ? v : null; }catch(e){ return null; } }
-function renderDatosCalculo(){
-  const tbody = document.getElementById('calc-tbody');
-  if(!tbody) return;
-  // Solo los presupuestos que TODAVÍA NO tienen un trabajo abierto: los que sí
-  // lo tienen muestran sus datos de cálculo dentro de la ficha del trabajo.
-  const filas = [];
-  DB.presupuestos.forEach(p => {
-    const tieneTrabajo = p.trabajo_id && DB.trabajos.some(t => t.id === p.trabajo_id);
-    if(tieneTrabajo) return;
-    const d = jsonObj(p.datos_calculo);
-    if(d) filas.push({ p, d });
-  });
-  if(!filas.length){
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="13">No hay presupuestos sueltos: los que tienen un trabajo abierto muestran sus datos de cálculo dentro de la ficha del trabajo.</td></tr>';
-    return;
-  }
-  filas.sort((a,b) => new Date(b.d.fecha||0) - new Date(a.d.fecha||0));
-  // Busca un parámetro de la calculadora por palabra clave y le agrega la unidad del rótulo
-  const busca = (params, claves) => {
-    const k = Object.keys(params).find(x => claves.some(c => x.toLowerCase().includes(c)));
-    if(!k || params[k]==='' ) return '';
+function togglePresCalc(id){
+  const fila = document.getElementById('pc_'+id), btn = document.getElementById('pcb_'+id);
+  if(!fila) return;
+  const abierta = fila.style.display !== 'none';
+  fila.style.display = abierta ? 'none' : '';
+  if(btn) btn.innerHTML = (abierta ? '▸' : '▾') + ' Cálculo';
+}
+// Con qué datos se calculó un presupuesto hecho con la calculadora
+function calcHtml(d){
+  const c = d.calculadora||{}, params = c.params||{}, a = c.arancel||{};
+  // Busca un parámetro por palabra clave y le pega la unidad que dice el rótulo
+  const busca = claves => {
+    const k = Object.keys(params).find(x => claves.some(cl => x.toLowerCase().includes(cl)));
+    if(!k || params[k]==='') return '';
     const u = k.includes('(km)') ? ' km' : k.includes('(m2)') ? ' m²' : k.includes('(ha)') ? ' ha' : k.includes('(m)') ? ' m' : '';
     return params[k] + u;
   };
-  const plata = v => (parseFloat(v)>0) ? '$ '+Math.round(parseFloat(v)).toLocaleString('es-AR') : '—';
-  tbody.innerHTML = filas.map(({p, d}) => {
-    const c = d.calculadora||{}, params = c.params||{}, a = c.arancel||{};
-    const per = busca(params, ['perímetro','perimetro']);
-    const vt  = busca(params, ['valor de tierra','valuación','valuacion','base imponible']);
-    const sup = busca(params, ['superficie']) || d.superficie || '';
-    const monto = parseFloat(d.monto)||0;
-    return `<tr>
-      <td>${fmtFecha(d.fecha)}</td>
-      <td>${escHtml(d.cliente||'—')}</td>
-      <td>${escHtml(d.tipo||'—')}</td>
-      <td>${escHtml(String(sup||'—'))}</td>
-      <td>${escHtml(String(per||'—'))}</td>
-      <td>${plata(vt)}</td>
-      <td>${plata(a.hon)}</td>
-      <td>${plata(a.ap)}</td>
-      <td>${plata(a.t8)}</td>
-      <td>${plata(a.tcp)}</td>
-      <td>${monto ? (d.moneda==='U$D'?'U$D ':'$ ')+monto.toLocaleString('es-AR',{maximumFractionDigits:0}) : '—'}</td>
-      <td style="font-size:11px;color:var(--ink3);white-space:nowrap">${escHtml(d.arancel_version||'—')}</td>
-      <td><button class="btn sm success" onclick="crearTrabajoDesdePresupuesto('${p.id}')" title="Abrir un trabajo con estos datos">＋ Trabajo</button></td>
-    </tr>`;
-  }).join('');
-  syncCalcScroll();
+  const plata = v => (parseFloat(v)>0) ? '$ '+Math.round(parseFloat(v)).toLocaleString('es-AR') : '';
+  const monto = parseFloat(d.monto)||0;
+  const items = [
+    ['Superficie',     busca(['superficie']) || d.superficie || ''],
+    ['Perímetro',      busca(['perímetro','perimetro'])],
+    ['Base imponible', plata(busca(['valor de tierra','valuación','valuacion','base imponible']))],
+    ['Hon. Colegio',   plata(a.hon)],
+    ['Aportes 18%',    plata(a.ap)],
+    ['Tasa 8',         plata(a.t8)],
+    ['Tasa Control',   plata(a.tcp)],
+    ['Presupuestado',  monto ? (d.moneda==='U$D'?'U$D ':'$ ')+monto.toLocaleString('es-AR',{maximumFractionDigits:0}) : ''],
+    ['Planilla',       d.arancel_version || ''],
+  ].filter(x => x[1]);
+  if(!items.length) return '<div style="font-size:11px;color:var(--ink3)">Este presupuesto no se armó con la calculadora.</div>';
+  return `<div class="calc-grid">${items.map(([k,v]) =>
+    `<div><span>${k}</span><b>${escHtml(String(v))}</b></div>`).join('')}</div>`;
 }
 async function savePresupuesto() {
   const id = document.getElementById('pres-id').value;
@@ -3307,8 +3272,6 @@ function showTab(name) {
   document.getElementById('tab-'+name).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
   window.scrollTo({top:0});
-  // El ancho del deslizador del cuadro se mide recién cuando la pestaña se ve
-  if(name==='presupuestos' && typeof syncCalcScroll==='function') syncCalcScroll();
 }
 function openModal(id) {
   document.getElementById(id).classList.add('open');
@@ -3427,7 +3390,26 @@ async function borrarMovimientoDesdeModal(){
 }
 function nuevoPresupuesto() {
   ['pres-id','pres-cliente','pres-notas','pres-ars','pres-usd'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('pres-trabajo').value = '';
+  document.getElementById('pres-estado').value = 'Enviado';
   document.getElementById('pres-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('pres-modal-titulo').textContent = 'Registrar presupuesto';
+  openModal('modal-presupuesto');
+}
+// Abre un presupuesto ya cargado: para corregirlo o para engancharlo a un trabajo
+function editPresupuesto(id) {
+  const p = DB.presupuestos.find(x => x.id === id);
+  if(!p){ toast('No encuentro ese presupuesto', true); return; }
+  document.getElementById('pres-id').value     = p.id;
+  document.getElementById('pres-cliente').value = p.cliente || '';
+  document.getElementById('pres-fecha').value   = String(p.fecha||'').slice(0,10);
+  document.getElementById('pres-ars').value     = parseFloat(p.monto_ars)>0 ? p.monto_ars : '';
+  document.getElementById('pres-usd').value     = parseFloat(p.monto_usd)>0 ? p.monto_usd : '';
+  document.getElementById('pres-notas').value   = p.notas || '';
+  setSelect('pres-tipo',    p.tipo_trabajo);
+  setSelect('pres-estado',  p.estado || 'Enviado');
+  setSelect('pres-trabajo', p.trabajo_id || '');
+  document.getElementById('pres-modal-titulo').textContent = 'Editar presupuesto';
   openModal('modal-presupuesto');
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
