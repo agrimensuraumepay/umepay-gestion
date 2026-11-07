@@ -48,6 +48,9 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
 .btn.green{background:var(--green);color:#fff;border-color:var(--green)}
 .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
 .hint{font-size:10px;color:var(--ink3);margin-top:3px}
+/* Interruptor «ver todos los trabajos del arancel», debajo del desplegable */
+.ver-todos{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:var(--ink2);font-weight:600;cursor:pointer;user-select:none}
+.ver-todos input{width:auto;margin:0;accent-color:var(--green);cursor:pointer}
 .desglose{font-size:12px}
 .desglose div{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--border)}
 .desglose div:last-child{border-bottom:none}
@@ -96,27 +99,12 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
     <div class="g2">
       <div class="field">
         <label>Categoría</label>
-        <select id="cat" onchange="onCat()">
-          <option value="">— Seleccionar —</option>
-          <optgroup label="Urbana">
-            <option value="men_urbana">Mensura simple urbana (Art. 53)</option>
-            <option value="men_urbana_sub">Mensura y subdivisión urbana (Art. 53+52)</option>
-            <option value="men_union_sub">Mensura, Unión y Subdivisión urbana</option>
-            <option value="vep">Verificación de estado parcelario (VEP)</option>
-            <option value="ca_urbano">Certificado de amojonamiento urbano</option>
-          </optgroup>
-          <optgroup label="Rural">
-            <option value="men_rural">Mensura simple rural (Art. 49)</option>
-            <option value="men_rural_sub">Mensura y subdivisión rural (Art. 49+50)</option>
-            <option value="men_rural_union">Mensura, Unión y Subdivisión rural</option>
-            <option value="ca_rural">Certificado de amojonamiento rural</option>
-          </optgroup>
-          <optgroup label="Topografía">
-            <option value="altimetria">Nivelación / Altimetría (Art. 43-44)</option>
-            <option value="taquimetria">Planialtimétrico / Taquimetría (Art. 45)</option>
-            <option value="dias">Por días de trabajo (Art. 28)</option>
-          </optgroup>
-        </select>
+        <select id="cat" onchange="onCat()"></select>
+        <label class="ver-todos">
+          <input type="checkbox" id="cat-todos" onchange="pintarCat()">
+          Ver todos los trabajos del arancel
+        </label>
+        <div class="hint" id="cat-nota" style="display:none"></div>
       </div>
       <div class="field" id="zona-field" style="display:none">
         <label>Estado del terreno (rural)</label>
@@ -214,6 +202,7 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
           <option value="men_sub">Mensura y subdivisión</option>
           <option value="men_union_sub">Mensura, Unión y Subdivisión</option>
           <option value="men_posesion">Mensura para posesión / usucapión</option>
+          <option value="men_dsup">Mensura de derecho de superficie</option>
           <option value="amoj">Amojonamiento</option>
           <option value="ca">Certificado de amojonamiento colegiado</option>
           <option value="vep">Verificación de estado parcelario</option>
@@ -245,7 +234,7 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
       <div class="field"><label>Forma de pago</label><input id="p-pago" value="50% en concepto de seña y 50% al finalizar."></div>
     </div>
     <div class="field" style="margin-top:10px"><label>Validez</label><input id="p-validez" value="Presupuesto válido por 15 días a partir del día de la fecha."></div>
-    <div class="field" style="margin-top:10px"><label>Observaciones (si lo dejás vacío, no aparece en el PDF)</label><input id="p-notas" value="El monto incluye las tasas de visado correspondientes. No incluye las tasas de visado municipal, que quedan a cargo del cliente."></div>
+    <div class="field" style="margin-top:10px"><label>Observaciones (si lo dejás vacío, no aparece en el PDF)</label><input id="p-notas" value="Los honorarios incluyen las tasas de visado necesarias para la tramitación. No se encuentran incluidas las tasas de visado municipal ni los gastos de escribanía por certificación de firmas, que son a cargo del comitente."></div>
   </div>
   <div class="btn-row">
     <button class="btn primary" onclick="renderPreview()">👁 Vista previa</button>
@@ -484,10 +473,62 @@ const PARAMS = {
 };
 const RURALES = ['men_rural','men_rural_sub','men_rural_union','ca_rural'];
 
+// ═══════════════════════════════════════════════════════════════════════
+//  TRABAJOS DE LA CALCULADORA
+//  `frec` son los que más usamos: son los únicos que aparecen hasta que se
+//  tilda «Ver todos los trabajos del arancel».
+//  `motor` dice con qué cálculo se liquida cuando no es uno propio. Quién va
+//  con quién lo dice la hoja «Grilla de Tareas» de la planilla del Colegio,
+//  que manda cada tarea a la hoja que la calcula: la mensura para usucapión
+//  y la de derecho de superficie van a MenRural / MenUrbana, o sea el mismo
+//  cálculo que la mensura simple (y la misma Tasa 8, que en la hoja TASAS
+//  nombra a la «Mensura de Posesión» junto con las demás mensuras).
+// ═══════════════════════════════════════════════════════════════════════
+const TIPOS = [
+  { g:'Urbana', id:'men_urbana',      n:'Mensura simple urbana (Art. 53)', frec:1 },
+  { g:'Urbana', id:'men_urb_usuc',    n:'Mensura para usucapión urbana (Art. 53)', frec:1, motor:'men_urbana',
+    nota:'Se liquida con el mismo arancel que la mensura simple urbana (Grilla de Tareas del Colegio → hoja MenUrbana).' },
+  { g:'Urbana', id:'men_urbana_sub',  n:'Mensura y subdivisión urbana (Art. 53+52)', frec:1 },
+  { g:'Urbana', id:'men_union_sub',   n:'Mensura, Unión y Subdivisión urbana' },
+  { g:'Urbana', id:'men_urb_dsup',    n:'Mensura de derecho de superficie urbana', motor:'men_urbana',
+    nota:'Mismo cálculo que la mensura simple urbana (Grilla de Tareas → hoja MenUrbana).' },
+  { g:'Urbana', id:'vep',             n:'Verificación de estado parcelario (VEP)', frec:1 },
+  { g:'Urbana', id:'ca_urbano',       n:'Certificado de amojonamiento urbano', frec:1 },
+  { g:'Rural',  id:'men_rural',       n:'Mensura simple rural (Art. 49)', frec:1 },
+  { g:'Rural',  id:'men_rur_usuc',    n:'Mensura para usucapión rural (Art. 49)', frec:1, motor:'men_rural',
+    nota:'Se liquida con el mismo arancel que la mensura simple rural (Grilla de Tareas del Colegio → hoja MenRural).' },
+  { g:'Rural',  id:'men_rural_sub',   n:'Mensura y subdivisión rural (Art. 49+50)', frec:1 },
+  { g:'Rural',  id:'men_rural_union', n:'Mensura, Unión y Subdivisión rural' },
+  { g:'Rural',  id:'men_rur_dsup',    n:'Mensura de derecho de superficie rural', motor:'men_rural',
+    nota:'Mismo cálculo que la mensura simple rural (Grilla de Tareas → hoja MenRural).' },
+  { g:'Rural',  id:'ca_rural',        n:'Certificado de amojonamiento rural', frec:1 },
+  { g:'Topografía', id:'altimetria',  n:'Nivelación / Altimetría (Art. 43-44)' },
+  { g:'Topografía', id:'taquimetria', n:'Planialtimétrico / Taquimetría (Art. 45)' },
+  { g:'Topografía', id:'dias',        n:'Por días de trabajo (Art. 28)' },
+];
+function tipoDe(cat){ return TIPOS.find(t => t.id === cat) || {}; }
+// Con qué cálculo se liquida este trabajo (los que comparten arancel apuntan a otro)
+function motorDe(cat){ return tipoDe(cat).motor || cat; }
+// Arma el desplegable. Sin tildar «ver todos» muestra solo los habituales.
+function pintarCat(){
+  const sel = document.getElementById('cat'), todos = document.getElementById('cat-todos').checked;
+  const elegido = sel.value;
+  const lista = TIPOS.filter(t => todos || t.frec || t.id === elegido);
+  let html = '<option value="">— Seleccionar —</option>', grupo = '';
+  lista.forEach(t => {
+    if(t.g !== grupo){ if(grupo) html += '</optgroup>'; html += '<optgroup label="'+t.g+'">'; grupo = t.g; }
+    html += '<option value="'+t.id+'">'+t.n+'</option>';
+  });
+  if(grupo) html += '</optgroup>';
+  sel.innerHTML = html;
+  sel.value = elegido;            // el elegido siempre queda en la lista
+  if(typeof reportHeight === 'function') reportHeight();
+}
+
 // ── Globito de ayuda (el signo "?" al lado de cada campo) ──
 function ayuda(ev, cat, i){
   ev.preventDefault(); ev.stopPropagation();
-  const f=(PARAMS[cat]||[])[i]; if(!f||!f.help) return;
+  const f=(PARAMS[motorDe(cat)]||[])[i]; if(!f||!f.help) return;
   const tip=document.getElementById('tip'), q=ev.currentTarget;
   tip.innerHTML=`<div style="font-weight:700;margin-bottom:5px">${f.label}</div>${f.help}`;
   tip.style.display='block';
@@ -506,11 +547,14 @@ function gv(id){ const e=document.getElementById('p_'+id); if(!e) return 0; retu
 function gs(id){ const e=document.getElementById('p_'+id); return e?e.value:''; }
 
 function onCat(){
-  const cat=document.getElementById('cat').value;
+  const cat=document.getElementById('cat').value, mot=motorDe(cat);
   const ps=document.getElementById('params-section'), pf=document.getElementById('params-fields'), rs=document.getElementById('results-section');
-  document.getElementById('zona-field').style.display = RURALES.includes(cat) && cat!=='ca_rural' ? 'flex':'none';
+  document.getElementById('zona-field').style.display = RURALES.includes(mot) && mot!=='ca_rural' ? 'flex':'none';
+  // Aviso de los trabajos que se liquidan con el arancel de otro
+  const nt=document.getElementById('cat-nota'), nota=tipoDe(cat).nota;
+  nt.style.display = nota ? 'block' : 'none'; nt.textContent = nota || '';
   if(!cat){ ps.style.display='none'; rs.style.display='none'; return; }
-  const fields=PARAMS[cat]||[];
+  const fields=PARAMS[mot]||[];
   pf.innerHTML=`<div class="g2" style="gap:12px">${fields.map((f,i)=>{
     if(f.sub) return `<div class="sub-h">${f.sub}</div>`;
     const q=f.help?`<span class="qmark" onclick="ayuda(event,'${cat}',${i})">?</span>`:'';
@@ -534,16 +578,17 @@ function onCat(){
 
 function recalc(){
   const cat=document.getElementById('cat').value; if(!cat) return;
+  const mot=motorDe(cat);   // con qué cálculo del arancel se liquida
   const terr=TERR[document.getElementById('zona').value]||0;
   let hon=0, det=[], t8=0, tcp=0, t8Label='Tasa 8';
 
-  if(RURALES.includes(cat) && cat!=='ca_rural'){
+  if(RURALES.includes(mot) && mot!=='ca_rural'){
     const P=gv('perim'),S=gv('sup_ha'),VT=gv('vt'),adic=gv('adic_km');
     const E9 = C.r_base + C.r_km*P + diagRural(VT) + (adic>0 ? C.r_add_km*adic : 0);
     const mensura = Math.max(E9, C.u_min);
     let sub=0, uni=0;
-    if(cat==='men_rural_sub'){ sub=subFrac(E9, gv('frac')); }
-    if(cat==='men_rural_union'){ uni=gv('unions')*C.union_fijo; sub=subFrac(E9, gv('frac')); }
+    if(mot==='men_rural_sub'){ sub=subFrac(E9, gv('frac')); }
+    if(mot==='men_rural_union'){ uni=gv('unions')*C.union_fijo; sub=subFrac(E9, gv('frac')); }
     let p11 = mensura + sub + uni;
     const inc = p11*terr;
     hon = p11 + inc;
@@ -554,11 +599,11 @@ function recalc(){
     if(uni>0) det.push({k:'Unión (fijo)',v:uni});
     if(inc>0) det.push({k:'Incremento por estado del terreno',v:inc});
   }
-  else if(['men_urbana','men_urbana_sub','men_union_sub'].includes(cat)){
+  else if(['men_urbana','men_urbana_sub','men_union_sub'].includes(mot)){
     const L=gv('perim_m'),Ed=gv('edif_m'),VT=gv('vt');
     const mensura = Math.max(C.u_por_m*(L+Ed) + diagUrb(VT), C.u_min);
     let sub=0, amoj=0, uni=0, amojLotes=0;
-    if(cat!=='men_urbana'){
+    if(mot!=='men_urbana'){
       // Art.52 (planilla, hoja MenUrbana I6/I8): la subdivisión se cobra POR MANZANA
       // —cada manzana cubre hasta 10 lotes— más un adicional por cada lote en exceso.
       sub  = gv('mz_reg')*C.sub_reg_base + gv('mz_reg_exc')*C.sub_reg_exc
@@ -567,7 +612,7 @@ function recalc(){
       const ar=gv('amoj_reg'), ai=gv('amoj_irr'); amojLotes=ar+ai;
       amoj = ar*C.amoj_urb_lote + ai*C.amoj_irr_lote;
     }
-    if(cat==='men_union_sub'){ uni=gv('unions')*C.union_fijo; }
+    if(mot==='men_union_sub'){ uni=gv('unions')*C.union_fijo; }
     hon = mensura + sub + amoj + uni;
     const lotes=gv('lotes')||amojLotes||1, S2=gv('sup_m2');
     t8 = t8Urb(lotes, S2); tcp = tcpUrb(lotes);
@@ -576,34 +621,34 @@ function recalc(){
     if(amoj>0) det.push({k:`Amojonamiento Art.53 (${amojLotes} lote${amojLotes>1?'s':''})`,v:amoj});
     if(uni>0)  det.push({k:'Unión (fijo)',v:uni});
   }
-  else if(cat==='vep'){
+  else if(mot==='vep'){
     const n=gv('lotes')||1; hon=vepEscala(n); t8=C.t8_N21; tcp=0;
     det=[{k:`VEP (${n} parcela${n>1?'s':''})`,v:hon}];
   }
-  else if(cat==='ca_urbano'){
+  else if(mot==='ca_urbano'){
     const n=gv('lotes')||1; hon=certUrb(n); tcp=0;
     // Tasa del certificado (hoja CA de la planilla; no lleva Tasa Control Previo)
     t8 = tasaCAUrb(n); t8Label='Tasa Certificado';
     det=[{k:`Amojonamiento urbano (${n} lote${n>1?'s':''})`,v:hon}];
   }
-  else if(cat==='ca_rural'){
+  else if(mot==='ca_rural'){
     const ha=gv('has'); hon = ha<51?C.ca_rur_lo : ha<501?C.ca_rur_mid : C.ca_rur_hi;
     // Tasa del certificado según ha + lotes (hoja CA; sin Tasa Control Previo)
     t8 = tasaCARur(ha, gv('lotes')||1); t8Label='Tasa Certificado'; tcp=0;
     det=[{k:'Amojonamiento rural',v:hon}];
   }
-  else if(cat==='altimetria'){
+  else if(mot==='altimetria'){
     const n=gv('puntos'),L=gv('long_km'),tr=gs('transv');
     if(L>0) hon=C.alt_base+C.alt_pt_b*n+C.alt_L*L;
     else if(tr==='Sí') hon=C.alt_base+C.alt_pt_a*n;
     else hon=C.alt_base+C.alt_pt_b*n;
     det=[{k:'Altimetría / Nivelación',v:hon}];
   }
-  else if(cat==='taquimetria'){
+  else if(mot==='taquimetria'){
     const S=gv('sup_ha'),K=C.taq_K[gs('escala')]||C.taq_K['1:1000'];
     hon=C.taq_base+K*Math.sqrt(S); det=[{k:'Taquimetría / Planialtimétrico',v:hon}];
   }
-  else if(cat==='dias'){
+  else if(mot==='dias'){
     hon=gv('d_campo')*C.dia_campo+gv('d_gab')*C.dia_gab; det=[{k:'Por días de trabajo',v:hon}];
   }
 
@@ -641,11 +686,19 @@ const DESC={
   vep:'• Medición de precisión para verificar la concordancia entre el título y la realidad física, relevando límites del terreno y construcciones existentes.\n• Elaboración del certificado bajo normativa vigente, incluyendo el visado ante el Colegio de Agrimensores.\n• Tramitación, seguimiento y presentación final para la validación del estado parcelario ante Catastro Provincial y DGR.',
   planialt:'• Levantamiento taquimétrico del terreno con confección de planos con curvas de nivel.\n• Determinación de superficies y cotas.',
   croquis:'• Elaboración de croquis georreferenciado en el que se identifican claramente las partes indivisas de cada lote y las áreas comunes.',
+  men_dsup:'• Relevamiento del terreno, incluyendo cercos, construcciones y referencias físicas existentes.\n• Análisis de antecedentes y gabinete: estudio de títulos y documentación dominial para la determinación de la superficie afectada al derecho de superficie y confección del plano bajo normativa vigente.\n• Gestión administrativa: confección, seguimiento y presentación del expediente para su aprobación en Catastro Provincial.',
   otro:'',
 };
-const NOMBRES={men_rural:'Mensura simple rural',men_sub:'Mensura y subdivisión',men_union_sub:'Mensura, Unión y Subdivisión',men_posesion:'Mensura para posesión / usucapión',amoj:'Amojonamiento',ca:'Certificado de amojonamiento colegiado',vep:'Verificación de estado parcelario',planialt:'Relevamiento planialtimétrico',croquis:'Croquis de subdivisión',otro:'Trabajo de agrimensura'};
+const NOMBRES={men_rural:'Mensura simple rural',men_sub:'Mensura y subdivisión',men_union_sub:'Mensura, Unión y Subdivisión',men_posesion:'Mensura para posesión / usucapión',amoj:'Amojonamiento',ca:'Certificado de amojonamiento colegiado',vep:'Verificación de estado parcelario',planialt:'Relevamiento planialtimétrico',croquis:'Croquis de subdivisión',men_dsup:'Mensura de derecho de superficie',otro:'Trabajo de agrimensura'};
 // Mapea la categoría de la CALCULADORA al tipo de trabajo del PRESUPUESTO (ítem)
-const CAT_TO_PRES={men_urbana_sub:'men_sub',men_union_sub:'men_union_sub',men_rural:'men_rural',men_rural_sub:'men_sub',men_rural_union:'men_union_sub',vep:'vep',ca_urbano:'ca',ca_rural:'ca',altimetria:'planialt',taquimetria:'planialt'};
+const CAT_TO_PRES={men_urbana_sub:'men_sub',men_union_sub:'men_union_sub',men_rural:'men_rural',men_rural_sub:'men_sub',men_rural_union:'men_union_sub',vep:'vep',ca_urbano:'ca',ca_rural:'ca',altimetria:'planialt',taquimetria:'planialt',
+  men_urb_usuc:'men_posesion',men_rur_usuc:'men_posesion',men_urb_dsup:'men_dsup',men_rur_dsup:'men_dsup'};
+// En las observaciones, el «No» que arranca una negación va en negrita para que
+// el cliente no lo pase por alto. Mismo color que el resto: solo más fuerte.
+// Recibe el texto YA escapado, así que no reintroduce HTML del usuario.
+function resaltarNo(txt){
+  return String(txt).replace(/(^|[.;:]\s+|<br>)(No|NO)\b/g, '$1<b>$2</b>');
+}
 function loadDescripcion(){ document.getElementById('p-desc').value=DESC[document.getElementById('p-tipo').value]||''; }
 function fmtFecha(s){ if(!s) return new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}); const [y,m,d]=s.split('-'); const ms=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']; return `${parseInt(d)} de ${ms[m-1]} de ${y}`; }
 function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -684,11 +737,13 @@ function buildDoc(){
     ubic?`${b('Ubicación:')} ${esc(ubic)}`:'',
   ].filter(Boolean).join('<br>');
 
-  // Viñetas de la descripción: punto verde y primera frase (hasta los dos puntos) en negrita
+  // Viñetas de la descripción: punto verde y primera frase (hasta los dos puntos)
+  // en negrita, pero en el MISMO gris del texto (si va en negro pesa demasiado).
+  const bGris=t=>`<b style="color:${TXT}">${t}</b>`;
   const descHTML=desc?desc.split('\n').filter(l=>l.trim()).map(l=>{
     const t=l.trim().replace(/^•\s*/,'');
     const i=t.indexOf(':');
-    const cuerpo=(i>0&&i<60)?`${b(esc(t.slice(0,i+1)))}${esc(t.slice(i+1))}`:esc(t);
+    const cuerpo=(i>0&&i<60)?`${bGris(esc(t.slice(0,i+1)))}${esc(t.slice(i+1))}`:esc(t);
     return `<tr><td style="font-size:12px;color:${TXT};padding:3px 5px 3px 20px;line-height:1.6"><span style="color:${SAGE};font-weight:bold">•</span> ${cuerpo}</td><td></td></tr>`;
   }).join(''):'';
 
@@ -696,12 +751,8 @@ function buildDoc(){
   const condLineas=[
     plazo?`${b('Plazo estimado:')} ${esc(plazo)}`:'',
     pago?`${b('Condiciones de pago:')} ${esc(pago)}`:'',
-    notas?`${b('Observaciones:')} ${esc(notas)}`:'',
+    notas?`${b('Observaciones:')} ${resaltarNo(esc(notas))}`:'',
   ].filter(Boolean).join('<br>');
-  // El renglón «Tasas / visados: Incluidas» solo si las observaciones hablan de
-  // tasas y no aclaran que algo queda afuera (ahí lo explica el texto).
-  const notasL=(notas||'').toLowerCase();
-  const tasasIncluidas=notasL.includes('tasas') && !notasL.includes('no incluye');
 
   return `
   <table width="100%" style="border-collapse:collapse"><tr>
@@ -743,10 +794,6 @@ function buildDoc(){
     <td style="width:55%"></td>
     <td style="vertical-align:top">
       <table width="100%" style="border-collapse:collapse">
-        ${tasasIncluidas?`<tr>
-          <td style="padding:8px 0;font-size:13px;color:${TXT}">Tasas / visados</td>
-          <td style="padding:8px 0;text-align:right;font-size:13px;color:${TXT}">Incluidas</td>
-        </tr>`:''}
         <tr>
           <td style="border-top:2px solid ${INK};border-bottom:2px solid ${INK};padding:12px 0;font-size:16px;font-weight:bold;color:${INK}">TOTAL</td>
           <td style="border-top:2px solid ${INK};border-bottom:2px solid ${INK};padding:12px 0;text-align:right;font-size:16px;font-weight:bold;color:${INK};white-space:nowrap">${esc(totalStr)}</td>
@@ -755,15 +802,16 @@ function buildDoc(){
     </td>
   </tr></table>
 
-  ${condLineas||validez?`<table width="100%" style="border-collapse:collapse;margin-top:22px"><tr>
+  ${condLineas?`<table width="100%" style="border-collapse:collapse;margin-top:22px"><tr>
     <td style="width:3px;background:${SAGE}"></td>
     <td style="background:${BG};padding:16px 18px;font-size:12px;line-height:1.8;color:${TXT}">
-      ${condLineas}${condLineas&&validez?'<br>':''}${validez?`<span style="font-style:italic;font-size:11px">${esc(validez)}</span>`:''}
+      ${condLineas}
     </td>
   </tr></table>`:''}
 
   <div style="margin-top:30px;text-align:center;font-size:11px;letter-spacing:2px;color:${TXT};text-transform:uppercase">agrimensuraumepay@gmail.com &nbsp;|&nbsp; Tel: 2346-335364 &nbsp;|&nbsp; Villa Yacanto, Córdoba</div>
-  <div style="background:${SAGE};height:26px;margin-top:20px"></div>`;
+  <div style="background:${SAGE};height:26px;margin-top:20px"></div>
+  ${validez?`<div style="margin-top:10px;text-align:center;font-size:10px;font-style:italic;color:${TXT}">${esc(validez)}</div>`:''}`;
 }
 function renderPreview(){ document.getElementById('prev-doc').innerHTML=buildDoc(); document.getElementById('preview-wrap').style.display='block'; }
 // Nombre de archivo: Presupuesto_Apellido_TipoDeTrabajo (sin espacios ni acentos)
@@ -1070,6 +1118,7 @@ const EMBED = new URLSearchParams(location.search).get('embed')==='1';
 function reportHeight(){ if(EMBED) parent.postMessage({type:'umepayCalcHeight',height:document.body.scrollHeight},'*'); }
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('p-fecha').value=new Date().toISOString().split('T')[0];
+  pintarCat();
   loadDescripcion(); selfTest();
   cargarTrabajos();
   // Al elegir un trabajo, si el nombre del solicitante está vacío se completa solo
