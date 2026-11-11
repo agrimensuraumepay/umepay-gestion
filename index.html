@@ -432,6 +432,18 @@ tr:hover td{background:var(--bg)}
   .mx-cat{padding:12px 10px}
 }
 /* Dónde está parada la plata: efectivo y USDT de cada socio */
+/* Detalle de un bolsillo: la foto cargada a mano y cada movimiento posterior */
+.caja-click{cursor:pointer;user-select:none}
+.caja-click:hover{color:var(--green,#657264)}
+.caja-flecha{display:inline-block;width:12px;color:var(--ink3)}
+.caja-chip{font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3);border:1px solid var(--border,#ddd);border-radius:8px;padding:1px 5px;margin-left:5px}
+.caja-det{background:var(--bg2);padding:8px 12px}
+.caja-det-l{display:flex;align-items:center;gap:10px;justify-content:space-between;font-size:11px;color:var(--ink2);padding:3px 0}
+.caja-det-l>span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.caja-det-l>b{white-space:nowrap;font-variant-numeric:tabular-nums}
+.caja-det-l>b.neg{color:#b91c1c}
+.caja-det-l>b.pos{color:#15803d}
+.caja-det-l.base{border-bottom:1px dashed var(--border,#ddd);padding-bottom:6px;margin-bottom:4px;color:var(--ink3)}
 .plata-tabla{width:100%;border-collapse:collapse;font-size:12.5px}
 .plata-tabla th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;
   color:var(--ink3);font-weight:600;padding:5px 8px;border-bottom:1px solid var(--border)}
@@ -2574,16 +2586,30 @@ function bolsilloDe(m){
 // Saldo de un bolsillo = lo último que cargaste a mano, más todos los
 // movimientos de caja que registraste DESPUÉS de esa carga. Así, si editás o
 // borrás un movimiento, el saldo se reacomoda solo.
+// ¿Este movimiento de caja es POSTERIOR a la última foto que cargaste a mano?
+// La foto ya contiene todo lo que había pasado hasta ese día, así que solo se
+// descuentan los movimientos más nuevos. Antes se miraba cuándo se CARGÓ el
+// movimiento (created_at) y no cuándo PASÓ: por eso un gasto viejo cargado con
+// atraso se restaba de nuevo sobre una foto que ya lo tenía adentro.
+function posteriorALaFoto(m, r){
+  if(!r.actualizado) return true;                 // nunca se cargó la foto: entran todos
+  const foto = String(r.actualizado), dia = foto.slice(0,10);
+  const f = String(m.fecha||'').slice(0,10);
+  if(!f) return String(m.created_at||'') > foto;  // sin fecha, por cuándo se cargó
+  if(f !== dia) return f > dia;
+  return String(m.created_at||'') > foto;          // mismo día: desempata la carga
+}
 function saldoBolsillo(nombre){
   const r = filaCaja(nombre);
-  let ars = parseFloat(r.monto_ars)||0, usd = parseFloat(r.monto_usd)||0;
-  const movs = DB.movimientos.filter(m => esDeCaja(m) && bolsilloDe(m) === nombre
-    && String(m.created_at||'') > String(r.actualizado||''));
+  const baseArs = parseFloat(r.monto_ars)||0, baseUsd = parseFloat(r.monto_usd)||0;
+  let ars = baseArs, usd = baseUsd;
+  const movs = DB.movimientos.filter(m => esDeCaja(m) && bolsilloDe(m) === nombre && posteriorALaFoto(m, r));
+  movs.sort((a,b) => String(a.fecha||'').localeCompare(String(b.fecha||'')));
   movs.forEach(m => {
     const v = (parseFloat(m.monto)||0) * (m.tipo === 'ingreso' ? 1 : -1);
     if(m.moneda === 'USDT' || m.moneda === 'U$D') usd += v; else ars += v;
   });
-  return { ars, usd, movs: movs.length };
+  return { ars, usd, movs: movs.length, lista: movs, baseArs, baseUsd, foto: r.actualizado||'' };
 }
 function renderPlataCaja(){
   const cont = document.getElementById('plata-caja');
@@ -2596,9 +2622,14 @@ function renderPlataCaja(){
     const sa = saldoBolsillo(b.id);
     const ars = b.ars ? sa.ars : 0;
     tArs += ars; tUsd += sa.usd; tMovs += sa.movs;
-    return `<tr><td>${b.id}</td>
+    const n = sa.movs;
+    const flecha = n ? `<span class="caja-flecha" id="cjf-${b.campo}">▸</span> ` : '';
+    const chip = n ? ` <span class="caja-chip">${n} mov</span>` : '';
+    const clic = n ? ` class="caja-click" onclick="toggleCajaDet('${b.campo}')" title="Ver qué movió este bolsillo"` : '';
+    return `<tr><td${clic}>${flecha}${b.id}${chip}</td>
       <td class="num">${b.ars ? (ars ? fmtC(ars,'$') : '—') : ''}</td>
-      <td class="num">${sa.usd ? fmtC(sa.usd,'U$D') : '—'}</td></tr>`;
+      <td class="num">${sa.usd ? fmtC(sa.usd,'U$D') : '—'}</td></tr>`
+      + (n ? `<tr id="cjd-${b.campo}" style="display:none"><td colspan="3" class="caja-det">${detalleBolsillo(sa, b)}</td></tr>` : '');
   }).join('');
   const ult = DB.caja.map(c=>c.actualizado).filter(Boolean).sort().pop();
   const nota = (DB.caja.find(c=>c.nota) || {}).nota || '';
@@ -2615,9 +2646,35 @@ function renderPlataCaja(){
       <div style="font-size:11px;color:var(--ink3);line-height:1.5">
         ${nota ? escHtml(nota)+'<br>' : ''}
         ${ult ? 'Cargado a mano el '+fmtFecha(ult) : 'Todavía sin cargar: tocá «Actualizar» y poné lo que tienen hoy.'}
-        ${tMovs ? `, más ${tMovs} movimiento${tMovs>1?'s':''} de caja registrado${tMovs>1?'s':''} después.` : ''}</div>
+        ${tMovs ? `, más ${tMovs} movimiento${tMovs>1?'s':''} de caja posterior${tMovs>1?'es':''}.
+          <br>Tocá un bolsillo para ver qué lo movió.` : ''}</div>
       <button class="btn sm" onclick="editarPlataCaja()">✎ Actualizar</button>
     </div>`;
+}
+// Qué hay detrás del número de un bolsillo: la foto que cargaste a mano y cada
+// movimiento posterior, uno por uno. Es la forma de ver de dónde sale un saldo raro.
+function detalleBolsillo(sa, b){
+  const num = (v, mon) => (v<0?'− ':'+ ') + Math.abs(v).toLocaleString('es-AR',
+    {maximumFractionDigits: Math.abs(v % 1) > 0.004 ? 2 : 0}) + ' ' + mon;
+  const lineas = sa.lista.map(m => {
+    const v = (parseFloat(m.monto)||0) * (m.tipo === 'ingreso' ? 1 : -1);
+    const mon = m.moneda === 'USDT' ? 'USDT' : m.moneda === 'U$D' ? 'U$D' : '$';
+    return `<div class="caja-det-l"><span>${fmtFecha(m.fecha)} · ${escHtml(m.descripcion||'(sin detalle)')}</span>
+      <b class="${v<0?'neg':'pos'}">${num(v, mon)}</b>
+      <button class="btn sm" onclick="editMovimiento('${m.id}')" title="Abrir el movimiento">✎</button></div>`;
+  }).join('');
+  const base = [];
+  if(b.ars) base.push(sa.baseArs.toLocaleString('es-AR',{maximumFractionDigits:2}) + ' $');
+  if(sa.baseUsd) base.push(sa.baseUsd.toLocaleString('es-AR',{maximumFractionDigits:2}) + ' U$D');
+  return `<div class="caja-det-l base"><span>Lo que cargaste a mano${sa.foto ? ' el '+fmtFecha(sa.foto) : ''}</span>
+      <b>${base.join(' + ') || '0'}</b><span style="width:28px"></span></div>${lineas}`;
+}
+function toggleCajaDet(campo){
+  const fila = document.getElementById('cjd-'+campo), fl = document.getElementById('cjf-'+campo);
+  if(!fila) return;
+  const abierta = fila.style.display !== 'none';
+  fila.style.display = abierta ? 'none' : '';
+  if(fl) fl.textContent = abierta ? '▸' : '▾';
 }
 function editarPlataCaja(){
   BOLSILLOS.forEach(b => {
