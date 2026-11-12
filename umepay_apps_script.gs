@@ -193,6 +193,42 @@ function getAll(name) {
   return { rows: rows };
 }
 
+/* ------------------------------------------------------------------
+ *  LOS MONTOS ENTRAN COMO NUMERO, NUNCA COMO TEXTO
+ *  Si a una celda se le pasa el texto "6.3", Google Sheets lo interpreta
+ *  como una FECHA (6 de marzo) y el monto queda destruido: eso le paso a
+ *  "Planos Silvino" (6,3 USDT quedo como 2026-03-06) y a "Plano de silvino
+ *  v2" (6,06 USDT quedo como 2026-06-06).
+ *  Solo se convierten los campos de dinero, y solo cuando el texto es un
+ *  numero puro: asi un numero de cuenta o una nomenclatura con ceros
+ *  adelante siguen entrando tal cual.
+ * ---------------------------------------------------------------- */
+var CAMPOS_NUMERICOS = ['monto', 'monto_pesos', 'monto_ars', 'monto_usd',
+                        'cambio', 'puntaje', 'superficie'];
+
+function valorCelda(clave, v) {
+  if (CAMPOS_NUMERICOS.indexOf(clave) < 0) return v;
+  if (typeof v === 'number') return v;
+  if (typeof v !== 'string') return v;
+  var t = v.trim();
+  if (!t) return v;
+  if (/^-?\d{1,3}(\.\d{3})*,\d+$/.test(t)) t = t.replace(/\./g, '').replace(',', '.');
+  else if (/^-?\d+,\d+$/.test(t)) t = t.replace(',', '.');
+  if (!/^-?\d+(\.\d+)?$/.test(t)) return v;
+  var n = Number(t);
+  return isNaN(n) ? v : n;
+}
+
+// Una celda que alguna vez quedo con formato de fecha sigue mostrando fechas
+// aunque le entre un numero: por eso al escribir un monto se le devuelve el
+// formato automatico.
+function escribirCelda(sh, fila, col, clave, valor) {
+  var v = valorCelda(clave, valor);
+  var rango = sh.getRange(fila, col);
+  if (typeof v === 'number') rango.setNumberFormat('0.##########');
+  rango.setValue(v);
+}
+
 function insertRow(name, data) {
   var sh = getSheet(name);
   var headers = getHeaders(sh);
@@ -200,8 +236,17 @@ function insertRow(name, data) {
   if (!data.id) data.id = 'id_' + new Date().getTime() + '_' + Math.floor(Math.random() * 100000);
   if (!data.created_at) data.created_at = new Date().toISOString();
   headers = ensureColumns(sh, headers, Object.keys(data));
-  var row = headers.map(function (h) { return data[h] !== undefined ? data[h] : ''; });
+  var row = headers.map(function (h) {
+    return data[h] !== undefined ? valorCelda(h, data[h]) : '';
+  });
   sh.appendRow(row);
+  // La fila recien agregada: a los montos se les saca cualquier formato de fecha
+  var fila = sh.getLastRow();
+  headers.forEach(function (h, i) {
+    if (CAMPOS_NUMERICOS.indexOf(h) >= 0 && typeof row[i] === 'number') {
+      sh.getRange(fila, i + 1).setNumberFormat('0.##########');
+    }
+  });
   return { ok: true, id: data.id };
 }
 
@@ -219,7 +264,7 @@ function updateRow(name, id, data) {
       var rowNum = i + 2;
       Object.keys(data).forEach(function (k) {
         var col = headers.indexOf(k);
-        if (col >= 0) sh.getRange(rowNum, col + 1).setValue(data[k]);
+        if (col >= 0) escribirCelda(sh, rowNum, col + 1, k, data[k]);
       });
       return { ok: true, id: id };
     }

@@ -2584,6 +2584,9 @@ const BOLSILLOS = [
 // decimal: siempre el último que aparece; el otro es separador de miles.
 function aNum(v){
   if(typeof v === 'number') return isFinite(v) ? v : 0;
+  // Un monto que la planilla devuelve convertido en fecha no es un número:
+  // mejor que quede en cero y se note, antes que colar un 2026 en los totales.
+  if(/^\d{4}-\d{2}-\d{2}T/.test(String(v == null ? '' : v).trim())) return 0;
   let t = String(v == null ? '' : v).replace(/[^0-9,.\-]/g, '');
   if(!t) return 0;
   const coma = t.lastIndexOf(','), punto = t.lastIndexOf('.');
