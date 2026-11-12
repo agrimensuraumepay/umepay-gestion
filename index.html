@@ -94,7 +94,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 .tab{display:none}.tab.active{display:block}
 /* Grilla de tarjetas (normativas): 1 columna en el cel, 2 o 3 en la compu */
 .card-grid{display:grid;grid-template-columns:1fr;gap:10px;align-items:start}
-@media(min-width:1050px){ .card-grid{grid-template-columns:repeat(2,1fr)} }
+/* Desde 900 px ya entran dos columnas: es el ancho de una tablet apaisada */
+@media(min-width:900px){ .card-grid{grid-template-columns:repeat(2,1fr)} }
 @media(min-width:1500px){ .card-grid{grid-template-columns:repeat(3,1fr)} }
 /* ── DASHBOARD CARDS ── */
 .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:24px}
@@ -286,7 +287,7 @@ tr:hover td{background:var(--bg)}
 @media(max-width:900px){ .mov-cols{grid-template-columns:1fr} }
 /* Resumen arriba: la caja y el balance entre socios, uno al lado del otro */
 .fin-top{display:grid;grid-template-columns:1fr;gap:16px;align-items:stretch;margin-bottom:16px}
-@media(min-width:1200px){ .fin-top{grid-template-columns:1.5fr 1fr} }
+@media(min-width:1000px){ .fin-top{grid-template-columns:1.5fr 1fr} }
 .fin-top .caja-card,.fin-top .balance-card{margin-bottom:0;display:flex;flex-direction:column}
 .fin-top .balance-card>div:last-child{margin-top:auto}
 .mov-col-hdr{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;padding:8px 12px;border-radius:var(--r) var(--r) 0 0;border:1px solid var(--border);border-bottom:none}
@@ -321,7 +322,7 @@ tr:hover td{background:var(--bg)}
 /* En la compu la ficha se abre en dos columnas: a la izquierda el trabajo y
    sus trámites, a la derecha la plata, los archivos y el historial. */
 .ficha-cols{display:grid;grid-template-columns:1fr;gap:0}
-@media(min-width:1100px){ .ficha-cols{grid-template-columns:1.15fr 1fr;gap:18px;align-items:start} }
+@media(min-width:900px){ .ficha-cols{grid-template-columns:1.15fr 1fr;gap:18px;align-items:start} }
 .ficha-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
 .ficha-cliente{font-family:var(--serif);font-size:21px;font-weight:600}
 .ficha-tipo{font-size:12px;color:var(--ink3);margin:2px 0 12px}
@@ -381,7 +382,7 @@ tr:hover td{background:var(--bg)}
 .caja-nota{font-size:11px;color:var(--ink3);margin-top:9px;line-height:1.5}
 /* Los dos paneles plegables, uno al lado del otro en la compu */
 .paneles{display:grid;grid-template-columns:1fr;gap:0;align-items:start}
-@media(min-width:1200px){ .paneles{grid-template-columns:1.7fr 1fr;gap:16px} }
+@media(min-width:1000px){ .paneles{grid-template-columns:1.7fr 1fr;gap:16px} }
 .paneles>.tiempos{margin-bottom:16px}
 @media(min-width:1200px){ .paneles>.tiempos{margin-bottom:18px} }
 /* ── MATRIZ DE PUNTAJES CATASTRAL ──
