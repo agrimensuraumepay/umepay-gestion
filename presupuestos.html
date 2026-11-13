@@ -250,6 +250,13 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
     </div>
     <div class="field" style="margin-top:10px"><label>Validez</label><input id="p-validez" value="Presupuesto válido por 15 días a partir del día de la fecha."></div>
     <div class="field" style="margin-top:10px"><label>Observaciones (si lo dejás vacío, no aparece en el PDF)</label><input id="p-notas" value="Los honorarios incluyen las tasas de visado necesarias para la tramitación. No se encuentran incluidas las tasas de visado municipal ni los gastos de escribanía por certificación de firmas, que son a cargo del comitente."></div>
+    <div class="field" style="margin-top:10px">
+      <label class="ver-todos" style="margin-top:0">
+        <input type="checkbox" id="p-limp-on" checked onchange="toggleLimpieza()">
+        Aclarar que no incluye la limpieza de los vértices
+      </label>
+      <input id="p-limp" value="No se incluye la limpieza ni el desmalezado de los vértices y las líneas de mensura. Si la vegetación impide el acceso o la visual, esa tarea se cotiza y se abona aparte: puede realizarla el comitente por su cuenta o un tercero, para lo cual el estudio puede facilitar un contacto.">
+    </div>
   </div>
   <div class="btn-row">
     <button class="btn primary" onclick="renderPreview()">👁 Vista previa</button>
@@ -775,6 +782,13 @@ function pintarItems(){
   const b=document.getElementById('btn-add-item');
   if(b) b.style.display=extras.length>=MAX_ITEMS-1?'none':'inline-flex';
 }
+// La nota de limpieza de vértices entra al PDF solo si la casilla está tildada;
+// el texto queda editable, así se adapta a cada caso (zarzamora, monte, etc.).
+function toggleLimpieza(){
+  const on=document.getElementById('p-limp-on'), e=document.getElementById('p-limp');
+  if(e) e.style.display=(on&&on.checked)?'':'none';
+  if(typeof reportHeight==='function') reportHeight();
+}
 // Al elegir el tipo se completan el título y la descripción, que después se editan
 function loadDescripcion(sfx){
   sfx=sfx||'';
@@ -795,6 +809,8 @@ function buildDoc(){
   const depto=g('p-depto'),loc=g('p-loc'),cuenta=g('p-cuenta'),nomen=g('p-nomen'),desig=g('p-desig'),sup=g('p-sup'),tipoParc=g('p-tipoparcela');
   const items=itemsDe(), varias=items.length>1;
   const plazo=g('p-plazo'),pago=g('p-pago'),validez=g('p-validez'),notas=g('p-notas');
+  const tildado=id=>{ const e=document.getElementById(id); return !!(e&&e.checked); };
+  const limpieza=tildado('p-limp-on')?g('p-limp'):'';
   const hasInm=depto||loc||cuenta||nomen||desig||sup||tipoParc;
 
   // Paleta del modelo (verde del logo #657264 + grises del diseño)
@@ -862,6 +878,7 @@ function buildDoc(){
     plazo?`${b('Plazo estimado:')} ${esc(plazo)}`:'',
     pago?`${b('Condiciones de pago:')} ${esc(pago)}`:'',
     notas?`${b('Observaciones:')} ${resaltarNo(esc(notas))}`:'',
+    limpieza?`${b('Limpieza de vértices:')} ${resaltarNo(esc(limpieza))}`:'',
   ].filter(Boolean).join('<br>');
 
   return `
@@ -1031,6 +1048,7 @@ function datosPresupuesto(){
     // Todas las opciones del presupuesto (con una sola, es el mismo ítem de arriba)
     opciones: itemsDe().map(it=>({titulo:it.titulo, moneda:it.moneda, monto:it.monto})),
     plazo:g('p-plazo'), pago:g('p-pago'),
+    limpieza: (document.getElementById('p-limp-on')||{}).checked?g('p-limp'):'',
     generado_el: new Date().toISOString(),
     arancel_version: ARANCEL_VERSION,
     calculadora: cat?{categoria:cat, params, arancel:lastResult}:null
