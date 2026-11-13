@@ -51,6 +51,11 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
 /* Interruptor «ver todos los trabajos del arancel», debajo del desplegable */
 .ver-todos{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:var(--ink2);font-weight:600;cursor:pointer;user-select:none}
 .ver-todos input{width:auto;margin:0;accent-color:var(--green);cursor:pointer}
+.item-card{border:1px solid var(--border2);border-radius:8px;padding:12px;margin-bottom:10px;background:var(--bg)}
+.item-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--green)}
+.item-x{background:none;border:none;color:var(--ink3);cursor:pointer;font-size:13px;padding:0 4px;font-family:var(--mono)}
+.item-x:hover{color:var(--amber)}
+.btn.sm{padding:6px 12px;font-size:11px}
 .desglose{font-size:12px}
 .desglose div{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--border)}
 .desglose div:last-child{border-bottom:none}
@@ -193,7 +198,10 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
     <div class="field" style="margin-top:10px"><label>Ubicación (descripción del informe de dominio)</label><textarea id="p-loc" placeholder="Ej: LOTE DE TERRENO; baldío ubicado en VILLA YACANTO, Pedanía Santa Rosa, DPTO. CALAMUCHITA"></textarea></div>
   </div>
   <div class="section">
-    <div class="sec-title">Ítem del presupuesto</div>
+    <div class="sec-title">Ítems del presupuesto</div>
+    <div class="hint" style="margin:-10px 0 12px">Con un solo ítem el presupuesto sale como siempre. Si agregás más, el PDF los presenta como <b>opciones alternativas</b> para que el cliente elija una (no se suman).</div>
+    <div class="item-card" id="item-1">
+    <div class="item-head" id="item-1-head" style="display:none"><span>Opción 1</span></div>
     <div class="g2">
       <div class="field">
         <label>Tipo de trabajo</label>
@@ -223,9 +231,16 @@ body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13p
       </div>
     </div>
     <div class="field" style="margin-top:10px">
+      <label>Título que sale en el PDF (editable)</label>
+      <input id="p-titulo" placeholder="Se completa solo con el tipo de trabajo">
+    </div>
+    <div class="field" style="margin-top:10px">
       <label>Descripción de tareas (editable)</label>
       <textarea id="p-desc" style="min-height:120px"></textarea>
     </div>
+    </div>
+    <div id="items-extra"></div>
+    <button class="btn sm" id="btn-add-item" onclick="addItem()">+ Agregar otra opción</button>
   </div>
   <div class="section">
     <div class="sec-title">Condiciones</div>
@@ -699,7 +714,74 @@ const CAT_TO_PRES={men_urbana_sub:'men_sub',men_union_sub:'men_union_sub',men_ru
 function resaltarNo(txt){
   return String(txt).replace(/(^|[.;:]\s+|<br>)(No|NO)\b/g, '$1<b>$2</b>');
 }
-function loadDescripcion(){ document.getElementById('p-desc').value=DESC[document.getElementById('p-tipo').value]||''; }
+/* ── Ítems / opciones del presupuesto ────────────────────────────
+ * El ítem 1 está en el HTML y conserva los IDs de siempre (p-tipo, p-monto…),
+ * así que un presupuesto de un solo ítem sale exactamente igual que antes.
+ * Las opciones que se agregan llevan sufijo: p-tipo-2, p-monto-2, etc.
+ * Son ALTERNATIVAS entre sí — el cliente elige una —, NO se suman.
+ * ───────────────────────────────────────────────────── */
+const MAX_ITEMS = 4;
+function gv(id){ const e=document.getElementById(id); return e?e.value:''; }
+function sv(id,v){ const e=document.getElementById(id); if(e) e.value=v; }
+// Sufijos de los ítems que existen hoy en pantalla ('' es el primero)
+function sufijos(){ const r=['']; for(let i=2;i<=MAX_ITEMS;i++){ if(document.getElementById('p-monto-'+i)) r.push('-'+i); } return r; }
+function itemsDe(){
+  const out=[];
+  sufijos().forEach(sfx=>{
+    const tipo=gv('p-tipo'+sfx), monto=gv('p-monto'+sfx), titulo=gv('p-titulo'+sfx).trim(), desc=gv('p-desc'+sfx);
+    // Una opción agregada y dejada en blanco no sale en el PDF
+    if(sfx && !monto && !titulo && !desc.trim()) return;
+    out.push({ tipo, moneda:gv('p-moneda'+sfx), monto, desc, titulo: titulo || NOMBRES[tipo] || tipo });
+  });
+  return out.length?out:[{tipo:'otro',moneda:'$',monto:'',desc:'',titulo:NOMBRES.otro}];
+}
+function addItem(){
+  let n=0; for(let i=2;i<=MAX_ITEMS;i++){ if(!document.getElementById('p-monto-'+i)){ n=i; break; } }
+  if(!n){ alert('Por ahora el presupuesto admite hasta '+MAX_ITEMS+' opciones.'); return; }
+  // Los tipos y las monedas se copian del ítem 1: una sola lista para mantener
+  const opts=document.getElementById('p-tipo').innerHTML;
+  const monedas=document.getElementById('p-moneda').innerHTML;
+  const d=document.createElement('div');
+  d.className='item-card'; d.id='item-'+n;
+  d.innerHTML=
+    '<div class="item-head"><span>Opci\u00f3n '+n+'</span>'
+    + '<button class="item-x" onclick="quitarItem('+n+')" title="Quitar esta opci\u00f3n">\u2715</button></div>'
+    + '<div class="g2"><div class="field"><label>Tipo de trabajo</label>'
+    + '<select id="p-tipo-'+n+'" onchange="loadDescripcion(\'-'+n+'\')">'+opts+'</select></div>'
+    + '<div class="g2" style="gap:8px"><div class="field"><label>Moneda</label>'
+    + '<select id="p-moneda-'+n+'">'+monedas+'</select></div>'
+    + '<div class="field"><label>Monto</label><input type="number" id="p-monto-'+n+'" placeholder="Ej: 600000"></div></div></div>'
+    + '<div class="field" style="margin-top:10px"><label>T\u00edtulo que sale en el PDF</label>'
+    + '<input id="p-titulo-'+n+'"></div>'
+    + '<div class="field" style="margin-top:10px"><label>Descripci\u00f3n de tareas</label>'
+    + '<textarea id="p-desc-'+n+'" style="min-height:100px"></textarea></div>';
+  document.getElementById('items-extra').appendChild(d);
+  loadDescripcion('-'+n);
+  pintarItems();
+  if(typeof reportHeight==='function') reportHeight();
+}
+function quitarItem(n){
+  const d=document.getElementById('item-'+n); if(d) d.remove();
+  pintarItems();
+  if(typeof reportHeight==='function') reportHeight();
+}
+// El rótulo «Opción 1» aparece solo cuando hay más de un ítem, y los de abajo
+// se renumeran de corrido si se borró uno del medio.
+function pintarItems(){
+  const extras=[].slice.call(document.querySelectorAll('#items-extra .item-card'));
+  const h1=document.getElementById('item-1-head');
+  if(h1) h1.style.display=extras.length?'flex':'none';
+  extras.forEach((d,i)=>{ const s=d.querySelector('.item-head span'); if(s) s.textContent='Opci\u00f3n '+(i+2); });
+  const b=document.getElementById('btn-add-item');
+  if(b) b.style.display=extras.length>=MAX_ITEMS-1?'none':'inline-flex';
+}
+// Al elegir el tipo se completan el título y la descripción, que después se editan
+function loadDescripcion(sfx){
+  sfx=sfx||'';
+  const t=gv('p-tipo'+sfx);
+  sv('p-desc'+sfx, DESC[t]||'');
+  sv('p-titulo'+sfx, NOMBRES[t]||'');
+}
 function fmtFecha(s){ if(!s) return new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}); const [y,m,d]=s.split('-'); const ms=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']; return `${parseInt(d)} de ${ms[m-1]} de ${y}`; }
 function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function fmtMonto(m,mon){ return mon+' '+parseFloat(m).toLocaleString('es-AR',{maximumFractionDigits:0}); } //   = espacio sin corte: el importe nunca queda en dos renglones
@@ -711,9 +793,9 @@ function buildDoc(){
   const g=id=>document.getElementById(id).value;
   const cliente=g('p-cliente')||'—', fecha=fmtFecha(g('p-fecha'));
   const depto=g('p-depto'),loc=g('p-loc'),cuenta=g('p-cuenta'),nomen=g('p-nomen'),desig=g('p-desig'),sup=g('p-sup'),tipoParc=g('p-tipoparcela');
-  const tipo=g('p-tipo'),moneda=g('p-moneda'),monto=g('p-monto'),desc=g('p-desc');
+  const items=itemsDe(), varias=items.length>1;
   const plazo=g('p-plazo'),pago=g('p-pago'),validez=g('p-validez'),notas=g('p-notas');
-  const nombre=NOMBRES[tipo]||tipo, hasInm=depto||loc||cuenta||nomen||desig||sup||tipoParc;
+  const hasInm=depto||loc||cuenta||nomen||desig||sup||tipoParc;
 
   // Paleta del modelo (verde del logo #657264 + grises del diseño)
   const SAGE='#657264', INK='#2b2b2b', TXT='#666666', RULE='#d1d1d1', BG='#f9f9f9';
@@ -722,7 +804,8 @@ function buildDoc(){
   // Todo el documento se arma con TABLAS e inline styles: es lo único que el
   // convertidor HTML→PDF de Google Drive respeta siempre (flex/grid/SVG lo rompen).
   const lbl=`font-family:${SERIF};font-size:14px;letter-spacing:1px;color:${INK};margin-bottom:7px;text-transform:uppercase`;
-  const totalStr=monto?fmtMonto(monto,moneda):'—';
+  const impDe=it=>it.monto?fmtMonto(it.monto,it.moneda):'—';
+  const totalStr=impDe(items[0]);
 
   // Datos del inmueble en renglones compactos (solo los que tienen valor), en este orden:
   // nomenclatura → tipo de parcela → cuenta y superficie → designación oficial → ubicación
@@ -740,15 +823,42 @@ function buildDoc(){
   // Viñetas de la descripción: punto verde y primera frase (hasta los dos puntos)
   // en negrita, pero en el MISMO gris del texto (si va en negro pesa demasiado).
   const bGris=t=>`<b style="color:${TXT}">${t}</b>`;
-  const descHTML=desc?desc.split('\n').filter(l=>l.trim()).map(l=>{
+  const descFilas=d=>d?d.split('\n').filter(l=>l.trim()).map(l=>{
     const t=l.trim().replace(/^•\s*/,'');
     const i=t.indexOf(':');
     const cuerpo=(i>0&&i<60)?`${bGris(esc(t.slice(0,i+1)))}${esc(t.slice(i+1))}`:esc(t);
     return `<tr><td style="font-size:12px;color:${TXT};padding:3px 5px 3px 20px;line-height:1.6"><span style="color:${SAGE};font-weight:bold">•</span> ${cuerpo}</td><td></td></tr>`;
   }).join(''):'';
 
+  // Un ítem: igual que siempre. Varios: cada uno con su rótulo OPCIÓN N,
+  // su importe y sus viñetas, separados por una línea fina.
+  const filasHTML=items.map((it,i)=>{
+    const rotulo=varias?`<tr><td colspan="2" style="padding:${i?14:12}px 5px 0;font-size:10px;font-weight:bold;letter-spacing:1.5px;color:${SAGE}">OPCIÓN ${i+1}</td></tr>`:'';
+    const pad=varias?'3px':'14px';
+    return rotulo
+      + `<tr><td style="padding:${pad} 5px 6px;font-size:14px;font-weight:bold;color:${INK}">${esc(it.titulo)}</td>`
+      + `<td style="padding:${pad} 5px 6px;text-align:right;font-size:14px;font-weight:bold;color:${INK};vertical-align:top;white-space:nowrap">${esc(impDe(it))}</td></tr>`
+      + descFilas(it.desc)
+      + (varias&&i<items.length-1?`<tr><td colspan="2" style="border-bottom:1px solid #eeeeee;padding-top:10px"></td></tr>`:'');
+  }).join('');
+
+  // Con varias opciones no hay TOTAL: sumarlas sería engañoso, son alternativas.
+  // La aclaración entra como primera línea del recuadro de condiciones.
+  const cierreHTML=varias ? '' : `<table width="100%" style="border-collapse:collapse;margin-top:18px"><tr>
+    <td style="width:55%"></td>
+    <td style="vertical-align:top">
+      <table width="100%" style="border-collapse:collapse">
+        <tr>
+          <td style="border-top:2px solid ${INK};border-bottom:2px solid ${INK};padding:12px 0;font-size:16px;font-weight:bold;color:${INK}">TOTAL</td>
+          <td style="border-top:2px solid ${INK};border-bottom:2px solid ${INK};padding:12px 0;text-align:right;font-size:16px;font-weight:bold;color:${INK};white-space:nowrap">${esc(totalStr)}</td>
+        </tr>
+      </table>
+    </td>
+  </tr></table>`;
+
   // Recuadro de condiciones (solo renglones con contenido; observaciones opcional)
   const condLineas=[
+    varias?`${b('Opciones alternativas:')} los importes corresponden a cada opción por separado; el comitente puede optar por la que prefiera.`:'',
     plazo?`${b('Plazo estimado:')} ${esc(plazo)}`:'',
     pago?`${b('Condiciones de pago:')} ${esc(pago)}`:'',
     notas?`${b('Observaciones:')} ${resaltarNo(esc(notas))}`:'',
@@ -782,25 +892,11 @@ function buildDoc(){
       <td style="border-bottom:2px solid ${SAGE};padding:10px 5px;font-size:11px;font-weight:bold;letter-spacing:1.5px;color:${SAGE}">DESCRIPCIÓN DEL SERVICIO</td>
       <td style="border-bottom:2px solid ${SAGE};padding:10px 5px;text-align:right;font-size:11px;font-weight:bold;letter-spacing:1.5px;color:${SAGE}">IMPORTE</td>
     </tr>
-    <tr>
-      <td style="padding:14px 5px 6px;font-size:14px;font-weight:bold;color:${INK}">${esc(nombre)}</td>
-      <td style="padding:14px 5px 6px;text-align:right;font-size:14px;font-weight:bold;color:${INK};vertical-align:top;white-space:nowrap">${esc(totalStr)}</td>
-    </tr>
-    ${descHTML}
+    ${filasHTML}
     <tr><td colspan="2" style="border-bottom:1px solid #eeeeee;padding-top:12px"></td></tr>
   </table>
 
-  <table width="100%" style="border-collapse:collapse;margin-top:18px"><tr>
-    <td style="width:55%"></td>
-    <td style="vertical-align:top">
-      <table width="100%" style="border-collapse:collapse">
-        <tr>
-          <td style="border-top:2px solid ${INK};border-bottom:2px solid ${INK};padding:12px 0;font-size:16px;font-weight:bold;color:${INK}">TOTAL</td>
-          <td style="border-top:2px solid ${INK};border-bottom:2px solid ${INK};padding:12px 0;text-align:right;font-size:16px;font-weight:bold;color:${INK};white-space:nowrap">${esc(totalStr)}</td>
-        </tr>
-      </table>
-    </td>
-  </tr></table>
+  ${cierreHTML}
 
   ${condLineas?`<table width="100%" style="border-collapse:collapse;margin-top:22px"><tr>
     <td style="width:3px;background:${SAGE}"></td>
@@ -821,8 +917,10 @@ function nombreArchivo(){
     .filter(w=>w && !['y','e','o','de','del','la','el','los','las','para','con','a'].includes(w.toLowerCase()))
     .map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join('');
   const apellido = ((document.getElementById('p-cliente').value||'').trim().split(/\s+/)[0]) || 'Cliente';
-  const tipo = NOMBRES[document.getElementById('p-tipo').value] || 'Trabajo';
-  return `Presupuesto_${camel(apellido)}_${camel(tipo)}`;
+  const its = itemsDe();
+  const tipo = its[0].titulo || 'Trabajo';
+  const ops = its.length>1 ? `_${its.length}Opciones` : '';
+  return `Presupuesto_${camel(apellido)}_${camel(tipo)}${ops}`;
 }
 // Documento HTML completo del presupuesto (withPrint=true agrega el auto-imprimir).
 function docHTML(withPrint){
@@ -876,17 +974,22 @@ async function guardarEnDrive(){
   // Además queda una fila en el registro de Presupuestos, con todos los datos usados para el cálculo
   try{
     const datos=datosPresupuesto();
+    // En el registro el monto es el de la primera opción; todas quedan en las notas
+    const rops=(datos.opciones||[]).filter(o=>o.monto);
+    const prim=rops[0]||{moneda:datos.moneda,monto:datos.monto};
     const selT=document.getElementById('p-trabajo');
     await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
       body:JSON.stringify({action:'insert',sheet:'presupuestos',data:{
         cliente:datos.cliente||cliente,
         fecha:datos.fecha||new Date().toISOString().split('T')[0],
-        tipo_trabajo:datos.tipo||'',
-        monto_ars:datos.moneda==='U$D'?'':(datos.monto||''),
-        monto_usd:datos.moneda==='U$D'?(datos.monto||''):'',
+        tipo_trabajo:rops.length>1?rops.map(o=>o.titulo).join(' / '):(datos.tipo||''),
+        monto_ars:prim.moneda==='U$D'?'':(prim.monto||''),
+        monto_usd:prim.moneda==='U$D'?(prim.monto||''):'',
         estado:'Enviado',
         trabajo_id:(selT&&selT.value)||'',
-        notas:'Generado con la calculadora',
+        notas:rops.length>1
+          ?`Generado con la calculadora — ${rops.length} opciones alternativas: ${rops.map(o=>o.moneda+' '+o.monto).join(' / ')}`
+          :'Generado con la calculadora',
         datos_calculo:JSON.stringify(datos),
       }})});
     if(EMBED) parent.postMessage({type:'umepayTrabajosCambiaron'},'*');
@@ -925,6 +1028,8 @@ function datosPresupuesto(){
     fecha:g('p-fecha'), cliente:g('p-cliente'), departamento:g('p-depto'), localidad:g('p-loc'),
     cuenta:g('p-cuenta'), superficie:g('p-sup'), nomenclatura:g('p-nomen'), designacion:g('p-desig'), tipo_parcela:g('p-tipoparcela'),
     tipo:NOMBRES[g('p-tipo')]||g('p-tipo'), moneda:g('p-moneda'), monto:g('p-monto'),
+    // Todas las opciones del presupuesto (con una sola, es el mismo ítem de arriba)
+    opciones: itemsDe().map(it=>({titulo:it.titulo, moneda:it.moneda, monto:it.monto})),
     plazo:g('p-plazo'), pago:g('p-pago'),
     generado_el: new Date().toISOString(),
     arancel_version: ARANCEL_VERSION,
@@ -937,7 +1042,9 @@ async function vincularPresupuestoATrabajo(pdfUrl, filename){
   if(!t) return '';
   const ahora=new Date().toISOString();
   const datos=datosPresupuesto();
-  const montoTxt=datos.monto?`${datos.moneda} ${parseFloat(datos.monto).toLocaleString('es-AR',{maximumFractionDigits:0})}`:'sin monto';
+  const ops=(datos.opciones||[]).filter(o=>o.monto);
+  const fmtOp=o=>`${o.moneda} ${parseFloat(o.monto).toLocaleString('es-AR',{maximumFractionDigits:0})}`;
+  const montoTxt=ops.length?(ops.length>1?`${ops.length} opciones: ${ops.map(fmtOp).join(' / ')}`:fmtOp(ops[0])):'sin monto';
   const pasa=t.estado==='A presupuestar';
   const nuevoEstado=pasa?'Esperando cliente':(t.estado||'');
   // Bitácora: misma lógica que anotarEnBitacora de index.html (no pisa lo anterior)
@@ -952,7 +1059,9 @@ async function vincularPresupuestoATrabajo(pdfUrl, filename){
     fecha_estado:ahora,
   };
   if(pasa) data.estado='Esperando cliente';
-  if(datos.monto){ if(datos.moneda==='U$D') data.monto_usd=datos.monto; else data.monto_ars=datos.monto; }
+  // Con varias opciones el monto del trabajo queda vacío a propósito: todavía no
+  // se sabe cuál va a elegir el cliente. Se carga a mano cuando lo confirme.
+  if(ops.length===1){ if(ops[0].moneda==='U$D') data.monto_usd=ops[0].monto; else data.monto_ars=ops[0].monto; }
   const res=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
     body:JSON.stringify({action:'update',sheet:'trabajos',id:t.id,data})});
   const d=await res.json();
