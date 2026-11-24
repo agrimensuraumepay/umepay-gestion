@@ -204,6 +204,13 @@ tr:hover td{background:var(--bg)}
 .trab-proxima{display:flex;align-items:flex-start;gap:7px;background:var(--green3);
   border-left:3px solid var(--green);padding:8px 12px;border-radius:0 6px 6px 0;
   font-size:12px;color:var(--green);font-weight:500;margin-bottom:8px;line-height:1.45}
+/* Aviso: se anotó una actualización pero la próxima acción quedó igual */
+.prox-aviso{display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-top:5px;
+  background:var(--amber2);border-left:3px solid var(--amber);border-radius:0 6px 6px 0;
+  padding:6px 10px;font-size:11px;color:var(--amber);line-height:1.4}
+.prox-aviso button{background:var(--amber);color:#fff;border:none;border-radius:5px;
+  padding:3px 9px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit}
+.hist-prox{margin-top:4px;font-size:11px;color:var(--green);font-weight:500}
 /* ── HISTORIAL (bitácora) ── */
 .hist-details{margin-bottom:8px}
 .hist-details summary{font-size:11px;color:var(--ink3);cursor:pointer;padding:2px 0;user-select:none}
@@ -942,7 +949,7 @@ tr:hover td{background:var(--bg)}
       <div class="field" style="margin-top:12px">
         <label>Tasas previstas — Caja 8470 + Colegio (ARS)</label>
         <input type="number" id="trab-tasas" placeholder="0">
-        <div class="field-hint" id="trab-tasas-hint">Lo que calculaste que vas a tener que pagar por este trabajo. Lo ya pagado se descuenta solo, con los gastos vinculados de categoría Caja o Colegio.</div>
+        <div class="field-hint" id="trab-tasas-hint">Lo que calculaste que vas a tener que pagar por este trabajo. Lo ya pagado se descuenta solo, con los gastos vinculados que van a un organismo (Caja, Colegio, Municipalidad, tasas y visados).</div>
       </div>
       <div class="sec-title" style="margin-top:14px">Registrar un cobro (opcional)</div>
       <div id="trab-cobro-estado" class="cobro-wrap"></div>
@@ -1201,12 +1208,17 @@ tr:hover td{background:var(--bg)}
       </div>
       <div class="field">
         <label>Nueva actualización</label>
-        <textarea id="est-comentario" style="min-height:90px"
+        <textarea id="est-comentario" style="min-height:90px" oninput="pintarAvisoProx()"
           placeholder="¿Qué pasó con este trabajo? Se agrega al historial con la fecha de hoy."></textarea>
       </div>
       <div class="field">
-        <label>▸ Próxima acción</label>
-        <input id="est-proxima" placeholder="El siguiente paso concreto">
+        <label>▸ Y ahora, ¿qué sigue?</label>
+        <input id="est-proxima" placeholder="El siguiente paso concreto" oninput="pintarAvisoProx()">
+        <div class="prox-aviso" id="est-prox-aviso">
+          <span>Esto es lo que seguía <b>antes</b> de esta actualización. ¿Sigue valiendo?</span>
+          <button type="button" onclick="limpiarProx()">Ya está hecha</button>
+        </div>
+        <div class="field-hint">Queda guardado junto con la actualización, así en el historial se ve qué pasó y qué quedaba pendiente en cada momento.</div>
       </div>
       <div class="field" id="est-hist-wrap" style="display:none">
         <label>Historial</label>
@@ -1746,9 +1758,12 @@ function saldoDe(t){
 // «Tasas, Colegio y Caja» del cuadro de caja.
 const CAT_EXTERNAS = ['Caja','Colegio','Municipalidad','Visados extras','Informes de dominio',
                       'Tasa / Arancel','Aporte previsional'];
-// Las dos tasas gordas que se presupuestan trabajo por trabajo: son las que se
-// descuentan de las «tasas previstas». Las extras no entran acá a propósito.
-const CAT_TASAS = ['Caja','Colegio','Tasa / Arancel','Aporte previsional'];
+// Plata que se paga a un organismo POR ESTE TRABAJO: es lo que se descuenta de
+// las «tasas previstas». Incluye el visado municipal y los visados extras,
+// porque las tasas previstas que se cargan en la ficha los contemplan
+// (ej. Hohnle: «tasas de colegio y caja, más lo que salga el visado municipal»).
+const CAT_TASAS = ['Caja','Colegio','Tasa / Arancel','Aporte previsional',
+                   'Municipalidad','Visados extras'];
 // Lo que ya se pagó de tasas en este trabajo (gastos vinculados, en pesos)
 function tasasPagadasDe(t){
   return DB.movimientos
@@ -1759,7 +1774,9 @@ function tasasPagadasDe(t){
 function tasasDe(t){
   const previstas = parseFloat(t.tasas_previstas)||0;
   const pagadas = tasasPagadasDe(t);
-  return { previstas, pagadas, falta: Math.max(0, previstas - pagadas) };
+  // Menos de un peso de diferencia es redondeo de las boletas, no una tasa sin pagar
+  const d = previstas - pagadas;
+  return { previstas, pagadas, falta: d < 1 ? 0 : d };
 }
 // Lo que el presupuesto había calculado de tasas, para sugerirlo en el modal
 function tasasDelPresupuesto(t){
@@ -1774,7 +1791,7 @@ function tasasDelPresupuesto(t){
 function pintarHintTasas(t){
   const hint = document.getElementById('trab-tasas-hint');
   if(!hint) return;
-  const base = 'Lo que calculaste que vas a tener que pagar por este trabajo. Lo ya pagado se descuenta solo, con los gastos vinculados de categoría Caja o Colegio.';
+  const base = 'Lo que calculaste que vas a tener que pagar por este trabajo. Lo ya pagado se descuenta solo, con los gastos vinculados que van a un organismo (Caja, Colegio, Municipalidad, tasas y visados).';
   const s = t ? tasasDelPresupuesto(t) : null;
   if(!s){ hint.innerHTML = base; return; }
   hint.innerHTML = base +
@@ -1829,6 +1846,7 @@ function histListHtml(hist){
     <div class="hist-item">
       <span class="hist-fecha">${fmtFecha(h.f)}${h.e?` · ${escHtml(h.e)}`:''}</span>
       ${escHtml(h.t).replace(/\n/g,'<br>')}
+      ${h.p?`<div class="hist-prox">▸ seguía: ${escHtml(h.p)}</div>`:''}
     </div>`).join('');
 }
 function cobroHtml(t){
@@ -2255,6 +2273,22 @@ function renderFicha(){
     </div>
   `;
 }
+// La próxima acción y la última actualización van juntas: si se anota algo nuevo
+// y la próxima acción sigue siendo la de antes, se avisa antes de guardar.
+// (Pasó en Grattone: la nota decía «enviado a catastro» y lo que seguía, «hay que
+// hacer la entrega en catastro».)
+function pintarAvisoProx(){
+  const txt=document.getElementById('est-comentario'), inp=document.getElementById('est-proxima'),
+        av=document.getElementById('est-prox-aviso');
+  if(!txt||!inp||!av) return;
+  const sinTocar = inp.value.trim() === String(inp.dataset.orig||'').trim();
+  av.style.display = (txt.value.trim() && inp.value.trim() && sinTocar) ? 'flex' : 'none';
+}
+function limpiarProx(){
+  const inp=document.getElementById('est-proxima');
+  if(inp){ inp.value=''; inp.focus(); }
+  pintarAvisoProx();
+}
 function openEstado(id) {
   const t = DB.trabajos.find(x=>x.id===id);
   if(!t) return;
@@ -2262,7 +2296,10 @@ function openEstado(id) {
   document.getElementById('est-estado').value = t.estado || 'En curso';
   document.getElementById('est-prioridad').value = t.prioridad || 'Media';
   document.getElementById('est-comentario').value = '';
-  document.getElementById('est-proxima').value = t.proxima_accion || '';
+  const inpProx = document.getElementById('est-proxima');
+  inpProx.value = t.proxima_accion || '';
+  inpProx.dataset.orig = t.proxima_accion || '';
+  pintarAvisoProx();
   // Historial previo (incluye el comentario actual si todavía no hay historial)
   let hist = historialDe(t);
   if(!hist.length && t.comentario) hist = [{f: t.fecha_estado || t.created_at, t: t.comentario, e: t.estado||''}];
@@ -2288,7 +2325,7 @@ async function saveEstado() {
     const hist = historialDe(t);
     if(!hist.length && t.comentario)
       hist.push({ f: t.fecha_estado || t.created_at || ahora, t: t.comentario, e: t.estado || '' });
-    hist.push({ f: ahora, t: texto || `Cambio de estado → ${estado}`, e: estado });
+    hist.push({ f: ahora, t: texto || `Cambio de estado → ${estado}`, e: estado, p: (data.proxima_accion||'').trim() });
     data.historial = JSON.stringify(hist);
     data.fecha_estado = ahora;
     if (texto) data.comentario = texto;
