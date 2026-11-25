@@ -1814,11 +1814,13 @@ function renderAll() {
 // La URL y la clave se guardan en la planilla para no perderlas, pero el
 // conector de facturación no las devuelve: no viajan a la vista de ella.
 async function sofiGuardar(){
+  sofiArmar();   // el link se arma siempre, aunque después no se pueda guardar
   try{
     await cfgSet('fact_url', document.getElementById('sofi-url').value.trim());
     await cfgSet('fact_clave', document.getElementById('sofi-clave').value.trim());
-    sofiArmar();
-  }catch(e){ toast('No se pudo guardar: ' + e.message, true); }
+  }catch(e){
+    toast('El link está armado, pero no pude guardarlo en la planilla: ' + e.message, true);
+  }
 }
 function sofiArmar(){
   const u = document.getElementById('sofi-url').value.trim();
