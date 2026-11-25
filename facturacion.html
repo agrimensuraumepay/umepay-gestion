@@ -132,9 +132,9 @@
   <div class="sec-hdr">
     <div>
       <div class="sec-title">Facturación</div>
-      <div class="sec-sub">Cuánto se puede facturar de cada trabajo y cómo se reparte entre los dos monotributos.
-        El <b>piso</b> es el honorario mínimo del arancel — sobre ese número se pagaron los aportes a la Caja, así que es lo que se sabe desde afuera.
-        El <b>techo</b> es lo que se le cobró al cliente.</div>
+      <div class="sec-sub">Cuánto hay que facturar de cada trabajo y cómo repartirlo entre los dos monotributos.
+        De cada obra se factura el <b>honorario mínimo del arancel</b>: es el número sobre el que se pagaron los aportes a la Caja,
+        así que es el que queda respaldado. Lo que se le cobró al cliente por encima de eso no se factura.</div>
     </div>
     <button class="btn success" onclick="fcNuevaFactura()">+ Cargar factura</button>
   </div>
@@ -158,23 +158,24 @@
   <div class="sec-hdr">
     <div>
       <div class="sec-title">Trabajos</div>
-      <div class="sec-sub">El mínimo se calcula solo: aporte de Caja del trabajo ÷ 0,18. Con <b>~</b> adelante quiere decir que salió de esa cuenta y no de un número cargado a mano.
-        <b>Obra</b> y <b>otra tarea</b> es la división que usa la Caja en la declaración: las obras llevan aportes y tienen piso, las otras tareas no.
-        «Falta cobrar» en porcentaje dice cuánta plata del trabajo todavía no entró, así se ve cuánto más va a poder facturarse más adelante.</div>
+      <div class="sec-sub"><b>Lo que se factura de una obra es el honorario mínimo</b>, que es el número sobre el que se pagó el 18% a la Caja.
+        Si no está cargado a mano, se deduce de la boleta: aporte de Caja ÷ 0,18, y entonces lleva un <b>~</b> adelante.
+        «Por facturar» es lo que queda de ese mínimo sin comprobante emitido.
+        <b>Obra</b> y <b>otra tarea</b> es la división que usa la Caja en la declaración: las otras tareas no llevan aportes, así que no tienen mínimo y se facturan por lo que se acuerde.
+        «Falta cobrar» en porcentaje dice cuánta plata del trabajo todavía no entró.</div>
     </div>
   </div>
   <div class="table-wrap">
     <table>
       <thead><tr>
         <th>Cliente</th><th>Trabajo</th>
-        <th style="text-align:right">Mínimo del arancel</th>
+        <th style="text-align:right">Honorarios mínimos</th>
         <th style="text-align:right">Falta cobrar</th>
         <th style="text-align:right">Facturado</th>
-        <th style="text-align:right">Falta hasta el mínimo</th>
-        <th style="text-align:right">Se puede facturar</th>
+        <th style="text-align:right">Por facturar</th>
         <th></th>
       </tr></thead>
-      <tbody id="fc-tbody"><tr class="empty-row"><td colspan="8">Cargando…</td></tr></tbody>
+      <tbody id="fc-tbody"><tr class="empty-row"><td colspan="7">Cargando…</td></tr></tbody>
     </table>
   </div>
   <div class="sec-hdr" style="margin-top:24px">
@@ -298,7 +299,7 @@
         <div class="field-hint">La Caja pide domicilio, localidad y expediente o nomenclatura por cada factura de obra. Cargado acá, sale solo.</div>
       </div>
       <div class="field" style="margin-top:10px">
-        <label>Honorario mínimo del arancel</label>
+        <label>Honorarios mínimos (es lo que se factura)</label>
         <input type="number" id="fx-minimo">
         <div class="field-hint" id="fx-minimo-hint"></div>
       </div>

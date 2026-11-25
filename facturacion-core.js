@@ -18,12 +18,12 @@
 // ════════════════════════════════════════════════════════════
 // FACTURACIÓN
 // Cada trabajo tiene dos números que acotan la factura:
-//   · el PISO: el honorario mínimo del arancel. Sobre ese número se pagó el 18%
-//     de aportes a la Caja, así que es lo que se sabe desde afuera. Si no hay
-//     factura por al menos eso, queda un hueco visible (el caso Escalante).
-//   · el TECHO: lo que se le cobró al cliente, que es más que el mínimo.
-// La contadora decide cuánto se factura entre esos dos extremos y a nombre de
-// quién, mirando el margen de cada monotributo.
+// Lo que se factura de una obra es el HONORARIO MÍNIMO del arancel: sobre ese
+// número se pagó el 18% a la Caja (es el total de la boleta de obra), así que
+// es el único monto que queda respaldado. Al cliente se le cobra más, y esa
+// diferencia no se factura.
+// La contadora decide a nombre de quién sale cada factura y en qué momento,
+// mirando el margen de cada monotributo.
 // IMPORTANTE: acá no se mira la forma de pago. La plata se inyecta al banco
 // cuando hace falta, así que una transferencia no se corresponde con el cobro
 // de un cliente en particular.
@@ -115,9 +115,11 @@ function fcFilas(){
   return DB.trabajos.map(t => {
     const min = fcMinimo(t), cob = fcCobrado(t), fact = fcFacturadoDe(t);
     const cerrado = fcCerrado(t);
+    // Por facturar: lo que queda del honorario mínimo sin comprobante emitido.
+    // Si ya se facturó por encima del mínimo, no falta nada (y está bien así).
     return { t, min, cob, fact, cerrado, tipo: fcTipoFiscal(t), porCobrar: fcPorCobrar(t),
              falta: cerrado ? 0 : Math.max(0, min.valor - fact),
-             disp:  cerrado ? 0 : Math.max(0, cob.pesos - fact) };
+             sobra: Math.max(0, fact - min.valor) };
   }).filter(f => f.min.valor > 0 || f.cob.ars > 0 || f.cob.ext > 0 || f.fact > 0)
     .sort((a, b) => (a.cerrado - b.cerrado) || (b.falta - a.falta) || (b.disp - a.disp));
 }
@@ -205,7 +207,7 @@ function renderFacturacion(){
   // Tabla de trabajos
   const filas = fcFilas();
   const tot = { min: 0, cob: 0, fact: 0, falta: 0, disp: 0 };
-  filas.forEach(f => { if(!f.cerrado){ tot.min += f.min.valor; tot.cob += f.cob.pesos; } tot.fact += f.fact; tot.falta += f.falta; tot.disp += f.disp; });
+  filas.forEach(f => { if(!f.cerrado){ tot.min += f.min.valor; tot.cob += f.cob.pesos; } tot.fact += f.fact; tot.falta += f.falta; });
   tb.innerHTML = filas.length ? filas.map(f => {
     const t = f.t;
     const fiscal = (t.cuit || '').trim()
@@ -229,8 +231,9 @@ function renderFacturacion(){
       <td style="text-align:right">${pcTxt}</td>
       <td style="text-align:right">${f.fact ? fmtPlata(f.fact, '$') : '—'}</td>
       <td style="text-align:right">${f.falta > 0 ? '<span class="fc-rojo">' + fmtPlata(f.falta, '$') + '</span>'
-          : (f.min.valor ? '<span class="fc-ok">✓</span>' : '—')}</td>
-      <td style="text-align:right">${f.disp > 0 ? fmtPlata(f.disp, '$') : '—'}</td>
+          : (f.cerrado ? '—'
+            : (f.min.valor ? '<span class="fc-ok">✓</span>' + (f.sobra ? `<div class="fc-fiscal">+${fmtPlata(f.sobra, '$')} sobre el mínimo</div>` : '')
+              : '<span class="fc-fiscal">a convenir</span>'))}</td>
       <td style="white-space:nowrap">
         <button class="btn sm" onclick="fcNuevaFactura('${t.id}')" title="Cargar una factura de este trabajo">+ Factura</button>
         <button class="btn sm" onclick="fcAbrirFiscal('${t.id}')" title="Datos para facturar">✎</button>
@@ -241,10 +244,9 @@ function renderFacturacion(){
       <td style="text-align:right">${fmtPlata(tot.min, '$')}</td>
       <td style="text-align:right"></td>
       <td style="text-align:right">${fmtPlata(tot.fact, '$')}</td>
-      <td style="text-align:right">${tot.falta ? '<span class="fc-rojo">' + fmtPlata(tot.falta, '$') + '</span>' : '—'}</td>
-      <td style="text-align:right">${fmtPlata(tot.disp, '$')}</td><td></td>
+      <td style="text-align:right">${tot.falta ? '<span class="fc-rojo">' + fmtPlata(tot.falta, '$') + '</span>' : '—'}</td><td></td>
     </tr>`
-    : '<tr class="empty-row"><td colspan="8">Todavía no hay trabajos con cobros ni aportes cargados.</td></tr>';
+    : '<tr class="empty-row"><td colspan="7">Todavía no hay trabajos con cobros ni aportes cargados.</td></tr>';
 
   // Facturas emitidas
   const tbf = document.getElementById('fc-tbody-fact');
