@@ -142,10 +142,26 @@ function json(o) {
 
 // ── Lectura ───────────────────────────────────────────────────────────
 
+/* Las columnas con las que nacen las hojas propias de facturación. Las mismas
+ * que usa el conector de la app, así las dos leen y escriben lo mismo. */
+var COLUMNAS_NUEVAS = {
+  facturas: ['id', 'fecha', 'titular', 'pto_venta', 'numero', 'trabajo_id', 'cliente',
+             'moneda', 'monto', 'concepto', 'nota', 'created_at'],
+  config: ['id', 'clave', 'valor']
+};
+
 function hoja(nombre) {
-  var sh = planilla().getSheetByName(nombre);
-  if (!sh) throw new Error('No existe la hoja «' + nombre + '». ¿Se implementó el conector de la app con las hojas nuevas?');
-  return sh;
+  var ss = planilla();
+  var sh = ss.getSheetByName(nombre);
+  if (sh) return sh;
+  // facturas y config son de esta vista: si faltan, se crean acá mismo
+  if (COLUMNAS_NUEVAS[nombre]) {
+    sh = ss.insertSheet(nombre);
+    sh.appendRow(COLUMNAS_NUEVAS[nombre]);
+    sh.setFrozenRows(1);
+    return sh;
+  }
+  throw new Error('No existe la hoja «' + nombre + '» en la planilla.');
 }
 
 function leer(nombre, campos) {
