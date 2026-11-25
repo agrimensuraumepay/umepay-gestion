@@ -17,22 +17,30 @@
  *  ───────────────────────────────────────────────────────────────────────
  *  CÓMO SE INSTALA (una sola vez)
  *
- *  1. Abrir la planilla «Umepay - Gestión» → Extensiones → Apps Script.
- *  2. Botón + (Archivos) → Secuencia de comandos → nombrarlo «facturacion».
- *  3. Pegar TODO este archivo ahí. Ctrl+S.
+ *  ⚠ VA EN UN PROYECTO APARTE, no adentro del proyecto de la planilla.
+ *  En Apps Script todos los archivos de un proyecto comparten las mismas
+ *  funciones: si este archivo convive con el conector de la app, los dos
+ *  doGet se pisan y uno de los dos deja de andar.
+ *
+ *  1. Ir a script.google.com → «Proyecto nuevo» (no desde la planilla).
+ *  2. Ponerle nombre arriba: «Umepay facturación».
+ *  3. Borrar el function myFunction() de ejemplo y pegar TODO este archivo.
  *  4. Cambiar la CLAVE de abajo por una inventada (letras y números, sin
- *     espacios). No es la contraseña de nadie: es la llave del link.
- *  5. Implementar → NUEVA IMPLEMENTACIÓN → Tipo: Aplicación web
+ *     espacios, sin acentos). No es la contraseña de nadie: es la llave
+ *     del link. Ctrl+S.
+ *  5. Implementar → Nueva implementación → Tipo: Aplicación web
  *       · Ejecutar como: Yo
  *       · Quién tiene acceso: Cualquier persona
- *     Implementar → copiar la URL que termina en /exec.
+ *     Implementar → va a pedir permisos la primera vez (es para que pueda
+ *     abrir la planilla): Revisar permisos → elegir la cuenta → Avanzado →
+ *     Ir a Umepay facturación → Permitir. Copiar la URL que termina en /exec.
  *  6. En la app, pestaña Facturación → «Compartir con la contadora»:
  *     pegar esa URL y la clave, y copiar el link que arma. Ese link es el
  *     que se le manda a la contadora.
  *
- *  OJO: esta implementación es DISTINTA de la del conector de la app. No hay
- *  que tocar la que ya existe: se agrega una nueva, y cada una queda con su
- *  propia URL.
+ *  Si este archivo ya quedó pegado adentro del proyecto de la planilla, hay
+ *  que BORRARLO de ahí (⋮ al lado del nombre del archivo → Eliminar) y volver
+ *  a implementar el conector de la app, que mientras tanto quedó pisado.
  *
  *  Para cambiar la clave más adelante: se edita acá, Ctrl+S, y después
  *  Implementar → Gestionar implementaciones → lápiz → Nueva versión. La URL
@@ -41,6 +49,28 @@
  */
 
 var CLAVE = 'CAMBIAR-ESTA-CLAVE';
+
+/* La planilla de gestión. Al ser un proyecto aparte hay que abrirla: se busca
+ * por nombre en el Drive de la cuenta. Si alguna vez se renombra, o si hay dos
+ * archivos con el mismo nombre, se pone acá el ID (lo que va entre /d/ y /edit
+ * en la dirección de la planilla) y se usa ese. */
+var PLANILLA_NOMBRE = 'Umepay - Gestión';
+var PLANILLA_ID = '';
+
+function planilla() {
+  if (PLANILLA_ID) return SpreadsheetApp.openById(PLANILLA_ID);
+  var it = DriveApp.getFilesByName(PLANILLA_NOMBRE);
+  if (!it.hasNext()) {
+    throw new Error('No encontré la planilla «' + PLANILLA_NOMBRE + '» en el Drive de esta cuenta. '
+      + 'Revisá el nombre, o poné el PLANILLA_ID en el script.');
+  }
+  var f = it.next();
+  if (it.hasNext()) {
+    throw new Error('Hay más de un archivo llamado «' + PLANILLA_NOMBRE + '». '
+      + 'Poné el PLANILLA_ID en el script para que no haya duda.');
+  }
+  return SpreadsheetApp.open(f);
+}
 
 /* Lo único que sale de cada hoja. Todo lo que no esté en estas listas no se
  * devuelve, aunque exista en la planilla. */
@@ -113,13 +143,13 @@ function json(o) {
 // ── Lectura ───────────────────────────────────────────────────────────
 
 function hoja(nombre) {
-  var sh = SpreadsheetApp.getActive().getSheetByName(nombre);
+  var sh = planilla().getSheetByName(nombre);
   if (!sh) throw new Error('No existe la hoja «' + nombre + '». ¿Se implementó el conector de la app con las hojas nuevas?');
   return sh;
 }
 
 function leer(nombre, campos) {
-  var sh = SpreadsheetApp.getActive().getSheetByName(nombre);
+  var sh = planilla().getSheetByName(nombre);
   if (!sh) return [];                                  // hoja todavía sin crear: lista vacía
   var datos = sh.getDataRange().getValues();
   if (datos.length < 2) return [];
