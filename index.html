@@ -226,6 +226,11 @@ tr:hover td{background:var(--bg)}
 .fc-rojo{color:var(--amber);font-weight:700}
 .fc-ok{color:var(--green2);font-weight:600}
 .fc-apagado{opacity:.5}
+.fc-chip{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  padding:2px 7px;border-radius:20px;background:var(--bg2);color:var(--ink2)}
+.fc-chip.obra{background:var(--green3);color:var(--green)}
+.fc-chip.otra{background:var(--blue2);color:var(--blue)}
+.fc-chip.sin{background:var(--amber2);color:var(--amber)}
 .fc-tot td{border-top:2px solid var(--ink);font-weight:700}
 /* Aviso: se anotó una actualización pero la próxima acción quedó igual */
 .prox-aviso{display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-top:5px;
@@ -751,7 +756,9 @@ tr:hover td{background:var(--bg)}
   <div class="sec-hdr">
     <div>
       <div class="sec-title">Trabajos</div>
-      <div class="sec-sub">El mínimo se calcula solo: aporte de Caja del trabajo ÷ 0,18. Con <b>~</b> adelante quiere decir que salió de esa cuenta y no de un número cargado a mano.</div>
+      <div class="sec-sub">El mínimo se calcula solo: aporte de Caja del trabajo ÷ 0,18. Con <b>~</b> adelante quiere decir que salió de esa cuenta y no de un número cargado a mano.
+        <b>Obra</b> y <b>otra tarea</b> es la división que usa la Caja en la declaración: las obras llevan aportes y tienen piso, las otras tareas no.
+        «Falta cobrar» en porcentaje dice cuánta plata del trabajo todavía no entró, así se ve cuánto más va a poder facturarse más adelante.</div>
     </div>
   </div>
   <div class="table-wrap">
@@ -759,7 +766,7 @@ tr:hover td{background:var(--bg)}
       <thead><tr>
         <th>Cliente</th><th>Trabajo</th>
         <th style="text-align:right">Mínimo del arancel</th>
-        <th style="text-align:right">Cobrado</th>
+        <th style="text-align:right">Falta cobrar</th>
         <th style="text-align:right">Facturado</th>
         <th style="text-align:right">Falta hasta el mínimo</th>
         <th style="text-align:right">Se puede facturar</th>
@@ -1370,7 +1377,16 @@ tr:hover td{background:var(--bg)}
     </div>
     <div class="modal-body">
       <input type="hidden" id="fx-id">
-      <div class="field"><label>Razón social / nombre completo</label><input id="fx-razon" placeholder="Como tiene que salir en la factura"></div>
+      <div class="field">
+        <label>Para la Caja, esto es…</label>
+        <select id="fx-tipofiscal">
+          <option value="">— Sin clasificar —</option>
+          <option value="obra">Trabajo sobre una obra (lleva aportes)</option>
+          <option value="otra">Otra tarea profesional (sin aportes)</option>
+        </select>
+        <div class="field-hint">La declaración de la Caja separa «facturación por obras» de «otras tareas». Las obras tienen honorario mínimo que respetar; las otras tareas, no.</div>
+      </div>
+      <div class="field" style="margin-top:10px"><label>Razón social / nombre completo del comitente</label><input id="fx-razon" placeholder="Como tiene que salir en la factura"></div>
       <div class="g2" style="margin-top:10px">
         <div class="field"><label>CUIT / CUIL / DNI</label><input id="fx-cuit" placeholder="20-12345678-9"></div>
         <div class="field">
@@ -1383,6 +1399,15 @@ tr:hover td{background:var(--bg)}
             <option>Exento</option>
           </select>
         </div>
+      </div>
+      <div class="g2" style="margin-top:10px">
+        <div class="field"><label>Domicilio de la obra</label><input id="fx-domicilio" placeholder="Calle y número"></div>
+        <div class="field"><label>Localidad</label><input id="fx-localidad" placeholder="Ej: Villa Yacanto"></div>
+      </div>
+      <div class="field" style="margin-top:10px">
+        <label>Expediente o nomenclatura</label>
+        <input id="fx-expediente" placeholder="Ej: 1206400101081013">
+        <div class="field-hint">La Caja pide domicilio, localidad y expediente o nomenclatura por cada factura de obra. Cargado acá, sale solo.</div>
       </div>
       <div class="field" style="margin-top:10px">
         <label>Honorario mínimo del arancel</label>
@@ -1785,6 +1810,31 @@ function fcFacturadoDe(t){
     .reduce((a, b) => a + fcAPesos(b.monto, b.moneda), 0);
 }
 function fcCerrado(t){ return String(t.sin_facturar || '') === '1'; }
+// La Caja divide la declaración en dos: facturación POR OBRAS (trabajos sobre
+// obras, los que llevan aportes) y por OTRAS TAREAS. Un relevamiento, un croquis
+// o un asesoramiento no son obra y no tienen honorario mínimo que respetar.
+function fcTipoFiscal(t){
+  const marcado = String(t.tipo_fiscal || '');
+  if(marcado === 'obra' || marcado === 'otra') return marcado;
+  // Sin marcar: si pagó aportes o tiene tasas previstas, es obra; si no, no se adivina
+  if(fcAportesCaja(t) > 0 || fcNum(t.tasas_previstas) > 0) return 'obra';
+  return '';
+}
+// Cuánto del trabajo falta cobrar, en porcentaje: le dice a la contadora cuánta
+// plata más va a entrar de ese cliente, que es margen futuro para facturar.
+function fcPorCobrar(t){
+  const mAr = fcNum(t.monto_ars), mUs = fcNum(t.monto_usd), c = fcCobrado(t);
+  if(mAr <= 0 && mUs <= 0) return null;                 // sin monto no hay porcentaje
+  const cot = fcCotiz();
+  if(mAr > 0 && mUs > 0 && !cot) return null;           // dos monedas sin cotización: no se mezcla
+  const k = cot || 1;
+  const total = mAr + mUs * k, cob = c.ars + c.ext * k;
+  if(total <= 0) return null;
+  return {
+    pct: Math.max(0, Math.min(100, (total - cob) / total * 100)),
+    ars: Math.max(0, mAr - c.ars), usd: Math.max(0, mUs - c.ext),
+  };
+}
 // El monotributo se mide por los últimos 12 meses móviles, no por año calendario
 function fcFacturado12m(titular){
   const d = new Date(); d.setMonth(d.getMonth() - 12);
@@ -1797,7 +1847,7 @@ function fcFilas(){
   return DB.trabajos.map(t => {
     const min = fcMinimo(t), cob = fcCobrado(t), fact = fcFacturadoDe(t);
     const cerrado = fcCerrado(t);
-    return { t, min, cob, fact, cerrado,
+    return { t, min, cob, fact, cerrado, tipo: fcTipoFiscal(t), porCobrar: fcPorCobrar(t),
              falta: cerrado ? 0 : Math.max(0, min.valor - fact),
              disp:  cerrado ? 0 : Math.max(0, cob.pesos - fact) };
   }).filter(f => f.min.valor > 0 || f.cob.ars > 0 || f.cob.ext > 0 || f.fact > 0)
@@ -1846,13 +1896,22 @@ function renderFacturacion(){
     const fiscal = (t.cuit || '').trim()
       ? `<div class="fc-fiscal">${escHtml(t.cuit)}${t.iva ? ' · ' + escHtml(t.iva) : ''}</div>`
       : '<div class="fc-fiscal falta">falta el CUIT</div>';
-    const ext = f.cob.ext ? `<div class="fc-fiscal">+ ${fmtPlata(f.cob.ext, 'U$D')}${fcCotiz() ? '' : ' (sin cotización)'}</div>` : '';
+    const chip = f.tipo === 'obra' ? '<span class="fc-chip obra">obra</span>'
+      : (f.tipo === 'otra' ? '<span class="fc-chip otra">otra tarea</span>'
+                           : '<span class="fc-chip sin">sin clasificar</span>');
+    const pc = f.porCobrar;
+    const pcTxt = !pc ? '—'
+      : (pc.pct <= 0.5 ? '<span class="fc-ok">cobrado</span>'
+        : `<b>${pc.pct.toFixed(0)}%</b><div class="fc-fiscal">`
+          + [pc.ars ? fmtPlata(pc.ars, '$') : '', pc.usd ? fmtPlata(pc.usd, 'U$D') : ''].filter(Boolean).join(' + ')
+          + '</div>');
     return `<tr class="${f.cerrado ? 'fc-apagado' : ''}">
       <td><div class="fc-cli">${escHtml(t.cliente || '(sin nombre)')}</div>${fiscal}</td>
-      <td>${escHtml(t.tipo_trabajo || '')}${f.cerrado ? '<div class="fc-fiscal">cerrado sin facturar</div>' : ''}
+      <td>${chip} ${escHtml(t.tipo_trabajo || '')}${f.cerrado ? '<div class="fc-fiscal">cerrado sin facturar</div>' : ''}
         ${t.facturacion_nota ? `<div class="fc-fiscal">${escHtml(t.facturacion_nota)}</div>` : ''}</td>
-      <td style="text-align:right">${f.min.valor ? (f.min.estimado ? '<span class="fc-est">~</span> ' : '') + fmtPlata(f.min.valor, '$') : '—'}</td>
-      <td style="text-align:right">${f.cob.ars ? fmtPlata(f.cob.ars, '$') : (f.cob.ext ? '—' : '—')}${ext}</td>
+      <td style="text-align:right">${f.min.valor ? (f.min.estimado ? '<span class="fc-est">~</span> ' : '') + fmtPlata(f.min.valor, '$')
+          : (f.tipo === 'otra' ? '<span class="fc-fiscal">no lleva aportes</span>' : '—')}</td>
+      <td style="text-align:right">${pcTxt}</td>
       <td style="text-align:right">${f.fact ? fmtPlata(f.fact, '$') : '—'}</td>
       <td style="text-align:right">${f.falta > 0 ? '<span class="fc-rojo">' + fmtPlata(f.falta, '$') + '</span>'
           : (f.min.valor ? '<span class="fc-ok">✓</span>' : '—')}</td>
@@ -1865,7 +1924,7 @@ function renderFacturacion(){
   }).join('') + `<tr class="fc-tot">
       <td colspan="2">Totales (sin los cerrados)</td>
       <td style="text-align:right">${fmtPlata(tot.min, '$')}</td>
-      <td style="text-align:right">${fmtPlata(tot.cob, '$')}</td>
+      <td style="text-align:right"></td>
       <td style="text-align:right">${fmtPlata(tot.fact, '$')}</td>
       <td style="text-align:right">${tot.falta ? '<span class="fc-rojo">' + fmtPlata(tot.falta, '$') + '</span>' : '—'}</td>
       <td style="text-align:right">${fmtPlata(tot.disp, '$')}</td><td></td>
@@ -1985,7 +2044,11 @@ function fcAbrirFiscal(id){
   const min = fcMinimo(t), ap = fcAportesCaja(t);
   document.getElementById('fx-titulo').textContent = 'Datos para facturar — ' + (t.cliente || '');
   document.getElementById('fx-id').value = t.id;
+  document.getElementById('fx-tipofiscal').value = ['obra','otra'].includes(String(t.tipo_fiscal||'')) ? t.tipo_fiscal : '';
   document.getElementById('fx-razon').value = t.razon_social || '';
+  document.getElementById('fx-domicilio').value = t.obra_domicilio || '';
+  document.getElementById('fx-localidad').value = t.obra_localidad || '';
+  document.getElementById('fx-expediente').value = t.obra_expediente || '';
   document.getElementById('fx-cuit').value = t.cuit || '';
   document.getElementById('fx-iva').value = t.iva || '';
   document.getElementById('fx-minimo').value = fcNum(t.honorario_minimo) || '';
@@ -2002,6 +2065,8 @@ async function fcGuardarFiscal(){
   const v = id => document.getElementById(id).value.trim();
   const id = v('fx-id');
   const data = {
+    tipo_fiscal: v('fx-tipofiscal'),
+    obra_domicilio: v('fx-domicilio'), obra_localidad: v('fx-localidad'), obra_expediente: v('fx-expediente'),
     razon_social: v('fx-razon'), cuit: v('fx-cuit'), iva: v('fx-iva'),
     honorario_minimo: v('fx-minimo') ? String(fcNum(v('fx-minimo'))) : '',
     sin_facturar: document.getElementById('fx-sinfact').checked ? '1' : '',
