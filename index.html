@@ -231,6 +231,14 @@ tr:hover td{background:var(--bg)}
 .fc-chip.obra{background:var(--green3);color:var(--green)}
 .fc-chip.otra{background:var(--blue2);color:var(--blue)}
 .fc-chip.sin{background:var(--amber2);color:var(--amber)}
+.ddjj-params{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px}
+.ddjj-tot{display:flex;gap:18px;flex-wrap:wrap;background:var(--bg2);border-radius:var(--r);padding:12px 14px;margin-bottom:14px}
+.ddjj-tot div{font-size:11px;color:var(--ink2)}
+.ddjj-tot b{display:block;font-size:16px;color:var(--ink);letter-spacing:-.4px}
+.ddjj-aviso{background:var(--amber2);border-left:3px solid var(--amber);border-radius:0 6px 6px 0;
+  padding:9px 12px;font-size:11px;color:var(--amber);line-height:1.5;margin-bottom:12px}
+.ddjj-sub{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2);margin:16px 0 7px}
+.ddjj-falta{color:var(--amber);font-weight:700}
 .fc-tot td{border-top:2px solid var(--ink);font-weight:700}
 /* Aviso: se anotó una actualización pero la próxima acción quedó igual */
 .prox-aviso{display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-top:5px;
@@ -790,6 +798,60 @@ tr:hover td{background:var(--bg)}
       <tbody id="fc-tbody-fact"><tr class="empty-row"><td colspan="7">Cargando…</td></tr></tbody>
     </table>
   </div>
+  <details class="tiempos" id="ddjj-panel" style="margin-top:24px">
+    <summary>▤ Armar la declaración para la Caja</summary>
+    <div class="tiempos-body">
+      <div class="sec-sub" style="margin-bottom:12px">
+        Las dos listas que pide el portal, con las columnas de cada paso:
+        <b>facturación por obras</b> (fecha, importe, comitente, CUIT, domicilio, localidad, expediente o nomenclatura y trabajos efectuados)
+        y <b>otras tareas</b> (fecha, importe y la tarea realizada). El número de comprobante es opcional.
+        La última declaración cubrió del 01/05/2024 al 30/06/2026.
+      </div>
+      <div class="ddjj-params">
+        <div class="field"><label>Desde</label><input type="date" id="ddjj-desde" value="2024-05-01" onchange="renderDeclaracion()"></div>
+        <div class="field"><label>Hasta</label><input type="date" id="ddjj-hasta" value="2026-06-30" onchange="renderDeclaracion()"></div>
+        <button class="btn sm" onclick="ddjjCopiar()">⧉ Copiar</button>
+        <button class="btn sm" onclick="ddjjBajar()">↓ CSV</button>
+      </div>
+      <div id="ddjj-cuerpo"></div>
+    </div>
+  </details>
+  <details class="tiempos" id="sofi-panel" style="margin-top:12px">
+    <summary>↱ Compartir con la contadora</summary>
+    <div class="tiempos-body">
+      <div class="sec-sub" style="margin-bottom:12px">
+        La contadora entra por una página aparte, con su propio conector: ve y edita esta misma
+        información, pero <b>no puede llegar a la caja, a los gastos del estudio ni a los personales</b>.
+        Se instala una sola vez, con el archivo <b>umepay_facturacion.gs</b>:
+        abrir la planilla → Extensiones → Apps Script → botón + → Secuencia de comandos,
+        pegarlo, cambiar la clave de adentro, y después <b>Implementar → Nueva implementación</b>
+        (aplicación web, ejecutar como yo, acceso para cualquier persona). Eso da una URL nueva,
+        distinta de la del conector de la app.
+      </div>
+      <div class="g2">
+        <div class="field">
+          <label>URL del conector de facturación</label>
+          <input id="sofi-url" placeholder="https://script.google.com/…/exec" onchange="sofiGuardar()">
+        </div>
+        <div class="field">
+          <label>Clave que pusiste en el script</label>
+          <input id="sofi-clave" placeholder="La misma, igual escrita" onchange="sofiGuardar()">
+        </div>
+      </div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn primary" onclick="sofiArmar()">Armar el link</button>
+        <button class="btn" onclick="sofiCopiar()">⧉ Copiar el link</button>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>Link para mandarle</label>
+        <textarea id="sofi-link" readonly style="min-height:64px;font-size:11px" placeholder="Cargá la URL y la clave, y tocá «Armar el link»"></textarea>
+        <div class="field-hint">Ese link es la llave: cualquiera que lo tenga ve y edita la facturación.
+          Mandalo por un mensaje directo, no lo publiques. Si alguna vez hace falta cortarlo, se cambia la clave
+          en el script y se vuelve a implementar (Gestionar implementaciones → lápiz → Nueva versión):
+          los links viejos dejan de servir.</div>
+      </div>
+    </div>
+  </details>
 </div>
 <div class="tab" id="tab-matrices">
   <!-- Lista de matrices cargadas -->
@@ -1653,6 +1715,7 @@ tr:hover td{background:var(--bg)}
 </div>
 <!-- TOASTS -->
 <div class="toast-wrap" id="toasts"></div>
+<script src="facturacion-core.js"></script>
 <script>
 // ==============================
 // CONFIG & STATE
@@ -1742,347 +1805,47 @@ function renderAll() {
   renderFacturacion();
   fillWorkSelects();
 }
-// ════════════════════════════════════════════════════════════
-// FACTURACIÓN
-// Cada trabajo tiene dos números que acotan la factura:
-//   · el PISO: el honorario mínimo del arancel. Sobre ese número se pagó el 18%
-//     de aportes a la Caja, así que es lo que se sabe desde afuera. Si no hay
-//     factura por al menos eso, queda un hueco visible (el caso Escalante).
-//   · el TECHO: lo que se le cobró al cliente, que es más que el mínimo.
-// La contadora decide cuánto se factura entre esos dos extremos y a nombre de
-// quién, mirando el margen de cada monotributo.
-// IMPORTANTE: acá no se mira la forma de pago. La plata se inyecta al banco
-// cuando hace falta, así que una transferencia no se corresponde con el cobro
-// de un cliente en particular.
-// ════════════════════════════════════════════════════════════
-const FC_APORTE = 0.18;                      // el aporte a la Caja es el 18% del mínimo
-const FC_TITULARES = ['Julia', 'Santiago'];
-
-function fcNum(v){ return parseFloat(String(v == null ? '' : v).replace(',', '.')) || 0; }
-
-// Los parámetros (topes y cotización) viven en la hoja config, no en este
-// navegador: así los ve cualquiera que abra la app o la vista de la contadora.
-function cfgGet(clave){
-  const f = DB.config.find(c => c.clave === clave);
-  return f ? String(f.valor == null ? '' : f.valor) : '';
-}
-async function cfgSet(clave, valor){
-  const f = DB.config.find(c => c.clave === clave);
-  if(f) await saveData('config', f.id, { valor: String(valor) });
-  else  await saveData('config', null, { clave, valor: String(valor) });
-}
-function fcCotiz(){ return fcNum(cfgGet('cotiz_usd')); }
-
-// Un monto en pesos. Lo que está en dólares o USDT se pasa con la cotización de
-// referencia; sin cotización cargada devuelve 0, antes que inventar un número.
-function fcAPesos(monto, moneda){
-  const v = fcNum(monto);
-  if(!v) return 0;
-  if((moneda || '$') === '$') return v;
-  const c = fcCotiz();
-  return c ? v * c : 0;
-}
-function fcAportesCaja(t){
-  return DB.movimientos
-    .filter(m => m.trabajo_id === t.id && m.tipo !== 'ingreso'
-                 && m.categoria === 'Caja' && (m.moneda || '$') === '$')
-    .reduce((a, b) => a + fcNum(b.monto), 0);
-}
-// El mínimo del arancel: el cargado a mano gana; si no hay, sale del aporte pagado
-function fcMinimo(t){
-  const cargado = fcNum(t.honorario_minimo);
-  if(cargado > 0) return { valor: cargado, estimado: false };
-  const ap = fcAportesCaja(t);
-  return { valor: ap ? ap / FC_APORTE : 0, estimado: ap > 0 };
-}
-// Todo lo cobrado del trabajo, sin importar cómo entró
-function fcCobrado(t){
-  let ars = 0, ext = 0;
-  DB.movimientos.forEach(m => {
-    if(m.tipo !== 'ingreso' || m.trabajo_id !== t.id) return;
-    if((m.moneda || '$') === '$') ars += fcNum(m.monto); else ext += fcNum(m.monto);
-  });
-  const c = fcCotiz();
-  return { ars, ext, pesos: ars + (c ? ext * c : 0) };
-}
-function fcFacturadoDe(t){
-  return DB.facturas.filter(f => f.trabajo_id === t.id)
-    .reduce((a, b) => a + fcAPesos(b.monto, b.moneda), 0);
-}
-function fcCerrado(t){ return String(t.sin_facturar || '') === '1'; }
-// La Caja divide la declaración en dos: facturación POR OBRAS (trabajos sobre
-// obras, los que llevan aportes) y por OTRAS TAREAS. Un relevamiento, un croquis
-// o un asesoramiento no son obra y no tienen honorario mínimo que respetar.
-function fcTipoFiscal(t){
-  const marcado = String(t.tipo_fiscal || '');
-  if(marcado === 'obra' || marcado === 'otra') return marcado;
-  // Sin marcar: si pagó aportes o tiene tasas previstas, es obra; si no, no se adivina
-  if(fcAportesCaja(t) > 0 || fcNum(t.tasas_previstas) > 0) return 'obra';
-  return '';
-}
-// Cuánto del trabajo falta cobrar, en porcentaje: le dice a la contadora cuánta
-// plata más va a entrar de ese cliente, que es margen futuro para facturar.
-function fcPorCobrar(t){
-  const mAr = fcNum(t.monto_ars), mUs = fcNum(t.monto_usd), c = fcCobrado(t);
-  if(mAr <= 0 && mUs <= 0) return null;                 // sin monto no hay porcentaje
-  const cot = fcCotiz();
-  if(mAr > 0 && mUs > 0 && !cot) return null;           // dos monedas sin cotización: no se mezcla
-  const k = cot || 1;
-  const total = mAr + mUs * k, cob = c.ars + c.ext * k;
-  if(total <= 0) return null;
-  return {
-    pct: Math.max(0, Math.min(100, (total - cob) / total * 100)),
-    ars: Math.max(0, mAr - c.ars), usd: Math.max(0, mUs - c.ext),
-  };
-}
-// El monotributo se mide por los últimos 12 meses móviles, no por año calendario
-function fcFacturado12m(titular){
-  const d = new Date(); d.setMonth(d.getMonth() - 12);
-  const desde = d.toISOString().slice(0, 10);
-  return DB.facturas
-    .filter(f => (f.titular || '') === titular && String(f.fecha || '').slice(0, 10) >= desde)
-    .reduce((a, b) => a + fcAPesos(b.monto, b.moneda), 0);
-}
-function fcFilas(){
-  return DB.trabajos.map(t => {
-    const min = fcMinimo(t), cob = fcCobrado(t), fact = fcFacturadoDe(t);
-    const cerrado = fcCerrado(t);
-    return { t, min, cob, fact, cerrado, tipo: fcTipoFiscal(t), porCobrar: fcPorCobrar(t),
-             falta: cerrado ? 0 : Math.max(0, min.valor - fact),
-             disp:  cerrado ? 0 : Math.max(0, cob.pesos - fact) };
-  }).filter(f => f.min.valor > 0 || f.cob.ars > 0 || f.cob.ext > 0 || f.fact > 0)
-    .sort((a, b) => (a.cerrado - b.cerrado) || (b.falta - a.falta) || (b.disp - a.disp));
-}
-
-function renderFacturacion(){
-  const tb = document.getElementById('fc-tbody');
-  if(!tb) return;
-  // Parámetros, sin pisar lo que se está tipeando
-  [['fc-tope-julia', 'tope_julia'], ['fc-tope-santiago', 'tope_santiago'], ['fc-cotiz', 'cotiz_usd']]
-    .forEach(([id, k]) => {
-      const e = document.getElementById(id);
-      if(e && document.activeElement !== e) e.value = cfgGet(k);
-    });
-
-  // Semáforo de los dos monotributos
-  document.getElementById('fc-semaforo').innerHTML = FC_TITULARES.map(q => {
-    const fac = fcFacturado12m(q), tope = fcNum(cfgGet('tope_' + q.toLowerCase()));
-    const pct = tope ? Math.min(100, fac / tope * 100) : 0;
-    const cls = !tope ? '' : (fac > tope ? ' pasado' : (fac / tope > 0.8 ? ' alerta' : ''));
-    const queda = tope - fac;
-    return `<div class="fc-card">
-      <div class="fc-card-top">
-        <div><div class="fc-card-quien">${q}</div>
-          <div class="fc-card-sub">facturado en los últimos 12 meses</div></div>
-        <div class="fc-card-num">${fmtPlata(fac, '$')}</div>
-      </div>
-      <div class="fc-barra${cls}"><span style="width:${pct}%"></span></div>
-      <div class="fc-card-pie">
-        <span>${tope ? 'Tope: ' + fmtPlata(tope, '$') : 'Sin tope cargado'}</span>
-        <span>${tope ? (queda >= 0
-            ? 'Queda <b>' + fmtPlata(queda, '$') + '</b>'
-            : '<b class="fc-rojo">Pasado por ' + fmtPlata(-queda, '$') + '</b>')
-          : 'Cargá el tope para ver el margen'}</span>
-      </div>
-    </div>`;
-  }).join('');
-
-  // Tabla de trabajos
-  const filas = fcFilas();
-  const tot = { min: 0, cob: 0, fact: 0, falta: 0, disp: 0 };
-  filas.forEach(f => { if(!f.cerrado){ tot.min += f.min.valor; tot.cob += f.cob.pesos; } tot.fact += f.fact; tot.falta += f.falta; tot.disp += f.disp; });
-  tb.innerHTML = filas.length ? filas.map(f => {
-    const t = f.t;
-    const fiscal = (t.cuit || '').trim()
-      ? `<div class="fc-fiscal">${escHtml(t.cuit)}${t.iva ? ' · ' + escHtml(t.iva) : ''}</div>`
-      : '<div class="fc-fiscal falta">falta el CUIT</div>';
-    const chip = f.tipo === 'obra' ? '<span class="fc-chip obra">obra</span>'
-      : (f.tipo === 'otra' ? '<span class="fc-chip otra">otra tarea</span>'
-                           : '<span class="fc-chip sin">sin clasificar</span>');
-    const pc = f.porCobrar;
-    const pcTxt = !pc ? '—'
-      : (pc.pct <= 0.5 ? '<span class="fc-ok">cobrado</span>'
-        : `<b>${pc.pct.toFixed(0)}%</b><div class="fc-fiscal">`
-          + [pc.ars ? fmtPlata(pc.ars, '$') : '', pc.usd ? fmtPlata(pc.usd, 'U$D') : ''].filter(Boolean).join(' + ')
-          + '</div>');
-    return `<tr class="${f.cerrado ? 'fc-apagado' : ''}">
-      <td><div class="fc-cli">${escHtml(t.cliente || '(sin nombre)')}</div>${fiscal}</td>
-      <td>${chip} ${escHtml(t.tipo_trabajo || '')}${f.cerrado ? '<div class="fc-fiscal">cerrado sin facturar</div>' : ''}
-        ${t.facturacion_nota ? `<div class="fc-fiscal">${escHtml(t.facturacion_nota)}</div>` : ''}</td>
-      <td style="text-align:right">${f.min.valor ? (f.min.estimado ? '<span class="fc-est">~</span> ' : '') + fmtPlata(f.min.valor, '$')
-          : (f.tipo === 'otra' ? '<span class="fc-fiscal">no lleva aportes</span>' : '—')}</td>
-      <td style="text-align:right">${pcTxt}</td>
-      <td style="text-align:right">${f.fact ? fmtPlata(f.fact, '$') : '—'}</td>
-      <td style="text-align:right">${f.falta > 0 ? '<span class="fc-rojo">' + fmtPlata(f.falta, '$') + '</span>'
-          : (f.min.valor ? '<span class="fc-ok">✓</span>' : '—')}</td>
-      <td style="text-align:right">${f.disp > 0 ? fmtPlata(f.disp, '$') : '—'}</td>
-      <td style="white-space:nowrap">
-        <button class="btn sm" onclick="fcNuevaFactura('${t.id}')" title="Cargar una factura de este trabajo">+ Factura</button>
-        <button class="btn sm" onclick="fcAbrirFiscal('${t.id}')" title="Datos para facturar">✎</button>
-      </td>
-    </tr>`;
-  }).join('') + `<tr class="fc-tot">
-      <td colspan="2">Totales (sin los cerrados)</td>
-      <td style="text-align:right">${fmtPlata(tot.min, '$')}</td>
-      <td style="text-align:right"></td>
-      <td style="text-align:right">${fmtPlata(tot.fact, '$')}</td>
-      <td style="text-align:right">${tot.falta ? '<span class="fc-rojo">' + fmtPlata(tot.falta, '$') + '</span>' : '—'}</td>
-      <td style="text-align:right">${fmtPlata(tot.disp, '$')}</td><td></td>
-    </tr>`
-    : '<tr class="empty-row"><td colspan="8">Todavía no hay trabajos con cobros ni aportes cargados.</td></tr>';
-
-  // Facturas emitidas
-  const tbf = document.getElementById('fc-tbody-fact');
-  const facs = [...DB.facturas].sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')));
-  tbf.innerHTML = facs.length ? facs.map(f => {
-    const t = DB.trabajos.find(x => x.id === f.trabajo_id);
-    const comp = [f.pto_venta, f.numero].filter(Boolean).join('-');
-    return `<tr>
-      <td>${f.fecha ? fmtFecha(f.fecha) : '—'}</td>
-      <td>${comp ? escHtml(comp) : '—'}${f.concepto ? `<div class="fc-fiscal">${escHtml(f.concepto)}</div>` : ''}</td>
-      <td>${escHtml(f.titular || '')}</td>
-      <td>${escHtml(f.cliente || '')}</td>
-      <td>${t ? escHtml(t.cliente + ' — ' + (t.tipo_trabajo || '')) : '<span class="fc-fiscal">sin vincular</span>'}</td>
-      <td style="text-align:right">${fmtPlata(fcNum(f.monto), f.moneda || '$')}</td>
-      <td><button class="btn sm" onclick="fcEditarFactura('${f.id}')">✎</button></td>
-    </tr>`;
-  }).join('') : '<tr class="empty-row"><td colspan="7">No hay facturas cargadas.</td></tr>';
-}
-
-async function fcGuardarParams(){
-  const v = id => document.getElementById(id).value.trim();
+// ── Facturación ───────────────────────────────────────────────
+// Las cuentas, el dibujo y los modales están en facturacion-core.js, que esta
+// página carga arriba: son los mismos que ve la contadora en su vista.
+// Lo único propio de la app es por dónde guarda.
+// ── El link de la contadora ──
+// La URL y la clave se guardan en la planilla para no perderlas, pero el
+// conector de facturación no las devuelve: no viajan a la vista de ella.
+async function sofiGuardar(){
   try{
-    await cfgSet('tope_julia', v('fc-tope-julia'));
-    await cfgSet('tope_santiago', v('fc-tope-santiago'));
-    await cfgSet('cotiz_usd', v('fc-cotiz'));
-    renderFacturacion();
-  }catch(e){ toast('No se pudieron guardar los parámetros: ' + e.message, true); }
-}
-
-// ── Modal de una factura ──
-function fcLlenarSelectTrabajos(){
-  const sel = document.getElementById('fc-trabajo');
-  const ts = [...DB.trabajos].sort((a, b) =>
-    String(a.cliente || '').localeCompare(String(b.cliente || ''), 'es', { sensitivity: 'base' }));
-  sel.innerHTML = '<option value="">— Sin vincular —</option>' + ts.map(t =>
-    `<option value="${escHtml(t.id)}">${escHtml((t.cliente || '(sin nombre)') + ' — ' + (t.tipo_trabajo || ''))}</option>`).join('');
-}
-function fcTrabajoElegido(){
-  const t = DB.trabajos.find(x => x.id === document.getElementById('fc-trabajo').value);
-  if(!t) return;
-  const cli = document.getElementById('fc-cliente');
-  if(!cli.value.trim()) cli.value = t.razon_social || t.cliente || '';
-}
-function fcNuevaFactura(trabajoId){
-  fcLlenarSelectTrabajos();
-  document.getElementById('fc-modal-titulo').textContent = 'Cargar factura';
-  document.getElementById('fc-id').value = '';
-  document.getElementById('fc-fecha').value = new Date().toISOString().slice(0, 10);
-  document.getElementById('fc-titular').value = 'Julia';
-  document.getElementById('fc-pv').value = cfgGet('pto_venta') || '';
-  ['fc-numero', 'fc-monto', 'fc-concepto', 'fc-nota', 'fc-cliente'].forEach(i => document.getElementById(i).value = '');
-  document.getElementById('fc-moneda').value = '$';
-  document.getElementById('fc-trabajo').value = trabajoId || '';
-  document.getElementById('fc-btn-borrar').style.display = 'none';
-  if(trabajoId) fcTrabajoElegido();
-  openModal('modal-factura');
-}
-function fcEditarFactura(id){
-  const f = DB.facturas.find(x => x.id === id);
-  if(!f) return;
-  fcLlenarSelectTrabajos();
-  document.getElementById('fc-modal-titulo').textContent = 'Editar factura';
-  document.getElementById('fc-id').value = f.id;
-  document.getElementById('fc-fecha').value = String(f.fecha || '').slice(0, 10);
-  document.getElementById('fc-titular').value = f.titular || 'Julia';
-  document.getElementById('fc-pv').value = f.pto_venta || '';
-  document.getElementById('fc-numero').value = f.numero || '';
-  document.getElementById('fc-trabajo').value = f.trabajo_id || '';
-  document.getElementById('fc-cliente').value = f.cliente || '';
-  document.getElementById('fc-moneda').value = f.moneda || '$';
-  document.getElementById('fc-monto').value = f.monto || '';
-  document.getElementById('fc-concepto').value = f.concepto || '';
-  document.getElementById('fc-nota').value = f.nota || '';
-  document.getElementById('fc-btn-borrar').style.display = '';
-  openModal('modal-factura');
-}
-async function fcGuardarFactura(){
-  const v = id => document.getElementById(id).value.trim();
-  if(!v('fc-fecha')) return toast('Falta la fecha', true);
-  if(!v('fc-cliente')) return toast('Falta el cliente', true);
-  if(!fcNum(v('fc-monto'))) return toast('Falta el monto', true);
-  const data = {
-    fecha: v('fc-fecha'), titular: v('fc-titular'), pto_venta: v('fc-pv'), numero: v('fc-numero'),
-    trabajo_id: v('fc-trabajo'), cliente: v('fc-cliente'), moneda: v('fc-moneda'),
-    monto: String(fcNum(v('fc-monto'))), concepto: v('fc-concepto'), nota: v('fc-nota'),
-  };
-  if(v('fc-pv')) await cfgSet('pto_venta', v('fc-pv'));   // el punto de venta se recuerda
-  try{
-    await saveData('facturas', v('fc-id') || null, data);
-    closeModal('modal-factura');
-    renderFacturacion();
-    toast('Factura guardada');
+    await cfgSet('fact_url', document.getElementById('sofi-url').value.trim());
+    await cfgSet('fact_clave', document.getElementById('sofi-clave').value.trim());
+    sofiArmar();
   }catch(e){ toast('No se pudo guardar: ' + e.message, true); }
 }
-async function fcBorrarFactura(){
-  const id = document.getElementById('fc-id').value;
-  if(!id) return;
-  if(!confirm('¿Borrar esta factura del registro?')) return;
-  try{
-    await api('delete', 'facturas', { id });
-    DB.facturas = DB.facturas.filter(f => f.id !== id);
-    closeModal('modal-factura');
-    renderFacturacion();
-    toast('Factura borrada');
-  }catch(e){ toast('No se pudo borrar: ' + e.message, true); }
+function sofiArmar(){
+  const u = document.getElementById('sofi-url').value.trim();
+  const k = document.getElementById('sofi-clave').value.trim();
+  const out = document.getElementById('sofi-link');
+  if(!u || !k){ out.value = ''; toast('Faltan la URL y la clave', true); return; }
+  if(!/^https:\/\/script\.google\.com\/.*\/exec$/.test(u)){
+    toast('Esa URL no parece la de una implementación: tiene que terminar en /exec', true); return;
+  }
+  const pagina = new URL('facturacion.html', location.href).href;
+  out.value = pagina + '#u=' + encodeURIComponent(u) + '&k=' + encodeURIComponent(k);
+}
+function sofiCopiar(){
+  const v = document.getElementById('sofi-link').value;
+  if(!v) return toast('Primero armá el link', true);
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(v).then(() => toast('Link copiado'), () => toast('No se pudo copiar', true));
+  } else toast('Este navegador no deja copiar solo', true);
 }
 
-// ── Modal de datos para facturar ──
-function fcAbrirFiscal(id){
-  const t = DB.trabajos.find(x => x.id === id);
-  if(!t) return;
-  const min = fcMinimo(t), ap = fcAportesCaja(t);
-  document.getElementById('fx-titulo').textContent = 'Datos para facturar — ' + (t.cliente || '');
-  document.getElementById('fx-id').value = t.id;
-  document.getElementById('fx-tipofiscal').value = ['obra','otra'].includes(String(t.tipo_fiscal||'')) ? t.tipo_fiscal : '';
-  document.getElementById('fx-razon').value = t.razon_social || '';
-  document.getElementById('fx-domicilio').value = t.obra_domicilio || '';
-  document.getElementById('fx-localidad').value = t.obra_localidad || '';
-  document.getElementById('fx-expediente').value = t.obra_expediente || '';
-  document.getElementById('fx-cuit').value = t.cuit || '';
-  document.getElementById('fx-iva').value = t.iva || '';
-  document.getElementById('fx-minimo').value = fcNum(t.honorario_minimo) || '';
-  document.getElementById('fx-sinfact').checked = fcCerrado(t);
-  document.getElementById('fx-nota').value = t.facturacion_nota || '';
-  document.getElementById('fx-minimo-hint').innerHTML = ap
-    ? `Aporte de Caja pagado en este trabajo: <b>${fmtPlata(ap, '$')}</b> → mínimo <b>${fmtPlata(ap / FC_APORTE, '$')}</b> (÷ 0,18). `
-      + `<a href="#" onclick="document.getElementById('fx-minimo').value=${Math.round(ap / FC_APORTE)};return false;">usar este número</a>. `
-      + 'Si lo dejás vacío, la tabla usa esa misma cuenta.'
-    : 'No hay aportes de Caja cargados en este trabajo, así que el mínimo no se puede deducir: cargálo a mano si corresponde.';
-  openModal('modal-fiscal');
+async function fcPersistir(hoja, id, data){
+  return saveData(hoja, id, data);
 }
-async function fcGuardarFiscal(){
-  const v = id => document.getElementById(id).value.trim();
-  const id = v('fx-id');
-  const data = {
-    tipo_fiscal: v('fx-tipofiscal'),
-    obra_domicilio: v('fx-domicilio'), obra_localidad: v('fx-localidad'), obra_expediente: v('fx-expediente'),
-    razon_social: v('fx-razon'), cuit: v('fx-cuit'), iva: v('fx-iva'),
-    honorario_minimo: v('fx-minimo') ? String(fcNum(v('fx-minimo'))) : '',
-    sin_facturar: document.getElementById('fx-sinfact').checked ? '1' : '',
-    facturacion_nota: v('fx-nota'),
-  };
-  try{
-    await saveData('trabajos', id, data);
-    closeModal('modal-fiscal');
-    renderFacturacion();
-    toast('Datos guardados');
-  }catch(e){ toast('No se pudo guardar: ' + e.message, true); }
+async function fcEliminar(hoja, id){
+  await api('delete', hoja, { id });
+  DB[hoja] = (DB[hoja] || []).filter(x => x.id !== id);
 }
 
-// ==============================
-// DASHBOARD
-// ==============================
 function renderDashboardLocal() {
   const movs = DB.movimientos;
   const n = v => parseFloat(v) || 0;

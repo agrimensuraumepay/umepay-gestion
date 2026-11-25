@@ -1,9 +1,9 @@
 // Service worker mínimo: permite instalar la app y que funcione básico sin internet.
 // Estrategia: para archivos propios (HTML/CSS/íconos) intenta la red y si no hay,
 // usa la copia guardada. NO toca las llamadas a Google (Apps Script) ni los POST.
-const CACHE = 'umepay-v7';
-const ASSETS = ['./', './index.html', './presupuestos.html',
-  './logo-umepay.svg', './icon-192.png', './icon-512.png', './manifest.webmanifest',
+const CACHE = 'umepay-v8';
+const ASSETS = ['./', './index.html', './presupuestos.html', './facturacion-core.js',
+  './facturacion.html', './logo-umepay.svg', './icon-192.png', './icon-512.png', './manifest.webmanifest',
   // La matriz de puntajes se usa en el campo, sin señal: tiene que estar cacheada
   './matrices_puntajes_catastro.json'];
 

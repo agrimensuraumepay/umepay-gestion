@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Facturación · Estudio Umepay</title>
+<link rel="icon" href="logo-umepay.svg">
+<style>
+  :root{
+    --bg:#f5f1ea;--bg2:#ece7dd;--surface:#faf8f4;
+    --ink:#1c1917;--ink2:#57534e;--ink3:#a8a29e;
+    --green:#1e5c3a;--green2:#2d7a50;--green3:#d1fae5;
+    --amber:#92400e;--amber2:#fef3c7;--red:#b91c1c;
+    --blue:#1e3a5f;--blue2:#dbeafe;
+    --border:#ddd8ce;--border2:#c8c2b6;
+    --mono:'Courier New',monospace;--r:9px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--mono);background:var(--bg);color:var(--ink);font-size:13px;min-height:100vh}
+  .topbar{background:var(--ink);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:space-between}
+  .topbar b{font-size:14px;letter-spacing:.06em}
+  .topbar .sub{font-size:10px;color:#c8c2b6}
+  .estado{font-size:10px;padding:3px 9px;border-radius:20px;background:#44403c;color:#e7e5e4}
+  .estado.ok{background:var(--green2);color:#fff}
+  .estado.mal{background:var(--amber);color:#fff}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 16px 60px}
+  .sec-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 14px}
+  .sec-title{font-size:15px;font-weight:700}
+  .sec-sub{font-size:11px;color:var(--ink2);line-height:1.6;max-width:760px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{font-size:11px;color:var(--ink2);font-weight:700}
+  .field input,.field select,.field textarea{font-family:var(--mono);font-size:13px;color:var(--ink);background:var(--surface);
+    border:1px solid var(--border2);border-radius:6px;padding:7px 10px;width:100%;outline:none}
+  .field input:focus,.field select:focus{border-color:var(--green);background:#fff}
+  .field-hint{font-size:10px;color:var(--ink3);line-height:1.5}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:6px;border:1px solid var(--border2);
+    background:var(--surface);color:var(--ink);font-family:var(--mono);font-size:12px;cursor:pointer;font-weight:500}
+  .btn:hover{background:var(--bg2)}
+  .btn.sm{padding:5px 11px;font-size:11px}
+  .btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn.success{background:var(--green);color:#fff;border-color:var(--green)}
+  .btn.danger{background:#fff;color:var(--red);border-color:#e7c4c4}
+  .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r);background:var(--surface)}
+  table{border-collapse:collapse;width:100%;min-width:620px}
+  th{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);text-align:left;
+    padding:9px 10px;border-bottom:1px solid var(--border);font-weight:700;white-space:nowrap}
+  td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  .empty-row td{text-align:center;color:var(--ink3);padding:20px}
+  details.tiempos{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:0}
+  details.tiempos summary{cursor:pointer;padding:12px 15px;font-size:12px;font-weight:700;user-select:none}
+  details.tiempos summary:hover{background:var(--bg2)}
+  .tiempos-body{padding:0 15px 15px}
+  .modal-bg{position:fixed;inset:0;background:rgba(28,25,23,.5);display:none;align-items:flex-start;justify-content:center;
+    padding:30px 14px;overflow-y:auto;z-index:50}
+  .modal-bg.open{display:flex}
+  .modal{background:var(--bg);border-radius:12px;width:100%;max-width:520px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.25)}
+  .modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--surface);border-bottom:1px solid var(--border)}
+  .modal-title{font-size:14px;font-weight:700}
+  .modal-close{background:none;border:none;font-size:16px;color:var(--ink3);cursor:pointer;font-family:inherit}
+  .modal-body{padding:18px}
+  .modal-footer{display:flex;gap:9px;justify-content:flex-end;padding:14px 18px;background:var(--surface);border-top:1px solid var(--border);flex-wrap:wrap}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;
+    padding:10px 18px;border-radius:8px;font-size:12px;z-index:90;display:none;max-width:90vw;text-align:center}
+  .toast.mal{background:var(--amber)}
+  .alta{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:22px;max-width:560px;margin:40px auto}
+  .alta h1{font-size:16px;margin-bottom:10px}
+  .alta p{font-size:12px;color:var(--ink2);line-height:1.7;margin-bottom:14px}
+  /* Facturación: las mismas clases que la app */
+  .fc-semaforo{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:14px}
+  @media(min-width:760px){ .fc-semaforo{grid-template-columns:1fr 1fr} }
+  .fc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
+  .fc-card-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .fc-card-quien{font-size:13px;font-weight:700}
+  .fc-card-sub{font-size:10px;color:var(--ink3)}
+  .fc-card-num{font-size:19px;font-weight:700;letter-spacing:-.5px}
+  .fc-barra{height:8px;border-radius:4px;background:var(--bg2);overflow:hidden;margin:8px 0 6px}
+  .fc-barra span{display:block;height:100%;background:var(--green2);border-radius:4px}
+  .fc-barra.alerta span{background:var(--amber)}
+  .fc-barra.pasado span{background:var(--red)}
+  .fc-card-pie{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--ink2)}
+  .fc-params{display:grid;grid-template-columns:1fr;gap:10px;background:var(--bg2);border-radius:var(--r);padding:12px 14px;margin-bottom:18px}
+  @media(min-width:760px){ .fc-params{grid-template-columns:1fr 1fr 1fr} }
+  .fc-cli{font-weight:600}
+  .fc-fiscal{font-size:10px;color:var(--ink3)}
+  .fc-fiscal.falta{color:var(--amber);font-weight:600}
+  .fc-est{color:var(--ink3);font-weight:400}
+  .fc-rojo{color:var(--amber);font-weight:700}
+  .fc-ok{color:var(--green2);font-weight:600}
+  .fc-apagado{opacity:.5}
+  .fc-tot td{border-top:2px solid var(--ink);font-weight:700}
+  .fc-chip{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    padding:2px 7px;border-radius:20px;background:var(--bg2);color:var(--ink2)}
+  .fc-chip.obra{background:var(--green3);color:var(--green)}
+  .fc-chip.otra{background:var(--blue2);color:var(--blue)}
+  .fc-chip.sin{background:var(--amber2);color:var(--amber)}
+  .ddjj-params{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px}
+  .ddjj-tot{display:flex;gap:18px;flex-wrap:wrap;background:var(--bg2);border-radius:var(--r);padding:12px 14px;margin-bottom:14px}
+  .ddjj-tot div{font-size:11px;color:var(--ink2)}
+  .ddjj-tot b{display:block;font-size:16px;color:var(--ink);letter-spacing:-.4px}
+  .ddjj-aviso{background:var(--amber2);border-left:3px solid var(--amber);border-radius:0 6px 6px 0;
+    padding:9px 12px;font-size:11px;color:var(--amber);line-height:1.5;margin-bottom:12px}
+  .ddjj-sub{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2);margin:16px 0 7px}
+  .ddjj-falta{color:var(--amber);font-weight:700}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div>
+    <b>FACTURACIÓN · ESTUDIO UMEPAY</b>
+    <div class="sub">Agrimensura · vista para la contadora</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span class="estado" id="estado">—</span>
+    <button class="btn sm" onclick="cargar()">↻ Actualizar</button>
+    <button class="btn sm" onclick="salir()">Salir</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- Sin link válido no se ve nada -->
+  <div class="alta" id="alta" style="display:none">
+    <h1>Falta el link de acceso</h1>
+    <p>Esta página se abre con el link que te mandó el estudio, que lleva la dirección
+    del conector y la clave. Sin eso no hay nada que mostrar.</p>
+    <p>Si tenés el link, abrilo de nuevo desde donde te lo mandaron. Si no, pedilo al estudio.</p>
+  </div>
+
+  <div id="vista" style="display:none">
+
+  <div class="sec-hdr">
+    <div>
+      <div class="sec-title">Facturación</div>
+      <div class="sec-sub">Cuánto se puede facturar de cada trabajo y cómo se reparte entre los dos monotributos.
+        El <b>piso</b> es el honorario mínimo del arancel — sobre ese número se pagaron los aportes a la Caja, así que es lo que se sabe desde afuera.
+        El <b>techo</b> es lo que se le cobró al cliente.</div>
+    </div>
+    <button class="btn success" onclick="fcNuevaFactura()">+ Cargar factura</button>
+  </div>
+  <div class="fc-semaforo" id="fc-semaforo"></div>
+  <div class="fc-params">
+    <div class="field">
+      <label>Tope anual — monotributo Julia</label>
+      <input type="number" id="fc-tope-julia" placeholder="Lo confirma la contadora" onchange="fcGuardarParams()">
+      <div class="field-hint">El del monotributo se mide por los últimos 12 meses, no por año calendario.</div>
+    </div>
+    <div class="field">
+      <label>Tope anual — monotributo Santiago</label>
+      <input type="number" id="fc-tope-santiago" placeholder="Lo confirma la contadora" onchange="fcGuardarParams()">
+    </div>
+    <div class="field">
+      <label>Cotización U$D de referencia</label>
+      <input type="number" id="fc-cotiz" placeholder="Ej: 1650" onchange="fcGuardarParams()">
+      <div class="field-hint">Solo para mostrar en pesos lo cobrado en dólares o USDT. Si está vacía, esos cobros se muestran en su moneda y no se suman.</div>
+    </div>
+  </div>
+  <div class="sec-hdr">
+    <div>
+      <div class="sec-title">Trabajos</div>
+      <div class="sec-sub">El mínimo se calcula solo: aporte de Caja del trabajo ÷ 0,18. Con <b>~</b> adelante quiere decir que salió de esa cuenta y no de un número cargado a mano.
+        <b>Obra</b> y <b>otra tarea</b> es la división que usa la Caja en la declaración: las obras llevan aportes y tienen piso, las otras tareas no.
+        «Falta cobrar» en porcentaje dice cuánta plata del trabajo todavía no entró, así se ve cuánto más va a poder facturarse más adelante.</div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Cliente</th><th>Trabajo</th>
+        <th style="text-align:right">Mínimo del arancel</th>
+        <th style="text-align:right">Falta cobrar</th>
+        <th style="text-align:right">Facturado</th>
+        <th style="text-align:right">Falta hasta el mínimo</th>
+        <th style="text-align:right">Se puede facturar</th>
+        <th></th>
+      </tr></thead>
+      <tbody id="fc-tbody"><tr class="empty-row"><td colspan="8">Cargando…</td></tr></tbody>
+    </table>
+  </div>
+  <div class="sec-hdr" style="margin-top:24px">
+    <div>
+      <div class="sec-title">Facturas emitidas</div>
+      <div class="sec-sub">Lo que se carga acá es lo que consume margen de monotributo arriba.</div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Fecha</th><th>Comprobante</th><th>A nombre de</th><th>Cliente</th>
+        <th>Trabajo</th><th style="text-align:right">Monto</th><th></th>
+      </tr></thead>
+      <tbody id="fc-tbody-fact"><tr class="empty-row"><td colspan="7">Cargando…</td></tr></tbody>
+    </table>
+  </div>
+  <details class="tiempos" id="ddjj-panel" style="margin-top:24px">
+    <summary>▤ Armar la declaración para la Caja</summary>
+    <div class="tiempos-body">
+      <div class="sec-sub" style="margin-bottom:12px">
+        Las dos listas que pide el portal, con las columnas de cada paso:
+        <b>facturación por obras</b> (fecha, importe, comitente, CUIT, domicilio, localidad, expediente o nomenclatura y trabajos efectuados)
+        y <b>otras tareas</b> (fecha, importe y la tarea realizada). El número de comprobante es opcional.
+        La última declaración cubrió del 01/05/2024 al 30/06/2026.
+      </div>
+      <div class="ddjj-params">
+        <div class="field"><label>Desde</label><input type="date" id="ddjj-desde" value="2024-05-01" onchange="renderDeclaracion()"></div>
+        <div class="field"><label>Hasta</label><input type="date" id="ddjj-hasta" value="2026-06-30" onchange="renderDeclaracion()"></div>
+        <button class="btn sm" onclick="ddjjCopiar()">⧉ Copiar</button>
+        <button class="btn sm" onclick="ddjjBajar()">↓ CSV</button>
+      </div>
+      <div id="ddjj-cuerpo"></div>
+    </div>
+  </details>
+  </div>
+</div>
+
+
+<div class="modal-bg" id="modal-factura">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="fc-modal-titulo">Cargar factura</div>
+      <button class="modal-close" onclick="closeModal('modal-factura')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="fc-id">
+      <div class="g2">
+        <div class="field"><label>Fecha *</label><input type="date" id="fc-fecha"></div>
+        <div class="field">
+          <label>A nombre de *</label>
+          <select id="fc-titular"><option>Julia</option><option>Santiago</option></select>
+        </div>
+      </div>
+      <div class="g2" style="margin-top:10px">
+        <div class="field"><label>Punto de venta</label><input id="fc-pv" placeholder="Ej: 1"></div>
+        <div class="field"><label>Número</label><input id="fc-numero" placeholder="Ej: 11"></div>
+      </div>
+      <div class="field" style="margin-top:10px">
+        <label>Trabajo</label>
+        <select id="fc-trabajo" onchange="fcTrabajoElegido()"></select>
+        <div class="field-hint">Si la factura no es de ningún trabajo (por ejemplo Greenfruit), dejalo sin vincular y escribí el cliente a mano.</div>
+      </div>
+      <div class="field" style="margin-top:10px"><label>Cliente *</label><input id="fc-cliente"></div>
+      <div class="g2" style="margin-top:10px">
+        <div class="field">
+          <label>Moneda</label>
+          <select id="fc-moneda"><option value="$">$ (ARS)</option><option value="U$D">U$D</option></select>
+        </div>
+        <div class="field"><label>Monto *</label><input type="number" id="fc-monto" placeholder="Ej: 500000"></div>
+      </div>
+      <div class="field" style="margin-top:10px"><label>Concepto</label><input id="fc-concepto" placeholder="Lo que dice la factura"></div>
+      <div class="field" style="margin-top:10px"><label>Nota</label><input id="fc-nota" placeholder="Para acordarse de algo"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn danger sm" id="fc-btn-borrar" onclick="fcBorrarFactura()" style="display:none">✕ Borrar</button>
+      <button class="btn" onclick="closeModal('modal-factura')">Cancelar</button>
+      <button class="btn primary" onclick="fcGuardarFactura()">Guardar</button>
+    </div>
+  </div>
+</div>
+<!-- Modal: datos para facturar de un trabajo -->
+<div class="modal-bg" id="modal-fiscal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="fx-titulo">Datos para facturar</div>
+      <button class="modal-close" onclick="closeModal('modal-fiscal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="fx-id">
+      <div class="field">
+        <label>Para la Caja, esto es…</label>
+        <select id="fx-tipofiscal">
+          <option value="">— Sin clasificar —</option>
+          <option value="obra">Trabajo sobre una obra (lleva aportes)</option>
+          <option value="otra">Otra tarea profesional (sin aportes)</option>
+        </select>
+        <div class="field-hint">La declaración de la Caja separa «facturación por obras» de «otras tareas». Las obras tienen honorario mínimo que respetar; las otras tareas, no.</div>
+      </div>
+      <div class="field" style="margin-top:10px"><label>Razón social / nombre completo del comitente</label><input id="fx-razon" placeholder="Como tiene que salir en la factura"></div>
+      <div class="g2" style="margin-top:10px">
+        <div class="field"><label>CUIT / CUIL / DNI</label><input id="fx-cuit" placeholder="20-12345678-9"></div>
+        <div class="field">
+          <label>Condición frente al IVA</label>
+          <select id="fx-iva">
+            <option value=""></option>
+            <option>Consumidor final</option>
+            <option>Monotributo</option>
+            <option>Responsable inscripto</option>
+            <option>Exento</option>
+          </select>
+        </div>
+      </div>
+      <div class="g2" style="margin-top:10px">
+        <div class="field"><label>Domicilio de la obra</label><input id="fx-domicilio" placeholder="Calle y número"></div>
+        <div class="field"><label>Localidad</label><input id="fx-localidad" placeholder="Ej: Villa Yacanto"></div>
+      </div>
+      <div class="field" style="margin-top:10px">
+        <label>Expediente o nomenclatura</label>
+        <input id="fx-expediente" placeholder="Ej: 1206400101081013">
+        <div class="field-hint">La Caja pide domicilio, localidad y expediente o nomenclatura por cada factura de obra. Cargado acá, sale solo.</div>
+      </div>
+      <div class="field" style="margin-top:10px">
+        <label>Honorario mínimo del arancel</label>
+        <input type="number" id="fx-minimo">
+        <div class="field-hint" id="fx-minimo-hint"></div>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label class="fx-check" style="display:flex;align-items:center;gap:7px;font-weight:600">
+          <input type="checkbox" id="fx-sinfact" style="width:auto;margin:0;accent-color:var(--green)">
+          Cerrado sin facturar
+        </label>
+        <div class="field-hint">Para los trabajos que se decidió no facturar: dejan de contar como pendientes y la fila queda al final, apagada.</div>
+      </div>
+      <div class="field" style="margin-top:10px"><label>Nota de facturación</label><input id="fx-nota" placeholder="Ej: la Caja no dijo nada, queda así"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-fiscal')">Cancelar</button>
+      <button class="btn primary" onclick="fcGuardarFiscal()">Guardar</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="facturacion-core.js"></script>
+<script>
+  // ════════════════════════════════════════════════════════
+  //  Vista de facturación · Estudio de Agrimensura Umepay
+  //
+  //  Esta página habla con el conector de FACTURACIÓN, que es otro que el de
+  //  la app: solo lee los trabajos, los cobros vinculados a un trabajo, las
+  //  facturas y los parámetros, y solo escribe facturas, datos fiscales y
+  //  topes. No tiene forma de ver la caja ni los gastos del estudio.
+  //
+  //  Las cuentas y el dibujo vienen de facturacion-core.js, el mismo archivo
+  //  que usa la app: lo que ve acá la contadora es lo mismo que ve Julia.
+  // ════════════════════════════════════════════════════════
+  let DB = { trabajos: [], movimientos: [], facturas: [], config: [] };
+  const LS = 'umepay_fact_acceso';
+
+  // El acceso llega en el link, después del #, que no viaja en los pedidos al
+  // servidor ni queda en los registros de la web. Se guarda en este navegador
+  // para no tener que volver a abrir el link cada vez.
+  function leerAcceso(){
+    const h = location.hash.replace(/^#/, '');
+    if(h){
+      const p = new URLSearchParams(h);
+      if(p.get('u') && p.get('k')){
+        const a = { u: p.get('u'), k: p.get('k') };
+        try{ localStorage.setItem(LS, JSON.stringify(a)); }catch(e){}
+        history.replaceState(null, '', location.pathname);   // el link no queda a la vista
+        return a;
+      }
+    }
+    try{ return JSON.parse(localStorage.getItem(LS) || 'null'); }catch(e){ return null; }
+  }
+  let ACCESO = leerAcceso();
+
+  function estado(txt, clase){
+    const e = document.getElementById('estado');
+    e.textContent = txt;
+    e.className = 'estado' + (clase ? ' ' + clase : '');
+  }
+  function toast(msg, mal){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (mal ? ' mal' : '');
+    t.style.display = 'block';
+    clearTimeout(t._h);
+    t._h = setTimeout(() => { t.style.display = 'none'; }, 4200);
+  }
+  function openModal(id){ document.getElementById(id).classList.add('open'); }
+  function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+  function escHtml(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
+  function fmtPlata(v, mon){ return (mon==='U$D'?'U$D ':'$ ') + Math.round(v).toLocaleString('es-AR'); }
+  function fmtFecha(s){
+    if(!s) return '';
+    const d = new Date(String(s).length <= 10 ? s + 'T12:00:00' : s);
+    return isNaN(d) ? String(s) : d.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' });
+  }
+
+  // ── Conector de facturación ──
+  async function pedir(payload){
+    const res = await fetch(ACCESO.u, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ ...payload, k: ACCESO.k })
+    });
+    const d = await res.json();
+    if(d.error) throw new Error(d.error);
+    return d;
+  }
+  async function cargar(){
+    if(!ACCESO){ document.getElementById('alta').style.display = 'block'; return; }
+    document.getElementById('alta').style.display = 'none';
+    document.getElementById('vista').style.display = 'block';
+    estado('Cargando…');
+    try{
+      const u = ACCESO.u + (ACCESO.u.includes('?') ? '&' : '?') + 'k=' + encodeURIComponent(ACCESO.k);
+      const res = await fetch(u);
+      const d = await res.json();
+      if(d.error) throw new Error(d.error);
+      DB.trabajos = d.trabajos || [];
+      DB.movimientos = d.movimientos || [];
+      DB.facturas = d.facturas || [];
+      DB.config = d.config || [];
+      estado('Al día · ' + new Date().toLocaleTimeString('es-AR'), 'ok');
+      renderFacturacion();
+    }catch(e){
+      estado('Sin conexión', 'mal');
+      toast('No pude leer los datos: ' + e.message, true);
+    }
+  }
+  // Lo que el core llama para guardar. Esta página solo puede escribir
+  // facturas, los datos fiscales de un trabajo y los parámetros.
+  async function fcPersistir(hoja, id, data){
+    if(hoja === 'facturas'){
+      const r = await pedir({ action: 'factura_guardar', id: id || '', data });
+      if(id){ const f = DB.facturas.find(x => x.id === id); if(f) Object.assign(f, data); }
+      else { DB.facturas.push({ ...data, id: r.id }); }
+      return r;
+    }
+    if(hoja === 'trabajos'){
+      const r = await pedir({ action: 'trabajo_fiscal', id, data });
+      const t = DB.trabajos.find(x => x.id === id); if(t) Object.assign(t, data);
+      return r;
+    }
+    if(hoja === 'config'){
+      const clave = id ? (DB.config.find(c => c.id === id) || {}).clave : data.clave;
+      const r = await pedir({ action: 'config_set', clave, valor: data.valor });
+      const f = DB.config.find(c => c.clave === clave);
+      if(f) f.valor = data.valor; else DB.config.push({ id: 'tmp_' + clave, clave, valor: data.valor });
+      return r;
+    }
+    throw new Error('Desde esta vista no se puede escribir eso');
+  }
+  async function fcEliminar(hoja, id){
+    if(hoja !== 'facturas') throw new Error('Desde esta vista solo se pueden borrar facturas');
+    await pedir({ action: 'factura_borrar', id });
+    DB.facturas = DB.facturas.filter(f => f.id !== id);
+  }
+  function salir(){
+    if(!confirm('¿Olvidar el acceso en este navegador? Para volver a entrar hay que abrir el link otra vez.')) return;
+    try{ localStorage.removeItem(LS); }catch(e){}
+    location.reload();
+  }
+  cargar();
+</script>
+</body>
+</html>
