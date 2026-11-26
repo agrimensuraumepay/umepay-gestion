@@ -182,9 +182,26 @@ async function cfgSet(clave, valor){
   else  await fcPersistir('config', null, { clave, valor: String(valor) });
 }
 
+// El monotributo se recategoriza dos veces al año, en enero y en julio, y en
+// cada corte se miran los últimos 12 meses facturados. Por eso acá nada cierra
+// por mes: lo que importa es cómo llega el acumulado a la próxima fecha de corte.
+function fcProximaRecat(){
+  const h = new Date(), y = h.getFullYear();
+  const corte = h.getMonth() < 6 ? new Date(y, 6, 1) : new Date(y + 1, 0, 1);
+  const desde = new Date(corte); desde.setMonth(desde.getMonth() - 12);
+  const mes = d => d.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+  return { corte, desde, txt: mes(corte), periodo: mes(desde) + ' a ' + mes(new Date(corte.getTime() - 86400000)) };
+}
+
 function renderFacturacion(){
   const tb = document.getElementById('fc-tbody');
   if(!tb) return;
+  const recat = document.getElementById('fc-recat');
+  if(recat){
+    const r = fcProximaRecat();
+    recat.innerHTML = `Próxima recategorización: <b>${r.txt}</b>. Ahí se mira lo facturado de ${r.periodo}, `
+      + 'que es lo que cuentan estas dos tarjetas. La fecha y el tope los confirma la contadora.';
+  }
   // Parámetros, sin pisar lo que se está tipeando
   // sofi-url y sofi-clave solo existen en la app: en la vista de la contadora no
   [['fc-tope-julia', 'tope_julia'], ['fc-tope-santiago', 'tope_santiago'], ['fc-cotiz', 'cotiz_usd'],
