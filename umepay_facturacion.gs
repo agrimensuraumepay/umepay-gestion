@@ -246,8 +246,16 @@ function buscarFila(sh, headers, id) {
 
 function guardarFactura(d) {
   var data = d.data || {};
-  if (!data.fecha) throw new Error('Falta la fecha');
-  if (!fcNumero(data.monto)) throw new Error('Falta el monto');
+  // En el alta hacen falta fecha y monto. En una edicion puede venir un solo
+  // campo (la contadora cambiando a nombre de quien sale, por ejemplo), y lo
+  // que no viene no se toca.
+  if (!d.id) {
+    if (!data.fecha) throw new Error('Falta la fecha');
+    if (!fcNumero(data.monto)) throw new Error('Falta el monto');
+  } else {
+    if (data.fecha !== undefined && !data.fecha) throw new Error('La fecha no puede quedar vacia');
+    if (data.monto !== undefined && !fcNumero(data.monto)) throw new Error('El monto no puede quedar vacio');
+  }
   var sh = hoja('facturas');
   var headers = asegurarColumnas(sh, columnas(sh), ['id', 'created_at'].concat(CAMPOS_FACTURA));
   if (d.id) {

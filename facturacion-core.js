@@ -88,8 +88,9 @@ function fcFacturadoDe(t){
   return fcEmitidas().filter(f => f.trabajo_id === t.id)
     .reduce((a, b) => a + fcAPesos(b.monto, b.moneda), 0);
 }
-// Lo anotado y todavía sin emitir, por titular
-function fcPendiente12m(titular){
+// Lo anotado y todavía sin emitir, por titular. No se filtra por período: es
+// plata que va a salir ahora, cuando se emita.
+function fcPendientePeriodo(titular){
   return fcPropuestas()
     .filter(f => (f.titular || '') === titular)
     .reduce((a, b) => a + fcAPesos(b.monto, b.moneda), 0);
@@ -120,12 +121,12 @@ function fcPorCobrar(t){
     ars: Math.max(0, mAr - c.ars), usd: Math.max(0, mUs - c.ext),
   };
 }
-// El monotributo se mide por los últimos 12 meses móviles, no por año calendario
-function fcFacturado12m(titular){
-  const d = new Date(); d.setMonth(d.getMonth() - 12);
-  const desde = d.toISOString().slice(0, 10);
+// Lo facturado por cada uno en el período elegido
+function fcFacturadoPeriodo(titular){
+  const p = fcPeriodo();
   return fcEmitidas()
-    .filter(f => (f.titular || '') === titular && String(f.fecha || '').slice(0, 10) >= desde)
+    .filter(f => (f.titular || '') === titular)
+    .filter(f => { const d = String(f.fecha || '').slice(0, 10); return d >= p.desde && d <= p.hasta; })
     .reduce((a, b) => a + fcAPesos(b.monto, b.moneda), 0);
 }
 function fcFilas(){
@@ -186,6 +187,29 @@ async function cfgSet(clave, valor){
   else  await fcPersistir('config', null, { clave, valor: String(valor) });
 }
 
+/* ── El período que miran las dos tarjetas ──────────────────────────
+ * Por año calendario, o los últimos 12 meses móviles. La elección se guarda en
+ * la planilla, así la contadora y la app miran lo mismo. */
+function fcPeriodo(){
+  const v = cfgGet('fc_periodo') || String(new Date().getFullYear());
+  if(v === '12m'){
+    const h = new Date(), d = new Date(); d.setMonth(d.getMonth() - 12);
+    return { id: '12m', desde: d.toISOString().slice(0, 10), hasta: h.toISOString().slice(0, 10),
+             txt: 'los últimos 12 meses' };
+  }
+  const a = parseInt(v, 10) || new Date().getFullYear();
+  return { id: String(a), desde: a + '-01-01', hasta: a + '-12-31', txt: 'el año ' + a };
+}
+// Los años que tienen algo cargado, para armar el selector
+function fcAnios(){
+  const set = new Set([String(new Date().getFullYear())]);
+  DB.facturas.forEach(f => {
+    const a = String(f.fecha || '').slice(0, 4);
+    if(/^\d{4}$/.test(a)) set.add(a);
+  });
+  return [...set].sort().reverse();
+}
+
 // El monotributo se recategoriza dos veces al año, en enero y en julio, y en
 // cada corte se miran los últimos 12 meses facturados. Por eso acá nada cierra
 // por mes: lo que importa es cómo llega el acumulado a la próxima fecha de corte.
@@ -200,11 +224,18 @@ function fcProximaRecat(){
 function renderFacturacion(){
   const tb = document.getElementById('fc-tbody');
   if(!tb) return;
+  const selP = document.getElementById('fc-periodo');
+  if(selP){
+    const p = fcPeriodo();
+    selP.innerHTML = fcAnios().map(a => `<option value="${a}">Año ${a}</option>`).join('')
+      + '<option value="12m">Últimos 12 meses</option>';
+    selP.value = p.id;
+  }
   const recat = document.getElementById('fc-recat');
   if(recat){
     const r = fcProximaRecat();
-    recat.innerHTML = `Próxima recategorización: <b>${r.txt}</b>. Ahí se mira lo facturado de ${r.periodo}, `
-      + 'que es lo que cuentan estas dos tarjetas. La fecha y el tope los confirma la contadora.';
+    recat.innerHTML = `Próxima recategorización: <b>${r.txt}</b>, y ahí se miran los últimos 12 meses (${r.periodo}). `
+      + 'El período de arriba, la fecha y los topes los define la contadora.';
   }
   // Parámetros, sin pisar lo que se está tipeando
   // sofi-url y sofi-clave solo existen en la app: en la vista de la contadora no
@@ -217,8 +248,8 @@ function renderFacturacion(){
 
   // Semáforo de los dos monotributos
   document.getElementById('fc-semaforo').innerHTML = FC_TITULARES.map(q => {
-    const fac = fcFacturado12m(q), tope = fcNum(cfgGet('tope_' + q.toLowerCase()));
-    const pend = fcPendiente12m(q);
+    const fac = fcFacturadoPeriodo(q), tope = fcNum(cfgGet('tope_' + q.toLowerCase()));
+    const pend = fcPendientePeriodo(q);
     const pct = tope ? Math.min(100, fac / tope * 100) : 0;
     const pctP = tope ? Math.min(100 - pct, pend / tope * 100) : 0;
     const cls = !tope ? '' : (fac + pend > tope ? ' pasado' : ((fac + pend) / tope > 0.8 ? ' alerta' : ''));
@@ -226,7 +257,7 @@ function renderFacturacion(){
     return `<div class="fc-card">
       <div class="fc-card-top">
         <div><div class="fc-card-quien">${q}</div>
-          <div class="fc-card-sub">facturado en los últimos 12 meses</div></div>
+          <div class="fc-card-sub">facturado en ${escHtml(fcPeriodo().txt)}</div></div>
         <div class="fc-card-num">${fmtPlata(fac, '$')}</div>
       </div>
       <div class="fc-barra${cls}"><span style="width:${pct}%"></span><i style="width:${pctP}%"></i></div>
@@ -415,6 +446,12 @@ function ddjjBajar(){
   setTimeout(() => URL.revokeObjectURL(a.href), 1500);
 }
 
+async function fcCambiarPeriodo(){
+  const v = document.getElementById('fc-periodo').value;
+  renderFacturacion();                       // se ve al instante
+  try{ await cfgSet('fc_periodo', v); }
+  catch(e){ toast('No pude guardar el período: ' + e.message, true); }
+}
 async function fcGuardarParams(){
   const v = id => document.getElementById(id).value.trim();
   try{
@@ -482,6 +519,8 @@ async function fcGuardarFactura(){
   // El cliente puede faltar: una inyección propia no tiene cliente. Pero algo
   // tiene que decir, o después no se sabe de qué era.
   if(!v('fc-cliente') && !v('fc-concepto')) return toast('Poné al menos el cliente o el concepto', true);
+  // Si ya tiene número es un comprobante emitido: tiene que decir a nombre de quién
+  if(v('fc-numero') && !v('fc-titular')) return toast('Falta a nombre de quién salió la factura', true);
   const data = {
     fecha: v('fc-fecha'), titular: v('fc-titular'), pto_venta: v('fc-pv'), numero: v('fc-numero'),
     trabajo_id: v('fc-trabajo'), cliente: v('fc-cliente'), moneda: '$',
@@ -576,7 +615,8 @@ function renderParaDecidir(){
       <td>${quien ? `<span class="fc-chip obra">${escHtml(quien)}</span>` : '<span class="fc-chip sin">lo decide la contadora</span>'}</td>
       <td>${escHtml(f.nota || '')}</td>
       <td style="white-space:nowrap">
-        <button class="btn sm" onclick="fcEditarFactura('${f.id}')">✎</button>
+        <button class="btn sm success" onclick="fcMarcarFacturada('${f.id}')" title="Ya la emití: cargar el número">✓ Facturado</button>
+        <button class="btn sm" onclick="fcEditarFactura('${f.id}')" title="Editar">✎</button>
       </td>
     </tr>`;
   }).join('') : '<tr class="empty-row"><td colspan="6">No hay nada anotado. Con el botón de arriba se agrega un ingreso que todavía no se facturó.</td></tr>';
@@ -624,4 +664,16 @@ function fcDesdeMovimiento(movId){
   document.getElementById('fc-cliente').value = t ? (t.razon_social || t.cliente || '') : '';
   document.getElementById('fc-concepto').value = m.descripcion || (t ? (t.tipo_trabajo || '') : '');
   document.getElementById('fc-mov').value = movId;
+}
+
+// Ya se emitió: se abre el mismo cuadro con el número listo para escribir. Al
+// guardarlo con número, el renglón deja de estar «para decidir» y pasa abajo,
+// a las facturas hechas.
+function fcMarcarFacturada(id){
+  fcEditarFactura(id);
+  document.getElementById('fc-modal-titulo').textContent = 'Marcar como facturada';
+  const pv = document.getElementById('fc-pv');
+  if(pv && !pv.value.trim()) pv.value = cfgGet('pto_venta') || '';
+  const n = document.getElementById('fc-numero');
+  if(n) setTimeout(() => { n.focus(); n.select(); }, 60);
 }

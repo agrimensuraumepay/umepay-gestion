@@ -82,6 +82,8 @@
   .fc-card-pie{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--ink2)}
   .fc-params{display:grid;grid-template-columns:1fr;gap:10px;background:var(--bg2);border-radius:var(--r);padding:12px 14px;margin-bottom:18px}
   @media(min-width:760px){ .fc-params{grid-template-columns:1fr 1fr 1fr} }
+  .url-input{font-family:var(--mono);font-size:12px;color:var(--ink);background:var(--surface);
+    border:1px solid var(--border2);border-radius:6px;padding:6px 9px;outline:none}
   .fc-cli{font-weight:600}
   .fc-fiscal{font-size:10px;color:var(--ink3)}
   .fc-fiscal.falta{color:var(--amber);font-weight:600}
@@ -164,7 +166,10 @@
       </details>
     </div>
     <div>
-      <div class="sec-title" style="margin-bottom:10px">Los dos monotributos</div>
+      <div class="sec-hdr" style="margin-bottom:10px">
+        <div class="sec-title">Los dos monotributos</div>
+        <select id="fc-periodo" class="url-input" style="width:auto;margin:0;font-size:12px" onchange="fcCambiarPeriodo()"></select>
+      </div>
       <div class="fc-semaforo" id="fc-semaforo"></div>
       <div class="sec-sub" id="fc-recat" style="margin-bottom:12px"></div>
       <div class="g2">
