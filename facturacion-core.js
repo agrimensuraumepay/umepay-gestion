@@ -73,8 +73,21 @@ function fcCobrado(t){
   const c = fcCotiz();
   return { ars, ext, pesos: ars + (c ? ext * c : 0) };
 }
+/* Una fila de facturas SIN número de comprobante todavía no se emitió: es un
+ * ingreso anotado para que la contadora diga a nombre de quién conviene que salga.
+ * No cuenta como facturación hasta que tenga número. */
+function fcEmitida(f){ return String(f.numero || '').trim() !== ''; }
+function fcEmitidas(){ return DB.facturas.filter(fcEmitida); }
+function fcPropuestas(){ return DB.facturas.filter(f => !fcEmitida(f)); }
+
 function fcFacturadoDe(t){
-  return DB.facturas.filter(f => f.trabajo_id === t.id)
+  return fcEmitidas().filter(f => f.trabajo_id === t.id)
+    .reduce((a, b) => a + fcAPesos(b.monto, b.moneda), 0);
+}
+// Lo anotado y todavía sin emitir, por titular
+function fcPendiente12m(titular){
+  return fcPropuestas()
+    .filter(f => (f.titular || '') === titular)
     .reduce((a, b) => a + fcAPesos(b.monto, b.moneda), 0);
 }
 function fcCerrado(t){ return String(t.sin_facturar || '') === '1'; }
@@ -107,7 +120,7 @@ function fcPorCobrar(t){
 function fcFacturado12m(titular){
   const d = new Date(); d.setMonth(d.getMonth() - 12);
   const desde = d.toISOString().slice(0, 10);
-  return DB.facturas
+  return fcEmitidas()
     .filter(f => (f.titular || '') === titular && String(f.fecha || '').slice(0, 10) >= desde)
     .reduce((a, b) => a + fcAPesos(b.monto, b.moneda), 0);
 }
@@ -145,7 +158,7 @@ function ddjjCampos(f, t, tipo){
 }
 function fcDeclaracion(desde, hasta){
   const obras = [], otras = [], sin = [];
-  DB.facturas.forEach(f => {
+  fcEmitidas().forEach(f => {
     const d = String(f.fecha || '').slice(0, 10);
     if(!d || (desde && d < desde) || (hasta && d > hasta)) return;
     const t = DB.trabajos.find(x => x.id === f.trabajo_id);
@@ -184,16 +197,18 @@ function renderFacturacion(){
   // Semáforo de los dos monotributos
   document.getElementById('fc-semaforo').innerHTML = FC_TITULARES.map(q => {
     const fac = fcFacturado12m(q), tope = fcNum(cfgGet('tope_' + q.toLowerCase()));
+    const pend = fcPendiente12m(q);
     const pct = tope ? Math.min(100, fac / tope * 100) : 0;
-    const cls = !tope ? '' : (fac > tope ? ' pasado' : (fac / tope > 0.8 ? ' alerta' : ''));
-    const queda = tope - fac;
+    const pctP = tope ? Math.min(100 - pct, pend / tope * 100) : 0;
+    const cls = !tope ? '' : (fac + pend > tope ? ' pasado' : ((fac + pend) / tope > 0.8 ? ' alerta' : ''));
+    const queda = tope - fac - pend;
     return `<div class="fc-card">
       <div class="fc-card-top">
         <div><div class="fc-card-quien">${q}</div>
           <div class="fc-card-sub">facturado en los últimos 12 meses</div></div>
         <div class="fc-card-num">${fmtPlata(fac, '$')}</div>
       </div>
-      <div class="fc-barra${cls}"><span style="width:${pct}%"></span></div>
+      <div class="fc-barra${cls}"><span style="width:${pct}%"></span><i style="width:${pctP}%"></i></div>
       <div class="fc-card-pie">
         <span>${tope ? 'Tope: ' + fmtPlata(tope, '$') : 'Sin tope cargado'}</span>
         <span>${tope ? (queda >= 0
@@ -201,6 +216,7 @@ function renderFacturacion(){
             : '<b class="fc-rojo">Pasado por ' + fmtPlata(-queda, '$') + '</b>')
           : 'Cargá el tope para ver el margen'}</span>
       </div>
+      ${pend ? `<div class="fc-card-pend">+ ${fmtPlata(pend, '$')} anotado para decidir</div>` : ''}
     </div>`;
   }).join('');
 
@@ -212,7 +228,7 @@ function renderFacturacion(){
     const t = f.t;
     const fiscal = (t.cuit || '').trim()
       ? `<div class="fc-fiscal">${escHtml(t.cuit)}${t.iva ? ' · ' + escHtml(t.iva) : ''}</div>`
-      : '<div class="fc-fiscal falta">falta el CUIT</div>';
+      : `<button class="fc-falta-cuit" onclick="fcAbrirFiscal('${t.id}')" title="Cargar los datos para facturar">+ falta el CUIT</button>`;
     const chip = f.tipo === 'obra' ? '<span class="fc-chip obra">obra</span>'
       : (f.tipo === 'otra' ? '<span class="fc-chip otra">otra tarea</span>'
                            : '<span class="fc-chip sin">sin clasificar</span>');
@@ -250,7 +266,7 @@ function renderFacturacion(){
 
   // Facturas emitidas
   const tbf = document.getElementById('fc-tbody-fact');
-  const facs = [...DB.facturas].sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')));
+  const facs = fcEmitidas().sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')));
   tbf.innerHTML = facs.length ? facs.map(f => {
     const t = DB.trabajos.find(x => x.id === f.trabajo_id);
     const comp = [f.pto_venta, f.numero].filter(Boolean).join('-');
@@ -265,6 +281,7 @@ function renderFacturacion(){
     </tr>`;
   }).join('') : '<tr class="empty-row"><td colspan="7">No hay facturas cargadas.</td></tr>';
 
+  renderParaDecidir();
   renderDeclaracion();
 }
 
@@ -383,10 +400,14 @@ async function fcGuardarParams(){
 // ── Modal de una factura ──
 function fcLlenarSelectTrabajos(){
   const sel = document.getElementById('fc-trabajo');
+  // Con cuánto le falta facturar a cada uno: así una inyección se imputa donde sirve
   const ts = [...DB.trabajos].sort((a, b) =>
     String(a.cliente || '').localeCompare(String(b.cliente || ''), 'es', { sensitivity: 'base' }));
-  sel.innerHTML = '<option value="">— Sin vincular —</option>' + ts.map(t =>
-    `<option value="${escHtml(t.id)}">${escHtml((t.cliente || '(sin nombre)') + ' — ' + (t.tipo_trabajo || ''))}</option>`).join('');
+  sel.innerHTML = '<option value="">— Sin vincular —</option>' + ts.map(t => {
+    const f = fcCerrado(t) ? 0 : Math.max(0, fcMinimo(t).valor - fcFacturadoDe(t));
+    const falta = f > 0 ? ' — faltan ' + fmtPlata(f, '$') : '';
+    return `<option value="${escHtml(t.id)}">${escHtml((t.cliente || '(sin nombre)') + ' — ' + (t.tipo_trabajo || '') + falta)}</option>`;
+  }).join('');
 }
 function fcTrabajoElegido(){
   const t = DB.trabajos.find(x => x.id === document.getElementById('fc-trabajo').value);
@@ -430,8 +451,10 @@ function fcEditarFactura(id){
 async function fcGuardarFactura(){
   const v = id => document.getElementById(id).value.trim();
   if(!v('fc-fecha')) return toast('Falta la fecha', true);
-  if(!v('fc-cliente')) return toast('Falta el cliente', true);
   if(!fcNum(v('fc-monto'))) return toast('Falta el monto', true);
+  // El cliente puede faltar: una inyección propia no tiene cliente. Pero algo
+  // tiene que decir, o después no se sabe de qué era.
+  if(!v('fc-cliente') && !v('fc-concepto')) return toast('Poné al menos el cliente o el concepto', true);
   const data = {
     fecha: v('fc-fecha'), titular: v('fc-titular'), pto_venta: v('fc-pv'), numero: v('fc-numero'),
     trabajo_id: v('fc-trabajo'), cliente: v('fc-cliente'), moneda: v('fc-moneda'),
@@ -503,3 +526,36 @@ async function fcGuardarFiscal(){
 // ==============================
 // DASHBOARD
 // ==============================
+
+// ── Ingresos para decidir con la contadora ───────────────────────────
+// Plata que todavía no entró o que se va a inyectar al banco. Se anota acá antes
+// de facturar, la contadora pone a nombre de quién conviene que salga, y cuando se
+// emite el comprobante se le carga el número y pasa a ser una factura hecha.
+function renderParaDecidir(){
+  const tb = document.getElementById('fc-tbody-dec');
+  if(!tb) return;
+  const ps = fcPropuestas().sort((a, b) => String(a.fecha || '').localeCompare(String(b.fecha || '')));
+  tb.innerHTML = ps.length ? ps.map(f => {
+    const t = DB.trabajos.find(x => x.id === f.trabajo_id);
+    const quien = (f.titular || '').trim();
+    return `<tr>
+      <td>${f.fecha ? fmtFecha(f.fecha) : '—'}</td>
+      <td>${escHtml(f.concepto || f.cliente || '(sin describir)')}
+        ${t ? `<div class="fc-fiscal">${escHtml(t.cliente || '')}</div>` : ''}</td>
+      <td style="text-align:right"><b>${fmtPlata(fcNum(f.monto), f.moneda || '$')}</b></td>
+      <td>${quien ? `<span class="fc-chip obra">${escHtml(quien)}</span>` : '<span class="fc-chip sin">lo decide la contadora</span>'}</td>
+      <td>${escHtml(f.nota || '')}</td>
+      <td style="white-space:nowrap">
+        <button class="btn sm" onclick="fcEditarFactura('${f.id}')">✎</button>
+      </td>
+    </tr>`;
+  }).join('') : '<tr class="empty-row"><td colspan="6">No hay nada anotado. Con el botón de arriba se agrega un ingreso que todavía no se facturó.</td></tr>';
+}
+// Alta rápida de un ingreso a decidir: es una factura sin número
+function fcNuevoPendiente(){
+  fcNuevaFactura();
+  document.getElementById('fc-modal-titulo').textContent = 'Ingreso para decidir';
+  document.getElementById('fc-numero').value = '';
+  document.getElementById('fc-titular').value = '';
+  document.getElementById('fc-cliente').value = '';
+}

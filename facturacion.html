@@ -152,8 +152,28 @@
     <div class="field">
       <label>Cotización U$D de referencia</label>
       <input type="number" id="fc-cotiz" placeholder="Ej: 1650" onchange="fcGuardarParams()">
-      <div class="field-hint">Solo para mostrar en pesos lo cobrado en dólares o USDT. Si está vacía, esos cobros se muestran en su moneda y no se suman.</div>
+      <div class="field-hint">Solo para mirar en pesos lo cobrado en dólares o USDT y ver cuánto falta cobrar de cada trabajo.
+        <b>No se usa para facturar</b>: cada inyección al banco lleva la cotización del día en que se hizo, y esa va en la factura.
+        Si está vacía, esos cobros se muestran en su moneda y no se suman.</div>
     </div>
+  </div>
+  <div class="sec-hdr">
+    <div>
+      <div class="sec-title">Para decidir con la contadora</div>
+      <div class="sec-sub">Plata que todavía no se facturó: lo que falta cobrar de un trabajo, o una inyección al banco de lo cobrado en efectivo.
+        Se anota acá <b>antes</b> de emitir nada, para que la contadora mire los dos monotributos y diga a nombre de quién conviene que salga.
+        Cuando se emite el comprobante se le carga el número y pasa abajo, a las facturas hechas.</div>
+    </div>
+    <button class="btn" onclick="fcNuevoPendiente()">+ Anotar un ingreso</button>
+  </div>
+  <div class="table-wrap" style="margin-bottom:24px">
+    <table>
+      <thead><tr>
+        <th>Fecha</th><th>De qué se trata</th><th style="text-align:right">Monto</th>
+        <th>A nombre de</th><th>Lo que dijo la contadora</th><th></th>
+      </tr></thead>
+      <tbody id="fc-tbody-dec"><tr class="empty-row"><td colspan="6">Cargando…</td></tr></tbody>
+    </table>
   </div>
   <div class="sec-hdr">
     <div>
@@ -226,20 +246,27 @@
       <div class="g2">
         <div class="field"><label>Fecha *</label><input type="date" id="fc-fecha"></div>
         <div class="field">
-          <label>A nombre de *</label>
-          <select id="fc-titular"><option>Julia</option><option>Santiago</option></select>
+          <label>A nombre de</label>
+          <select id="fc-titular">
+            <option value="">— Lo decide la contadora —</option>
+            <option>Julia</option><option>Santiago</option>
+          </select>
         </div>
       </div>
       <div class="g2" style="margin-top:10px">
         <div class="field"><label>Punto de venta</label><input id="fc-pv" placeholder="Ej: 1"></div>
-        <div class="field"><label>Número</label><input id="fc-numero" placeholder="Ej: 11"></div>
+        <div class="field">
+          <label>Número</label>
+          <input id="fc-numero" placeholder="Ej: 11">
+          <div class="field-hint">Vacío = todavía no se emitió, queda en «para decidir».</div>
+        </div>
       </div>
       <div class="field" style="margin-top:10px">
         <label>Trabajo</label>
         <select id="fc-trabajo" onchange="fcTrabajoElegido()"></select>
         <div class="field-hint">Si la factura no es de ningún trabajo (por ejemplo Greenfruit), dejalo sin vincular y escribí el cliente a mano.</div>
       </div>
-      <div class="field" style="margin-top:10px"><label>Cliente *</label><input id="fc-cliente"></div>
+      <div class="field" style="margin-top:10px"><label>Cliente</label><input id="fc-cliente" placeholder="Si es una inyección propia, dejalo vacío"></div>
       <div class="g2" style="margin-top:10px">
         <div class="field">
           <label>Moneda</label>
@@ -247,8 +274,8 @@
         </div>
         <div class="field"><label>Monto *</label><input type="number" id="fc-monto" placeholder="Ej: 500000"></div>
       </div>
-      <div class="field" style="margin-top:10px"><label>Concepto</label><input id="fc-concepto" placeholder="Lo que dice la factura"></div>
-      <div class="field" style="margin-top:10px"><label>Nota</label><input id="fc-nota" placeholder="Para acordarse de algo"></div>
+      <div class="field" style="margin-top:10px"><label>Concepto</label><input id="fc-concepto" placeholder="Ej: inyección de dólares / Greenfruit noviembre"></div>
+      <div class="field" style="margin-top:10px"><label>Nota</label><input id="fc-nota" placeholder="Acá escribe la contadora lo que decidió"></div>
     </div>
     <div class="modal-footer">
       <button class="btn danger sm" id="fc-btn-borrar" onclick="fcBorrarFactura()" style="display:none">✕ Borrar</button>
