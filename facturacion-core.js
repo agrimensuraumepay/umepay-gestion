@@ -39,6 +39,10 @@ function cfgGet(clave){
   const f = DB.config.find(c => c.clave === clave);
   return f ? String(f.valor == null ? '' : f.valor) : '';
 }
+/* La cotización no se usa para facturar: el dólar es efectivo hasta que se
+ * inyecta al banco, y cada inyección lleva la del día en su propia factura.
+ * Queda sólo como referencia opcional para mirar en pesos lo cobrado en dólares;
+ * no hay campo en la pantalla, se carga a mano en la hoja config si hace falta. */
 function fcCotiz(){ return fcNum(cfgGet('cotiz_usd')); }
 
 // Un monto en pesos. Lo que está en dólares o USDT se pasa con la cotización de
@@ -204,7 +208,7 @@ function renderFacturacion(){
   }
   // Parámetros, sin pisar lo que se está tipeando
   // sofi-url y sofi-clave solo existen en la app: en la vista de la contadora no
-  [['fc-tope-julia', 'tope_julia'], ['fc-tope-santiago', 'tope_santiago'], ['fc-cotiz', 'cotiz_usd'],
+  [['fc-tope-julia', 'tope_julia'], ['fc-tope-santiago', 'tope_santiago'],
    ['sofi-url', 'fact_url'], ['sofi-clave', 'fact_clave']]
     .forEach(([id, k]) => {
       const e = document.getElementById(id);
@@ -239,9 +243,9 @@ function renderFacturacion(){
 
   // Tabla de trabajos
   const filas = fcFilas();
-  const tot = { min: 0, cob: 0, fact: 0, falta: 0, disp: 0 };
+  const tot = { min: 0, cob: 0, fact: 0, falta: 0 };
   filas.forEach(f => { if(!f.cerrado){ tot.min += f.min.valor; tot.cob += f.cob.pesos; } tot.fact += f.fact; tot.falta += f.falta; });
-  tb.innerHTML = filas.length ? filas.map(f => {
+  const filaHtml = f => {
     const t = f.t;
     const fiscal = (t.cuit || '').trim()
       ? `<div class="fc-fiscal">${escHtml(t.cuit)}${t.iva ? ' · ' + escHtml(t.iva) : ''}</div>`
@@ -272,14 +276,21 @@ function renderFacturacion(){
         <button class="btn sm" onclick="fcAbrirFiscal('${t.id}')" title="Datos para facturar">✎</button>
       </td>
     </tr>`;
-  }).join('') + `<tr class="fc-tot">
+  };
+  // Los cerrados sin facturar siguen estando, pero plegados: no son trabajo pendiente
+  const activas = filas.filter(f => !f.cerrado), cerradas = filas.filter(f => f.cerrado);
+  tb.innerHTML = filas.length ? activas.map(filaHtml).join('') + `<tr class="fc-tot">
       <td colspan="2">Totales (sin los cerrados)</td>
       <td style="text-align:right">${fmtPlata(tot.min, '$')}</td>
       <td style="text-align:right"></td>
       <td style="text-align:right">${fmtPlata(tot.fact, '$')}</td>
       <td style="text-align:right">${tot.falta ? '<span class="fc-rojo">' + fmtPlata(tot.falta, '$') + '</span>' : '—'}</td><td></td>
     </tr>`
+    + (cerradas.length ? `<tr><td colspan="7" style="padding:7px 10px">
+        <button class="fc-ver-cerrados" id="fc-btn-cerrados" onclick="fcVerCerrados()">▸ ${cerradas.length} trabajo${cerradas.length === 1 ? '' : 's'} cerrado${cerradas.length === 1 ? '' : 's'} sin facturar</button>
+      </td></tr>` + cerradas.map(f => filaHtml(f).replace('<tr class="', '<tr class="fc-cerrada ')).join('') : '')
     : '<tr class="empty-row"><td colspan="7">Todavía no hay trabajos con cobros ni aportes cargados.</td></tr>';
+  fcPintarCerrados();
 
   // Facturas emitidas
   const tbf = document.getElementById('fc-tbody-fact');
@@ -409,7 +420,6 @@ async function fcGuardarParams(){
   try{
     await cfgSet('tope_julia', v('fc-tope-julia'));
     await cfgSet('tope_santiago', v('fc-tope-santiago'));
-    await cfgSet('cotiz_usd', v('fc-cotiz'));
     renderFacturacion();
   }catch(e){ toast('No se pudieron guardar los parámetros: ' + e.message, true); }
 }
@@ -440,7 +450,7 @@ function fcNuevaFactura(trabajoId){
   document.getElementById('fc-titular').value = 'Julia';
   document.getElementById('fc-pv').value = cfgGet('pto_venta') || '';
   ['fc-numero', 'fc-monto', 'fc-concepto', 'fc-nota', 'fc-cliente'].forEach(i => document.getElementById(i).value = '');
-  document.getElementById('fc-moneda').value = '$';
+  document.getElementById('fc-mov').value = '';
   document.getElementById('fc-trabajo').value = trabajoId || '';
   document.getElementById('fc-btn-borrar').style.display = 'none';
   if(trabajoId) fcTrabajoElegido();
@@ -458,7 +468,7 @@ function fcEditarFactura(id){
   document.getElementById('fc-numero').value = f.numero || '';
   document.getElementById('fc-trabajo').value = f.trabajo_id || '';
   document.getElementById('fc-cliente').value = f.cliente || '';
-  document.getElementById('fc-moneda').value = f.moneda || '$';
+  document.getElementById('fc-mov').value = f.mov_id || '';
   document.getElementById('fc-monto').value = f.monto || '';
   document.getElementById('fc-concepto').value = f.concepto || '';
   document.getElementById('fc-nota').value = f.nota || '';
@@ -474,9 +484,12 @@ async function fcGuardarFactura(){
   if(!v('fc-cliente') && !v('fc-concepto')) return toast('Poné al menos el cliente o el concepto', true);
   const data = {
     fecha: v('fc-fecha'), titular: v('fc-titular'), pto_venta: v('fc-pv'), numero: v('fc-numero'),
-    trabajo_id: v('fc-trabajo'), cliente: v('fc-cliente'), moneda: v('fc-moneda'),
+    trabajo_id: v('fc-trabajo'), cliente: v('fc-cliente'), moneda: '$',
     monto: String(fcNum(v('fc-monto'))), concepto: v('fc-concepto'), nota: v('fc-nota'),
   };
+  // De qué cobro salió, para no mandarlo dos veces a la lista
+  const mov = v('fc-mov');
+  if(mov) data.mov_id = mov;
   if(v('fc-pv')) await cfgSet('pto_venta', v('fc-pv'));   // el punto de venta se recuerda
   try{
     await fcPersistir('facturas', v('fc-id') || null, data);
@@ -575,4 +588,40 @@ function fcNuevoPendiente(){
   document.getElementById('fc-numero').value = '';
   document.getElementById('fc-titular').value = '';
   document.getElementById('fc-cliente').value = '';
+}
+
+// Los trabajos cerrados sin facturar arrancan escondidos: están para consultarlos,
+// no para reclamar nada.
+let FC_VER_CERRADOS = false;
+function fcPintarCerrados(){
+  document.querySelectorAll('.fc-cerrada').forEach(tr => { tr.style.display = FC_VER_CERRADOS ? '' : 'none'; });
+  const b = document.getElementById('fc-btn-cerrados');
+  if(b) b.textContent = b.textContent.replace(/^[\u25b8\u25be]/, FC_VER_CERRADOS ? '\u25be' : '\u25b8');
+}
+function fcVerCerrados(){ FC_VER_CERRADOS = !FC_VER_CERRADOS; fcPintarCerrados(); }
+
+// ── Un cobro en pesos, derecho a la lista de la contadora ────────────────
+// Lo que entra por transferencia en pesos ya está en el banco: se puede facturar.
+// Lo cobrado en dólares es efectivo y recién se factura cuando se inyecta, así que
+// de esos no sale este botón.
+function fcPropuestaDeMov(movId){
+  return DB.facturas.find(f => String(f.mov_id || '') === String(movId)) || null;
+}
+function fcDesdeMovimiento(movId){
+  const m = DB.movimientos.find(x => x.id === movId);
+  if(!m) return;
+  const ya = fcPropuestaDeMov(movId);
+  if(ya){
+    toast(fcEmitida(ya) ? 'Ese cobro ya est\u00e1 facturado (comprobante ' + (ya.numero || '') + ')'
+                        : 'Ese cobro ya est\u00e1 en la lista de la contadora');
+    return;
+  }
+  const t = DB.trabajos.find(x => x.id === m.trabajo_id);
+  fcNuevoPendiente();
+  document.getElementById('fc-fecha').value = String(m.fecha || '').slice(0, 10);
+  document.getElementById('fc-monto').value = fcNum(m.monto);
+  document.getElementById('fc-trabajo').value = m.trabajo_id || '';
+  document.getElementById('fc-cliente').value = t ? (t.razon_social || t.cliente || '') : '';
+  document.getElementById('fc-concepto').value = m.descripcion || (t ? (t.tipo_trabajo || '') : '');
+  document.getElementById('fc-mov').value = movId;
 }

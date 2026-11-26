@@ -205,8 +205,17 @@ tr:hover td{background:var(--bg)}
   border-left:3px solid var(--green);padding:8px 12px;border-radius:0 6px 6px 0;
   font-size:12px;color:var(--green);font-weight:500;margin-bottom:8px;line-height:1.45}
 /* ── FACTURACIÓN ── */
-.fc-semaforo{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:14px}
-@media(min-width:760px){ .fc-semaforo{grid-template-columns:1fr 1fr} }
+.fc-semaforo{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px}
+@media(min-width:620px){ .fc-semaforo{grid-template-columns:1fr 1fr} }
+/* Arriba: a la izquierda lo que hay que decidir, a la derecha los topes */
+.fc-top{display:grid;grid-template-columns:1fr;gap:18px;margin-bottom:22px}
+@media(min-width:1000px){ .fc-top{grid-template-columns:1.25fr 1fr} .fc-top .fc-semaforo{grid-template-columns:1fr} }
+.fc-ayuda{margin:0 0 10px}
+.fc-ayuda summary{font-size:11px;color:var(--ink3);cursor:pointer;user-select:none;font-weight:600}
+.fc-ayuda summary:hover{color:var(--ink)}
+.fc-ayuda-txt{font-size:11px;color:var(--ink2);line-height:1.65;padding:8px 0 0}
+.fc-ver-cerrados{background:none;border:none;color:var(--ink3);cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;padding:0}
+.fc-ver-cerrados:hover{color:var(--ink)}
 .fc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
 .fc-card-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px}
 .fc-card-quien{font-size:13px;font-weight:700}
@@ -743,60 +752,70 @@ tr:hover td{background:var(--bg)}
   <div class="sec-hdr">
     <div>
       <div class="sec-title">Facturación</div>
-      <div class="sec-sub">Cuánto hay que facturar de cada trabajo y cómo repartirlo entre los dos monotributos.
-        De cada obra se factura el <b>honorario mínimo del arancel</b>: es el número sobre el que se pagaron los aportes a la Caja,
-        así que es el que queda respaldado. Lo que se le cobró al cliente por encima de eso no se factura.</div>
+      <div class="sec-sub">Qué hay que facturar, de qué trabajo y a nombre de cuál de los dos monotributos.</div>
     </div>
     <button class="btn success" onclick="fcNuevaFactura()">+ Cargar factura</button>
   </div>
-  <div class="fc-semaforo" id="fc-semaforo"></div>
-  <div class="sec-sub" id="fc-recat" style="margin:-4px 0 14px"></div>
-  <div class="fc-params">
-    <div class="field">
-      <label>Tope anual — monotributo Julia</label>
-      <input type="number" id="fc-tope-julia" placeholder="Lo confirma la contadora" onchange="fcGuardarParams()">
-      <div class="field-hint">El del monotributo se mide por los últimos 12 meses, no por año calendario.</div>
-    </div>
-    <div class="field">
-      <label>Tope anual — monotributo Santiago</label>
-      <input type="number" id="fc-tope-santiago" placeholder="Lo confirma la contadora" onchange="fcGuardarParams()">
-    </div>
-    <div class="field">
-      <label>Cotización U$D de referencia</label>
-      <input type="number" id="fc-cotiz" placeholder="Ej: 1650" onchange="fcGuardarParams()">
-      <div class="field-hint">Solo para mirar en pesos lo cobrado en dólares o USDT y ver cuánto falta cobrar de cada trabajo.
-        <b>No se usa para facturar</b>: cada inyección al banco lleva la cotización del día en que se hizo, y esa va en la factura.
-        Si está vacía, esos cobros se muestran en su moneda y no se suman.</div>
-    </div>
-  </div>
-  <div class="sec-hdr">
+  <div class="fc-top">
     <div>
-      <div class="sec-title">Para decidir con la contadora</div>
-      <div class="sec-sub">Plata que todavía no se facturó: lo que falta cobrar de un trabajo, o una inyección al banco de lo cobrado en efectivo.
-        Se anota acá <b>antes</b> de emitir nada, para que la contadora mire los dos monotributos y diga a nombre de quién conviene que salga.
-        Cuando se emite el comprobante se le carga el número y pasa abajo, a las facturas hechas.</div>
+      <div class="sec-hdr" style="margin-bottom:10px">
+        <div>
+          <div class="sec-title">Para decidir</div>
+          <div class="sec-sub">Ingresos todavía sin facturar: falta definir a nombre de quién sale cada uno.</div>
+        </div>
+        <button class="btn" onclick="fcNuevoPendiente()">+ Anotar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Fecha</th><th>De qué se trata</th><th style="text-align:right">Monto</th>
+            <th>A nombre de</th><th>Lo que dijo la contadora</th><th></th>
+          </tr></thead>
+          <tbody id="fc-tbody-dec"><tr class="empty-row"><td colspan="6">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+      <details class="fc-ayuda" style="margin-top:8px">
+        <summary>¿Cómo funciona esta lista?</summary>
+        <div class="fc-ayuda-txt">Un cobro en pesos entra al banco, así que puede facturarse: desde «Ingresos y Gastos»
+          se manda acá con el botón «▸». Lo cobrado en dólares es efectivo y recién se factura cuando se inyecta
+          al banco; esa inyección se anota a mano con «+ Anotar».
+          Mientras el renglón no tenga número de comprobante no cuenta como facturado en ningún lado.
+          Cuando se emite, se le carga el número y pasa a «Facturas emitidas».</div>
+      </details>
     </div>
-    <button class="btn" onclick="fcNuevoPendiente()">+ Anotar un ingreso</button>
-  </div>
-  <div class="table-wrap" style="margin-bottom:24px">
-    <table>
-      <thead><tr>
-        <th>Fecha</th><th>De qué se trata</th><th style="text-align:right">Monto</th>
-        <th>A nombre de</th><th>Lo que dijo la contadora</th><th></th>
-      </tr></thead>
-      <tbody id="fc-tbody-dec"><tr class="empty-row"><td colspan="6">Cargando…</td></tr></tbody>
-    </table>
+    <div>
+      <div class="sec-title" style="margin-bottom:10px">Los dos monotributos</div>
+      <div class="fc-semaforo" id="fc-semaforo"></div>
+      <div class="sec-sub" id="fc-recat" style="margin-bottom:12px"></div>
+      <div class="g2">
+        <div class="field">
+          <label>Tope — Julia</label>
+          <input type="number" id="fc-tope-julia" placeholder="Lo pone la contadora" onchange="fcGuardarParams()">
+        </div>
+        <div class="field">
+          <label>Tope — Santiago</label>
+          <input type="number" id="fc-tope-santiago" placeholder="Lo pone la contadora" onchange="fcGuardarParams()">
+        </div>
+      </div>
+    </div>
   </div>
   <div class="sec-hdr">
     <div>
       <div class="sec-title">Trabajos</div>
-      <div class="sec-sub"><b>Lo que se factura de una obra es el honorario mínimo</b>, que es el número sobre el que se pagó el 18% a la Caja.
-        Si no está cargado a mano, se deduce de la boleta: aporte de Caja ÷ 0,18, y entonces lleva un <b>~</b> adelante.
-        «Por facturar» es lo que queda de ese mínimo sin comprobante emitido.
-        <b>Obra</b> y <b>otra tarea</b> es la división que usa la Caja en la declaración: las otras tareas no llevan aportes, así que no tienen mínimo y se facturan por lo que se acuerde.
-        «Falta cobrar» en porcentaje dice cuánta plata del trabajo todavía no entró.</div>
+      <div class="sec-sub">De cada obra se factura el honorario mínimo del arancel, que es sobre lo que se pagaron los aportes.</div>
     </div>
   </div>
+  <details class="fc-ayuda">
+    <summary>¿Cómo se lee esta tabla?</summary>
+    <div class="fc-ayuda-txt">
+      <b>Honorarios mínimos:</b> de una obra se factura ese número, que es sobre el que se pagó el 18% a la Caja.
+      Si no está cargado a mano se deduce de la boleta (aporte de Caja ÷ 0,18) y lleva un <b>~</b> adelante.<br>
+      <b>Por facturar:</b> lo que queda de ese mínimo sin comprobante emitido.<br>
+      <b>Obra / otra tarea:</b> la división que usa la Caja en su declaración. Las otras tareas no llevan aportes,
+      no tienen mínimo y se facturan por lo que se acuerde.<br>
+      <b>Falta cobrar:</b> qué porcentaje del trabajo todavía no entró, o sea cuánto más va a entrar de ese cliente.
+    </div>
+  </details>
   <div class="table-wrap">
     <table>
       <thead><tr>
@@ -813,7 +832,7 @@ tr:hover td{background:var(--bg)}
   <div class="sec-hdr" style="margin-top:24px">
     <div>
       <div class="sec-title">Facturas emitidas</div>
-      <div class="sec-sub">Lo que se carga acá es lo que consume margen de monotributo arriba.</div>
+      <div class="sec-sub">Comprobantes ya emitidos. Son los que consumen margen arriba.</div>
     </div>
   </div>
   <div class="table-wrap">
@@ -829,10 +848,7 @@ tr:hover td{background:var(--bg)}
     <summary>▤ Armar la declaración para la Caja</summary>
     <div class="tiempos-body">
       <div class="sec-sub" style="margin-bottom:12px">
-        Las dos listas que pide el portal, con las columnas de cada paso:
-        <b>facturación por obras</b> (fecha, importe, comitente, CUIT, domicilio, localidad, expediente o nomenclatura y trabajos efectuados)
-        y <b>otras tareas</b> (fecha, importe y la tarea realizada). El número de comprobante es opcional.
-        La última declaración cubrió del 01/05/2024 al 30/06/2026.
+        Las dos listas que pide el portal, con las columnas de cada paso. La última declaración cubrió del 01/05/2024 al 30/06/2026.
       </div>
       <div class="ddjj-params">
         <div class="field"><label>Desde</label><input type="date" id="ddjj-desde" value="2024-05-01" onchange="renderDeclaracion()"></div>
@@ -1423,6 +1439,7 @@ tr:hover td{background:var(--bg)}
     </div>
     <div class="modal-body">
       <input type="hidden" id="fc-id">
+      <input type="hidden" id="fc-mov">
       <div class="g2">
         <div class="field"><label>Fecha *</label><input type="date" id="fc-fecha"></div>
         <div class="field">
@@ -1447,12 +1464,10 @@ tr:hover td{background:var(--bg)}
         <div class="field-hint">Si la factura no es de ningún trabajo (por ejemplo Greenfruit), dejalo sin vincular y escribí el cliente a mano.</div>
       </div>
       <div class="field" style="margin-top:10px"><label>Cliente</label><input id="fc-cliente" placeholder="Si es una inyección propia, dejalo vacío"></div>
-      <div class="g2" style="margin-top:10px">
-        <div class="field">
-          <label>Moneda</label>
-          <select id="fc-moneda"><option value="$">$ (ARS)</option><option value="U$D">U$D</option></select>
-        </div>
-        <div class="field"><label>Monto *</label><input type="number" id="fc-monto" placeholder="Ej: 500000"></div>
+      <div class="field" style="margin-top:10px">
+        <label>Monto en pesos *</label>
+        <input type="number" id="fc-monto" placeholder="Ej: 500000">
+        <div class="field-hint">Si el cobro fue en dólares, va el monto en pesos de la inyección, con la cotización de ese día.</div>
       </div>
       <div class="field" style="margin-top:10px"><label>Concepto</label><input id="fc-concepto" placeholder="Ej: inyección de dólares / Greenfruit noviembre"></div>
       <div class="field" style="margin-top:10px"><label>Nota</label><input id="fc-nota" placeholder="Acá escribe la contadora lo que decidió"></div>
@@ -3177,6 +3192,15 @@ function renderMovimientos() {
   renderCompromisos();
   renderPlataCaja();
 
+  // Un cobro en pesos ya está en el banco: se puede mandar a la lista de la
+  // contadora para que decida a nombre de quién se factura. Lo cobrado en
+  // dólares es efectivo y recién se factura al inyectarlo, así que no lleva botón.
+  const btnFacturar = m => {
+    if(m.tipo !== 'ingreso' || (m.moneda || '$') !== '$') return '';
+    const ya = fcPropuestaDeMov(m.id);
+    if(ya) return `<button class="btn sm" disabled style="opacity:.45" title="${fcEmitida(ya) ? 'Ya facturado' : 'Ya está en la lista de la contadora'}">✓</button> `;
+    return `<button class="btn sm" onclick="fcDesdeMovimiento('${m.id}')" title="Mandarlo a facturación, para que la contadora decida a nombre de quién">▸ Facturar</button> `;
+  };
   // Cada movimiento como renglón compacto de su columna
   const fila = m => {
     const isIng = m.tipo === 'ingreso';
@@ -3195,7 +3219,7 @@ function renderMovimientos() {
       <td>${m.descripcion||''}${m.comprobante_url?` <a href="${m.comprobante_url}" target="_blank" rel="noopener" title="Ver comprobante" style="text-decoration:none">📎</a>`:''}
         <div class="mov-sub">${detalle}${repBadge}</div></td>
       <td style="text-align:right;font-weight:500;white-space:nowrap;color:${isIng?'var(--green)':'var(--amber)'}">${montoStr}</td>
-      <td style="white-space:nowrap"><button class="btn sm" onclick="editMovimiento('${m.id}')" title="Editar">✎</button>
+      <td style="white-space:nowrap">${btnFacturar(m)}<button class="btn sm" onclick="editMovimiento('${m.id}')" title="Editar">✎</button>
         <button class="btn sm danger" onclick="deleteMovimiento('${m.id}')" title="Eliminar">✕</button></td>
     </tr>`;
   };
